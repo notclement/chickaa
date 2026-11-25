@@ -63,7 +63,7 @@ export async function membership(db: Db, tripId: string, userId: string) {
     .select({ trip: trips, role: tripMembers.role })
     .from(trips)
     .innerJoin(tripMembers, and(eq(tripMembers.tripId, trips.id), eq(tripMembers.userId, userId)))
-    .where(and(eq(trips.id, tripId), isNull(tripMembers.leftAt)))
+    .where(and(eq(trips.id, tripId), isNull(tripMembers.leftAt), isNull(trips.deletedAt)))
     .limit(1);
   if (!row) throw notFound('Trip not found');
   return row;
@@ -99,7 +99,7 @@ tripRoutes.get('/', async (c) => {
     .select({ trip: trips, role: tripMembers.role, memberCount: memberCountSql })
     .from(tripMembers)
     .innerJoin(trips, eq(trips.id, tripMembers.tripId))
-    .where(and(eq(tripMembers.userId, me.id), isNull(tripMembers.leftAt)))
+    .where(and(eq(tripMembers.userId, me.id), isNull(tripMembers.leftAt), isNull(trips.deletedAt)))
     .orderBy(sql`case ${trips.status} when 'active' then 0 when 'completed' then 1 else 2 end`, desc(trips.createdAt));
   const res: TripListResponse = { trips: rows.map((r) => toSummary(r.trip, r.role, r.memberCount)) };
   return c.json(res);

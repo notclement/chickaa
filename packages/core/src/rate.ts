@@ -61,3 +61,27 @@ export function convert(minor: bigint, from: CurrencyCode, to: CurrencyCode, rat
   else d *= 10n ** BigInt(-shift);
   return roundHalfEven(n, d);
 }
+
+/**
+ * Exact rate from a numeric literal as it appears in an API's JSON text ("8.45e-5", "0.037512"),
+ * so provider rates never pass through a float. Rounded half-even to 12 decimal places.
+ */
+export function rateFromLiteral(literal: string): Rate {
+  const m = /^(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(literal.trim());
+  if (!m) throw new FinanceError('INVALID_RATE', `Unreadable exchange rate “${literal}”`);
+  const digits = BigInt(m[1]! + (m[2] ?? ''));
+  // value = digits × 10^(exp − fracLen)
+  let exp = Number.parseInt(m[3] ?? '0', 10) - (m[2] ?? '').length;
+  let num = digits;
+  if (exp >= 0) {
+    num *= 10n ** BigInt(exp);
+    exp = 0;
+  }
+  let scale = -exp;
+  if (scale > MAX_SCALE) {
+    num = roundHalfEven(num, 10n ** BigInt(scale - MAX_SCALE));
+    scale = MAX_SCALE;
+  }
+  if (num <= 0n) throw new FinanceError('INVALID_RATE', 'The exchange rate must be more than 0');
+  return parseRate(rateToString({ num, scale }));
+}

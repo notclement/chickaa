@@ -12,8 +12,10 @@ COPY packages/contracts/package.json packages/contracts/
 COPY packages/db/package.json packages/db/
 RUN pnpm install --frozen-lockfile
 COPY . .
-ARG APP_VERSION=dev
-ENV APP_VERSION=$APP_VERSION
+# Render passes RENDER_GIT_COMMIT to Docker builds; other hosts can pass APP_VERSION.
+ARG RENDER_GIT_COMMIT
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION:-${RENDER_GIT_COMMIT}}
 RUN pnpm build
 
 FROM node:22-slim AS runtime
@@ -23,8 +25,9 @@ ENV NODE_ENV=production \
     WEB_DIST=/app/web \
     MIGRATIONS_DIR=/app/migrations \
     RUN_MIGRATIONS_ON_START=true
-ARG APP_VERSION=dev
-ENV APP_VERSION=$APP_VERSION
+ARG RENDER_GIT_COMMIT
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION:-${RENDER_GIT_COMMIT}}
 # The API is bundled into dist/ (no node_modules needed at runtime).
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/migrations ./migrations

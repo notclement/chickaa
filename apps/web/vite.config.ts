@@ -17,7 +17,7 @@ function gitSha(): string {
 
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.APP_VERSION ?? `${pkg.version}+${gitSha()}`),
+    __APP_VERSION__: JSON.stringify(`${pkg.version}+${(process.env.APP_VERSION || gitSha()).slice(0, 7)}`),
   },
   plugins: [
     react(),

@@ -3,6 +3,8 @@ import { CURRENCIES, CURRENCY_CODES } from '@ncc/core';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage, patch, post } from '../api/client.ts';
+import { DeleteTripCard } from '../components/DeleteTripCard.tsx';
+import { TripRatesCard } from '../components/TripRatesCard.tsx';
 import { useUnsavedChanges } from '../pwa/unsavedChanges.ts';
 import { Button, Card, ErrorState, FormError, Loading, ScreenTitle, SelectField, TextField } from '../ui/index.tsx';
 
@@ -65,6 +67,12 @@ export function EditTripScreen() {
           navigate(`/trips/${id}`, { replace: true });
         }}
       />
+      <div className="mt-4">
+        <TripRatesCard tripId={trip.id} baseCurrency={trip.baseCurrency} />
+      </div>
+      <div className="mt-4">
+        <DeleteTripCard trip={trip} />
+      </div>
     </>
   );
 }

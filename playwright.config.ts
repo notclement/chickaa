@@ -35,6 +35,7 @@ export default defineConfig({
       DATABASE_URL: process.env.DATABASE_URL ?? '',
       RUN_MIGRATIONS_ON_START: process.env.DATABASE_URL ? 'true' : 'false',
       RATE_LIMIT_SCALE: '1000',
+      FX_FAKE_RATES: 'THB>SGD=0.0375,IDR>SGD=0.0000845,JPY>SGD=0.0089',
     },
   },
 });

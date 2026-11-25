@@ -94,6 +94,9 @@ export const trips = pgTable('trips', {
   createdBy: uuid('created_by').notNull().references(() => users.id),
   status: tripStatus('status').notNull().default('active'),
   completedAt: ts('completed_at'),
+  /** Soft delete by the owner once everyone is settled: hidden from the app, records kept. */
+  deletedAt: ts('deleted_at'),
+  deletedBy: uuid('deleted_by').references(() => users.id),
   version: integer('version').notNull().default(1),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -151,6 +154,9 @@ export const fxRateCache = pgTable(
     quote: currency('quote').notNull(),
     rateDate: date('rate_date').notNull(),
     rate: rate('rate').notNull(),
+    /** Date the provider actually published the rate (weekends fall back to the last business day). */
+    publishedDate: date('published_date'),
+    provider: text('provider'),
     fetchedAt: ts('fetched_at').notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.base, t.quote, t.rateDate] })],

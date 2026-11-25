@@ -5,6 +5,7 @@ import { createDb } from '@ncc/db';
 import { runMigrations } from '@ncc/db/migrate';
 import { sql } from 'drizzle-orm';
 import { createApp } from '../src/app.ts';
+import { FxUnavailableError, type FxProvider } from '../src/fx/provider.ts';
 import { loadConfig } from '../src/config.ts';
 
 export const ORIGIN = 'https://ncc.test';
@@ -12,6 +13,26 @@ export const TEST_DB_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE
 
 let shared: ReturnType<typeof createDb> | null = null;
 let migrated = false;
+
+/** Fake FX source with known rates (base→quote). Counts calls so tests can check caching. */
+export const fakeFx = {
+  calls: 0,
+  rates: { 'THB>SGD': '0.0375', 'IDR>SGD': '8.45e-5', 'JPY>SGD': '0.0089', 'MYR>SGD': '0.29', 'SGD>IDR': '11834.32' } as Record<string, string>,
+  down: false,
+};
+const fx: FxProvider = {
+  name: 'FakeFX',
+  async getRate(from, to, date) {
+    fakeFx.calls++;
+    const literal = fakeFx.rates[`${from}>${to}`];
+    if (fakeFx.down || !literal) throw new FxUnavailableError('no rate');
+    // Pretend weekends fall back to Friday.
+    const d = new Date(`${date}T00:00:00Z`);
+    const dow = d.getUTCDay();
+    if (dow === 0 || dow === 6) d.setUTCDate(d.getUTCDate() - (dow === 0 ? 2 : 1));
+    return { literal, date: d.toISOString().slice(0, 10) };
+  },
+};
 
 /** App wired to the real test database. Tables are truncated before each test file's tests. */
 export async function testApp() {
@@ -24,7 +45,7 @@ export async function testApp() {
   const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html>');
   const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN }), webDist: dist };
-  const app = createApp({ config, db: shared.db, pingDb: async () => true });
+  const app = createApp({ config, db: shared.db, pingDb: async () => true, fx });
   return { app, db: shared.db };
 }
 
@@ -73,7 +94,9 @@ export function client(app: App, ip = '203.0.113.1') {
     get: (p: string) => call('GET', p),
     post: (p: string, b?: unknown) => call('POST', p, b ?? {}),
     patch: (p: string, b: unknown) => call('PATCH', p, b),
+    put: (p: string, b: unknown) => call('PUT', p, b),
     del: (p: string) => call('DELETE', p),
+    call,
     get cookie() {
       return cookie;
     },

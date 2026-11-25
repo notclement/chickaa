@@ -1,5 +1,6 @@
 import type { Db } from '@ncc/db';
 import type { Config } from '../config.ts';
+import type { FxProvider } from '../fx/provider.ts';
 
 export interface AuthUser {
   id: string;
@@ -11,6 +12,7 @@ export interface Env {
   Variables: {
     db: Db;
     config: Config;
+    fx: FxProvider;
     user: AuthUser | null;
     sessionId: string | null;
   };

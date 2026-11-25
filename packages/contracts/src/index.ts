@@ -193,3 +193,133 @@ export type InvitePreview = z.infer<typeof InvitePreview>;
 
 export const JoinResponse = z.object({ tripId: z.string(), alreadyMember: z.boolean() });
 export type JoinResponse = z.infer<typeof JoinResponse>;
+
+// ---------- exchange rates ----------
+/** Exact decimal as a string (never a JSON float). */
+export const DecimalString = z.string().trim().min(1, 'Required').max(24);
+
+export const FxRateResponse = z.object({
+  from: z.string(),
+  to: z.string(),
+  /** 1 `from` = rate `to`, exact decimal string. */
+  rate: z.string(),
+  /** Date the provider published this rate (may be earlier than requested, e.g. weekends). */
+  date: z.string(),
+  source: z.enum(['same_currency', 'api', 'trip_fixed']),
+  provider: z.string().nullable(),
+});
+export type FxRateResponse = z.infer<typeof FxRateResponse>;
+
+export const TripFxRate = z.object({ currency: z.string(), rate: z.string(), setAt: z.string(), setBy: z.string() });
+export type TripFxRate = z.infer<typeof TripFxRate>;
+export const TripFxRatesResponse = z.object({ rates: z.array(TripFxRate) });
+export type TripFxRatesResponse = z.infer<typeof TripFxRatesResponse>;
+export const SetTripFxRateRequest = z.object({ rate: DecimalString });
+
+// ---------- expenses ----------
+const Uuid = z.uuid();
+
+export const SplitRequest = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('equal'), participants: z.array(Uuid).min(1, 'Choose who shares it').max(100) }),
+  z.object({ type: z.literal('exact'), amounts: z.array(z.object({ userId: Uuid, amount: DecimalString })).min(1).max(100) }),
+  z.object({ type: z.literal('percentage'), percents: z.array(z.object({ userId: Uuid, percent: DecimalString })).min(1).max(100) }),
+  z.object({ type: z.literal('shares'), shares: z.array(z.object({ userId: Uuid, shares: z.number().int().min(1).max(1000) })).min(1).max(100) }),
+]);
+export type SplitRequest = z.infer<typeof SplitRequest>;
+
+/** How to get the exchange rate. Omit for expenses in the trip's own currency. */
+export const RateChoice = z.discriminatedUnion('source', [
+  z.object({ source: z.literal('api') }),
+  z.object({ source: z.literal('trip_fixed') }),
+  z.object({ source: z.literal('manual'), value: DecimalString }),
+]);
+export type RateChoice = z.infer<typeof RateChoice>;
+
+const ExpenseFields = {
+  description: z.string().trim().min(1, 'What was it for?').max(80),
+  notes: z.string().trim().max(500).nullable().optional(),
+  expenseDate: IsoDate,
+  currency: CurrencyCode,
+  amount: DecimalString,
+  rate: RateChoice.optional(),
+  payers: z.array(z.object({ userId: Uuid, amount: DecimalString })).min(1, 'Choose who paid').max(50),
+  split: SplitRequest,
+};
+
+export const CreateExpenseRequest = z.object({ clientId: Uuid, ...ExpenseFields });
+export type CreateExpenseRequest = z.input<typeof CreateExpenseRequest>;
+
+export const UpdateExpenseRequest = z.object({ version: z.number().int().positive(), ...ExpenseFields });
+export type UpdateExpenseRequest = z.input<typeof UpdateExpenseRequest>;
+
+/** Minor-unit amounts travel as strings (bigint-safe). */
+export const Expense = z.object({
+  id: z.string(),
+  tripId: z.string(),
+  clientId: z.string(),
+  description: z.string(),
+  notes: z.string().nullable(),
+  expenseDate: z.string(),
+  currency: z.string(),
+  amount: z.string(),
+  baseCurrency: z.string(),
+  baseAmount: z.string(),
+  rate: z.string(),
+  rateSource: z.enum(['same_currency', 'api', 'trip_fixed', 'manual']),
+  rateDate: z.string(),
+  splitType: z.enum(['equal', 'exact', 'percentage', 'shares']),
+  payers: z.array(z.object({ userId: z.string(), amount: z.string(), baseAmount: z.string() })),
+  splits: z.array(
+    z.object({
+      userId: z.string(),
+      amount: z.string(),
+      baseAmount: z.string(),
+      percentBp: z.number().nullable(),
+      shares: z.number().nullable(),
+    }),
+  ),
+  createdBy: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  version: z.number(),
+  deleted: z.boolean(),
+});
+export type Expense = z.infer<typeof Expense>;
+
+export const ExpenseListResponse = z.object({ expenses: z.array(Expense) });
+export type ExpenseListResponse = z.infer<typeof ExpenseListResponse>;
+
+export const ExpenseRevision = z.object({
+  version: z.number(),
+  action: z.enum(['create', 'update', 'delete']),
+  actor: z.object({ userId: z.string(), displayName: z.string() }),
+  createdAt: z.string(),
+  snapshot: z.unknown(),
+});
+export type ExpenseRevision = z.infer<typeof ExpenseRevision>;
+export const ExpenseRevisionsResponse = z.object({ revisions: z.array(ExpenseRevision) });
+export type ExpenseRevisionsResponse = z.infer<typeof ExpenseRevisionsResponse>;
+
+// ---------- balances ----------
+export const BalanceRow = z.object({
+  userId: z.string(),
+  paid: z.string(),
+  share: z.string(),
+  transfersOut: z.string(),
+  transfersIn: z.string(),
+  net: z.string(),
+});
+export type BalanceRow = z.infer<typeof BalanceRow>;
+
+export const BalancesResponse = z.object({
+  baseCurrency: z.string(),
+  totalSpent: z.string(),
+  expenseCount: z.number(),
+  balances: z.array(BalanceRow),
+});
+export type BalancesResponse = z.infer<typeof BalancesResponse>;
+
+// ---------- trip deletion ----------
+/** Owner deletes a trip once everyone is settled. Typing the trip name confirms it. */
+export const DeleteTripRequest = z.object({ confirmName: z.string() });
+export type DeleteTripRequest = z.input<typeof DeleteTripRequest>;

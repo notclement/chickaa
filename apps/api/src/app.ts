@@ -7,7 +7,9 @@ import { errorResponse, HttpError } from './lib/http.ts';
 import { setRateLimitScale } from './lib/rateLimit.ts';
 import type { Env } from './lib/types.ts';
 import { csrfGuard, securityHeaders } from './middleware/security.ts';
+import { frankfurter, type FxProvider } from './fx/provider.ts';
 import { authRoutes } from './routes/auth.ts';
+import { expenseRoutes, tripExpenseRoutes } from './routes/expenses.ts';
 import { inviteRoutes } from './routes/invites.ts';
 import { invitationRoutes, tripRoutes } from './routes/trips.ts';
 import { serveWeb } from './static.ts';
@@ -18,9 +20,11 @@ export interface AppDeps {
   db: Db | null;
   /** Returns true if the database answers. */
   pingDb: () => Promise<boolean>;
+  /** Exchange-rate source (tests pass a fake). */
+  fx?: FxProvider;
 }
 
-export function createApp({ config, db, pingDb }: AppDeps) {
+export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
   setRateLimitScale(config.rateLimitScale);
   const app = new Hono<Env>();
   app.use('*', securityHeaders({ hsts: config.nodeEnv === 'production' }));
@@ -28,6 +32,7 @@ export function createApp({ config, db, pingDb }: AppDeps) {
   const api = new Hono<Env>();
   api.use('*', async (c, next) => {
     c.set('config', config);
+    c.set('fx', fx);
     await next();
     c.res.headers.set('Cache-Control', 'no-store'); // user data never lands in HTTP caches
   });
@@ -57,6 +62,8 @@ export function createApp({ config, db, pingDb }: AppDeps) {
 
   api.route('/auth', authRoutes);
   api.route('/trips', tripRoutes);
+  api.route('/trips', tripExpenseRoutes);
+  api.route('/expenses', expenseRoutes);
   api.route('/invitations', invitationRoutes);
   api.route('/invites', inviteRoutes);
 

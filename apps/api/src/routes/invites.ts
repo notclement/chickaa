@@ -37,7 +37,8 @@ async function find(db: Db, token: string) {
     .innerJoin(trips, eq(trips.id, invitations.tripId))
     .where(eq(invitations.tokenHash, sha256(token)))
     .limit(1);
-  return { inv: row?.inv, trip: row?.trip };
+  if (!row || row.trip.deletedAt) return { inv: undefined, trip: undefined }; // deleted trips: link is dead
+  return { inv: row.inv, trip: row.trip };
 }
 
 async function isMember(db: Db, tripId: string, userId: string) {

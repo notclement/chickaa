@@ -381,6 +381,7 @@ All mutating requests require same-origin `Origin` header + `X-Requested-With: n
 | POST | `/trips/:id/complete` | owner; locks expenses, generates settlement plan |
 | POST | `/trips/:id/reopen` | owner; only if no transfer is `sent`; supersedes pending transfers |
 | POST | `/trips/:id/archive` | owner |
+| DELETE | `/trips/:id` | owner; body `{confirmName}`; **only when every balance is exactly 0** and no transfer is sent/disputed. Soft delete: hidden for everyone, invite links revoked, records kept |
 | PUT | `/trips/:id/fx-rates/:currency` | owner; set trip-fixed rate |
 
 **Invitations**
@@ -398,10 +399,12 @@ All mutating requests require same-origin `Origin` header + `X-Requested-With: n
 | GET | `/trips/:id/expenses` | |
 | POST | `/trips/:id/expenses` | idempotent by `clientId` (§4.3) |
 | GET | `/expenses/:id` | |
+| | | Edit/delete: the expense's creator or the trip owner. Editing without changing currency/date/rate type keeps the original rate |
 | PUT | `/expenses/:id` | `If-Match: version` |
 | DELETE | `/expenses/:id` | `If-Match: version`, soft delete |
 | GET | `/expenses/:id/revisions` | audit trail |
-| GET | `/fx/rate?from=THB&to=SGD&date=2027-04-02` | server-cached Frankfurter rate |
+| GET | `/trips/:id/fx-rate?currency=THB&date=…` | suggested rate: trip-fixed if set, else Frankfurter daily rate (cached in DB forever) |
+| GET / PUT / DELETE | `/trips/:id/fx-rates[/:currency]` | trip-fixed rates (owner sets) |
 
 **Balances & settlement**
 | Method | Path | Notes |
@@ -525,7 +528,7 @@ Each phase ends with something runnable and deployed to a staging URL.
 | **1. Foundation + PWA shell** ✅ | Monorepo, Vite/React/Tailwind, Hono, Postgres/Drizzle, brand lockup, manifest, icons, iOS splash, SW + update toast, install prompts, CSP, Docker, CI | **Installable on iPhone & Android, opens offline, update toast works**. Chrome reports zero installability errors (Playwright) |
 | **2. Auth & trips** ✅ | Register/login/recovery, sessions, rate-limit, trips, members, invites (link, QR, share sheet, revoke, expiry, limits), join flow incl. paste-invite | e2e: Alice creates trip, Bob joins via link |
 | **3. Financial core (tests first)** ✅ | `packages/core`: money, currencies, allocation, splits, FX conversion, ledger; full unit + property tests | Coverage gate: 100% lines/functions, ≥95% branches (CI fails below) |
-| **4. Expenses** | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |
+| **4. Expenses** ✅ | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |
 | **5. Settlement optimiser** | Exact DP + fallback, plan generation on complete, Settle Up UI | Optimality property tests green; n=20 < 1s |
 | **6. Settlement tracking** | Sent/confirm/dispute/cancel, events, progress, reopen, final summary | Acceptance steps 15–24 pass |
 | **7. Offline viewing** | Dexie snapshot cache, offline banner with last-updated time, disabled actions, idempotent retry UX, logout isolation, storage persist | Playwright offline suite: load trip → go offline → reload installed app → data + "last updated" shown, all writes disabled; flaky-network retry creates exactly one expense |

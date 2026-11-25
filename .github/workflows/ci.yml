@@ -30,6 +30,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Live exchange-rate API check (warning only)
+        continue-on-error: true
+        run: pnpm --filter @ncc/api exec vitest run test/fx-live.test.ts
+        env:
+          FX_LIVE: '1'
       - run: pnpm build
       - name: Apply migrations to a fresh database
         run: node apps/api/dist/migrate-cli.js

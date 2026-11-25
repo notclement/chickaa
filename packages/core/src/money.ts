@@ -49,3 +49,21 @@ export function sumMinor(values: Iterable<bigint>): bigint {
   for (const v of values) s += v;
   return s;
 }
+
+/** "33.33" (%) → 3333 basis points. Up to 2 decimals, between 0.01 and 100. */
+export function parsePercent(input: string): number {
+  const s = input.trim();
+  const m = /^(\d{1,3})(?:\.(\d{0,2}))?$/.exec(s);
+  if (!m) throw new FinanceError('INVALID_SPLIT', 'Enter a percentage like 25 or 33.33');
+  const bp = Number.parseInt(m[1]! + (m[2] ?? '').padEnd(2, '0'), 10);
+  if (bp <= 0 || bp > 10_000) throw new FinanceError('INVALID_SPLIT', 'Each percentage must be between 0.01% and 100%');
+  return bp;
+}
+
+/** 3333 → "33.33", 5000 → "50". */
+export function formatPercent(basisPoints: number): string {
+  const digits = String(basisPoints).padStart(3, '0');
+  const whole = digits.slice(0, -2);
+  const frac = digits.slice(-2).replace(/0+$/, '');
+  return frac ? `${whole}.${frac}` : `${whole}`;
+}

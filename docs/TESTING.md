@@ -34,6 +34,15 @@ Run on the staging URL after each phase. ✅ = pass.
 - [ ] Force-quit and reopen the installed app a day later → still logged in
 - [ ] After 15+ min idle: open app → “Waking up the server…” appears briefly, then content loads
 
+### Expenses (Phase 4)
+- [ ] Add an expense in SGD with the decimal keyboard; total + your balance update
+- [ ] Add one in THB/IDR: the rate appears with its date; “≈ S$…” matches; switch to “Use my own rate”
+- [ ] Several payers: “left to assign” counts down to “✓ Adds up”
+- [ ] Each split tab (Equally / Amounts / % / Shares) shows per-person amounts live
+- [ ] Edit and delete an expense; history shows who did it
+- [ ] Settings → set a fixed rate for a currency → new expenses in it say “Trip’s fixed rate”
+- [ ] Settings → Delete trip is blocked while anyone owes, works once all are settled
+
 ### Android, Chrome
 - [ ] Install card shows **Install app** button → native install dialog → icon on home screen (round mask looks right)
 - [ ] Launches standalone with orange status bar

@@ -11,6 +11,7 @@ export function AppStatusCard() {
   const online = useOnline();
   const [server, setServer] = useState<Check>('checking');
   const [db, setDb] = useState<Check>('checking');
+  const [serverVersion, setServerVersion] = useState<string>('');
   const [swReady, setSwReady] = useState<boolean>(() => !!navigator.serviceWorker?.controller);
   const standalone = isStandalone(readPlatform());
 
@@ -25,6 +26,7 @@ export function AppStatusCard() {
       .then((h) => {
         if (cancelled) return;
         setServer('ok');
+        setServerVersion(h.version);
         setDb(h.db === 'ok' ? 'ok' : 'down');
       })
       .catch(() => {
@@ -56,7 +58,8 @@ export function AppStatusCard() {
         <Row label="Opened as" value={standalone ? 'Home-screen app' : 'Browser tab'} />
         <Row label="Server" value={label(server)} good={server === 'ok'} bad={server === 'down'} />
         <Row label="Database" value={label(db)} good={db === 'ok'} bad={db === 'down'} />
-        <Row label="Version" value={__APP_VERSION__} mono />
+        <Row label="App version" value={__APP_VERSION__} mono />
+        {serverVersion && <Row label="Server version" value={serverVersion} mono />}
       </dl>
     </section>
   );

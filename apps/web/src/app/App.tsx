@@ -2,6 +2,10 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'rea
 import { AuthProvider, useAuth } from '../auth/AuthContext.tsx';
 import { AppShell } from '../components/AppShell.tsx';
 import { AccountScreen } from '../screens/AccountScreen.tsx';
+import { BalancesScreen } from '../screens/BalancesScreen.tsx';
+import { ExpenseDetailScreen } from '../screens/ExpenseDetailScreen.tsx';
+import { EditExpenseScreen, NewExpenseScreen } from '../screens/ExpenseFormScreen.tsx';
+import { ExpenseListScreen } from '../screens/ExpenseListScreen.tsx';
 import { LoginScreen, RecoverScreen, RegisterScreen } from '../screens/AuthScreens.tsx';
 import { InviteScreen } from '../screens/InviteScreen.tsx';
 import { JoinScreen } from '../screens/JoinScreen.tsx';
@@ -30,6 +34,11 @@ export function App() {
               <Route path="trips/:id" element={<TripScreen />} />
               <Route path="trips/:id/edit" element={<EditTripScreen />} />
               <Route path="trips/:id/invite" element={<InviteScreen />} />
+              <Route path="trips/:id/expenses" element={<ExpenseListScreen />} />
+              <Route path="trips/:id/expenses/new" element={<NewExpenseScreen />} />
+              <Route path="trips/:id/balances" element={<BalancesScreen />} />
+              <Route path="expenses/:eid" element={<ExpenseDetailScreen />} />
+              <Route path="expenses/:eid/edit" element={<EditExpenseScreen />} />
               <Route path="account" element={<AccountScreen />} />
             </Route>
             <Route path="*" element={<NotFoundScreen />} />

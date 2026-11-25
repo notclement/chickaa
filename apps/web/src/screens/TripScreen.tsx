@@ -1,16 +1,22 @@
-import type { TripDetail } from '@ncc/contracts';
+import type { BalancesResponse, ExpenseListResponse } from '@ncc/contracts';
 import { Link, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
+import { BalanceList } from '../components/BalanceList.tsx';
+import { ExpenseRow } from '../components/ExpenseRow.tsx';
 import { currencyLabel, formatDateRange } from '../lib/format.ts';
+import { money } from '../lib/money.ts';
+import { useTrip } from '../lib/useTrip.ts';
 import { Avatar, Badge, ButtonLink, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
 
-/** Trip dashboard. Expenses, balances and settle-up arrive in later phases. */
+/** Trip dashboard: totals, my position, balances, recent expenses, people. */
 export function TripScreen() {
   const { id } = useParams();
   const me = useMe();
-  const { data: trip, error, loading, reload } = useApi(() => api<TripDetail>(`/trips/${id}`), [id]);
+  const { trip, error, loading, reload, nameOf } = useTrip(id);
+  const balances = useApi(() => api<BalancesResponse>(`/trips/${id}/balances`), [id]);
+  const expenses = useApi(() => api<ExpenseListResponse>(`/trips/${id}/expenses`), [id]);
 
   if (loading && !trip) return <Loading />;
   if (error) {
@@ -20,63 +26,110 @@ export function TripScreen() {
   if (!trip) return null;
 
   const owner = trip.myRole === 'owner';
-  const dates = formatDateRange(trip.startDate, trip.endDate);
+  const active = trip.status === 'active';
   const ownerName = trip.members.find((m) => m.role === 'owner')?.displayName;
+  const mine = balances.data?.balances.find((b) => b.userId === me.id);
+  const myNet = mine ? BigInt(mine.net) : 0n;
+  const list = expenses.data?.expenses ?? [];
 
   return (
-    <div className="space-y-4">
-      <ScreenTitle title={trip.name} back="/" subtitle={dates ?? undefined} />
+    <div className="space-y-4 pb-20">
+      <ScreenTitle title={trip.name} back="/" subtitle={formatDateRange(trip.startDate, trip.endDate) ?? undefined} />
 
-      <Card className="!p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="brand">{currencyLabel(trip.baseCurrency)}</Badge>
-          <Badge tone={trip.status === 'active' ? 'good' : 'neutral'}>{trip.status === 'active' ? 'Active' : trip.status === 'completed' ? 'Completed' : 'Archived'}</Badge>
-          {owner && (
-            <Link to={`/trips/${trip.id}/edit`} className="ml-auto rounded-xl px-2 py-1 text-sm font-semibold text-ink-500 active:bg-ink-900/5">
-              ⚙︎ Settings
-            </Link>
-          )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone="brand">{currencyLabel(trip.baseCurrency)}</Badge>
+        <Badge tone={active ? 'good' : 'neutral'}>{active ? 'Active' : trip.status === 'completed' ? 'Completed' : 'Archived'}</Badge>
+        {owner && (
+          <Link to={`/trips/${trip.id}/edit`} className="ml-auto rounded-xl px-2 py-1 text-sm font-semibold text-ink-500 active:bg-ink-900/5">
+            ⚙︎ Settings
+          </Link>
+        )}
+      </div>
+
+      <section className="grid grid-cols-2 gap-2">
+        <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-ink-900/5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">Trip total</div>
+          <div className="mt-1 text-xl font-extrabold tabular-nums" data-testid="trip-total">
+            {balances.data ? money(balances.data.totalSpent, trip.baseCurrency) : '…'}
+          </div>
         </div>
-        {trip.description && <p className="mt-3 whitespace-pre-line text-ink-700">{trip.description}</p>}
-      </Card>
+        <div className={`rounded-3xl p-4 shadow-sm ring-1 ring-ink-900/5 ${myNet > 0n ? 'bg-owed/10' : myNet < 0n ? 'bg-owes/10' : 'bg-white'}`}>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">{myNet > 0n ? 'You get back' : myNet < 0n ? 'You owe' : 'You’re'}</div>
+          <div className={`mt-1 text-xl font-extrabold tabular-nums ${myNet > 0n ? 'text-owed' : myNet < 0n ? 'text-owes' : ''}`} data-testid="my-balance">
+            {!balances.data ? '…' : myNet === 0n ? 'settled up' : money(myNet < 0n ? -myNet : myNet, trip.baseCurrency)}
+          </div>
+        </div>
+      </section>
+
+      {trip.description && <p className="whitespace-pre-line px-1 text-ink-700">{trip.description}</p>}
 
       <Card>
         <div className="flex items-center justify-between">
-          <h2 className="font-bold">
-            People <span className="text-ink-500">· {trip.memberCount}</span>
-          </h2>
+          <h2 className="font-bold">Recent expenses</h2>
+          {list.length > 0 && (
+            <Link to={`/trips/${trip.id}/expenses`} className="text-sm font-semibold text-tangerine-600">
+              See all {list.length}
+            </Link>
+          )}
         </div>
-        <ul className="mt-3 divide-y divide-ink-900/5">
-          {trip.members.map((m) => (
-            <li key={m.userId} className="flex items-center gap-3 py-2.5">
-              <Avatar name={m.displayName} id={m.userId} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold">
-                  {m.displayName}
-                  {m.userId === me.id && <span className="font-normal text-ink-500"> (you)</span>}
-                </div>
-                <div className="truncate text-sm text-ink-500">@{m.username}</div>
-              </div>
-              {m.role === 'owner' && <Badge tone="brand">Owner</Badge>}
-            </li>
-          ))}
-        </ul>
-        {owner && trip.status === 'active' ? (
-          <ButtonLink to={`/trips/${trip.id}/invite`} block>
-            ＋ Invite people
-          </ButtonLink>
+        {expenses.loading && !expenses.data ? (
+          <Loading />
+        ) : list.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-500">Nothing yet. Add the first expense: hotel, dinner, taxi…</p>
         ) : (
-          trip.status === 'active' && <p className="mt-2 text-sm text-ink-500">Want to add someone? Ask {ownerName ?? 'the owner'} for an invite link.</p>
+          <ul className="divide-y divide-ink-900/5">
+            {list.slice(0, 4).map((e) => (
+              <li key={e.id}>
+                <ExpenseRow e={e} me={me.id} nameOf={nameOf} />
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
 
-      <Card className="text-center">
-        <div className="text-3xl" aria-hidden>
-          🧾
-        </div>
-        <h2 className="mt-2 font-bold">Expenses are coming next</h2>
-        <p className="mt-1 text-sm text-ink-700">Adding expenses, balances and settling up arrive in the next updates.</p>
+      {balances.data && balances.data.expenseCount > 0 && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold">Balances</h2>
+            <Link to={`/trips/${trip.id}/balances`} className="text-sm font-semibold text-tangerine-600">
+              Details
+            </Link>
+          </div>
+          <BalanceList data={balances.data} me={me.id} nameOf={nameOf} />
+        </Card>
+      )}
+
+      <Card>
+        <h2 className="font-bold">
+          People <span className="text-ink-500">· {trip.memberCount}</span>
+        </h2>
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {trip.members.map((m) => (
+            <li key={m.userId} className="flex items-center gap-2 rounded-full bg-cream py-1 pl-1 pr-3 text-sm font-semibold ring-1 ring-ink-900/5">
+              <Avatar name={m.displayName} id={m.userId} size="sm" />
+              {m.userId === me.id ? `${m.displayName} (you)` : m.displayName}
+              {m.role === 'owner' && <span className="text-xs text-tangerine-700">owner</span>}
+            </li>
+          ))}
+        </ul>
+        {owner && active ? (
+          <ButtonLink to={`/trips/${trip.id}/invite`} variant="secondary" block>
+            ＋ Invite people
+          </ButtonLink>
+        ) : (
+          active && <p className="mt-3 text-sm text-ink-500">Want to add someone? Ask {ownerName ?? 'the owner'} for an invite link.</p>
+        )}
       </Card>
+
+      {active && (
+        <div className="fixed inset-x-0 bottom-safe z-10 px-safe">
+          <div className="mx-auto max-w-xl">
+            <ButtonLink to={`/trips/${trip.id}/expenses/new`} block>
+              ＋ Add expense
+            </ButtonLink>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

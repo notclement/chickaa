@@ -1,6 +1,6 @@
 # NoChickenCall: Architecture & Design (draft for review)
 
-> Status: **DRAFT, under review with Clem.** Nothing gets built until the open decisions in §0 are settled.
+> Status: **Decisions agreed with Clem (26 Nov 2026), see §0.** Under review before Phase 1 starts.
 > Source of truth for scope: [SPEC.md](SPEC.md). This doc covers *how* to build it.
 
 Guiding rule: **the app is a PWA first.** Every choice below is judged on whether it makes the
@@ -9,14 +9,18 @@ correctness comes a close second. Everything else comes after those two.
 
 ---
 
-## 0. Open decisions (need Clem's call)
+## 0. Decisions (agreed)
 
-| # | Decision | Recommendation | Alternative |
-|---|----------|----------------|-------------|
-| D1 | Frontend/backend stack | **Vite + React SPA + Hono API, same origin, one deployable** (see §1.1) | Next.js App Router + Serwist, as the spec suggests |
-| D2 | What works offline | **Create expenses offline; edit/delete only *unsynced* local ones.** Editing already-synced expenses needs a connection | Full offline editing with 3-way conflict resolution |
-| D3 | Foreign-currency expense recorded offline | **Use the last rate the phone downloaded for that trip, clearly labelled "offline rate"**, with an option to type a manual rate | Force a manual rate whenever offline |
-| D4 | Hosting | **Single Docker container (API + static PWA) on Fly.io / Render / Railway + Neon Postgres** | Vercel (static + functions) + Neon; or your own VPS |
+| # | Decision | Agreed |
+|---|----------|--------|
+| D1 | Frontend/backend stack | **Vite + React SPA + Hono API, same origin, one deployable** (see §1.1) |
+| D2 | What works offline | **Read-only.** With no signal the installed app opens and shows the last-loaded trips, expenses, balances and settlement plan, with a clear **"Offline · view only · last updated <time>"** banner. **Every change (add/edit/delete expense, join, settle, confirm) requires a connection.** |
+| D3 | Offline FX rate | Not applicable: expenses can't be recorded offline |
+| D4 | Hosting | **Single Docker container (API + static PWA) on Fly.io / Render / Railway + Neon Postgres** |
+
+> **Deliberate deviation from SPEC §3.4 / §15:** offline expense recording, the IndexedDB outbox and offline sync are **dropped** at the owner's request.
+> What's kept: installable PWA, offline app shell, read-only offline viewing (SPEC §3.4 "Available offline" list) with a last-updated time, and duplicate-submission protection.
+> This removes the riskiest part of the spec (offline financial writes and conflict merging).
 
 Defaults I've assumed unless you object (spec clean-ups, see §10):
 - "Unequal split" and "Exact amount split" are the same thing → merged into **Exact amounts**.
@@ -32,9 +36,10 @@ Defaults I've assumed unless you object (spec clean-ups, see §10):
  ┌───────────────────────── Phone / Desktop browser ─────────────────────────┐
  │  Installed PWA (standalone)                                               │
  │  ┌──────────────┐   ┌──────────────────────┐   ┌───────────────────────┐  │
- │  │ React SPA UI │──▶│ Local store (Dexie / │◀──│ Sync engine (outbox,  │  │
- │  │ (all screens │   │ IndexedDB, per-user) │   │ retries, idempotency) │  │
- │  │  precached)  │   └──────────────────────┘   └──────────┬────────────┘  │
+ │  │ React SPA UI │──▶│ Read-only cache      │◀──│ API client (online    │  │
+ │  │ (all screens │   │ (Dexie / IndexedDB,  │   │ writes, idempotency   │  │
+ │  │  precached)  │   │  per-user snapshots) │   │ keys, snapshot pulls) │  │
+ │  │              │   └──────────────────────┘   └──────────┬────────────┘  │
  │  └──────────────┘                                         │ fetch /api/v1 │
  │  ┌──────────────────────────────────────┐                 │ (cookie auth) │
  │  │ Service worker (Workbox): app shell, │                 │               │
@@ -75,8 +80,8 @@ Same-origin matters for PWAs: the session cookie is first-party, which avoids Sa
 | Layer | Choice | Notes |
 |---|---|---|
 | UI | React 19, TypeScript, Tailwind CSS v4, React Router (or TanStack Router) | Mobile-first, accessible primitives (Radix/Ark) |
-| PWA | `vite-plugin-pwa` (Workbox), `injectManifest` mode with our own `sw.ts` | Lets us add update + Background Sync logic |
-| Local data | Dexie (IndexedDB) + `dexie-react-hooks` `useLiveQuery` | UI reads from local DB, so it works the same online and offline |
+| PWA | `vite-plugin-pwa` (Workbox), `injectManifest` mode with our own `sw.ts` | Lets us control the update prompt |
+| Local data | Dexie (IndexedDB) + `dexie-react-hooks` `useLiveQuery` | Read-only snapshot cache for offline viewing. Never a source of truth |
 | Server state fetch | Thin fetch client + TanStack Query for online-only actions | |
 | Validation | Zod schemas in `packages/contracts`, shared by client and server | |
 | API | Hono on Node 22 | REST, versioned `/api/v1` |
@@ -106,7 +111,7 @@ nochickencall/
 │  │  │  │                      # AddExpense, ExpenseList, Balances, SettleUp, Summary, JoinTrip
 │  │  │  ├─ components/         # Brand lockup (NoChickenCall / 别计较), money input, member picker...
 │  │  │  ├─ pwa/                # sw.ts, registerSW, UpdateToast, InstallPrompt (+ iOS instructions)
-│  │  │  ├─ offline/            # dexie schema, outbox, syncEngine, connectivity store
+│  │  │  ├─ offline/            # dexie snapshot cache, connectivity store, OfflineBanner
 │  │  │  ├─ api/                # typed fetch client
 │  │  │  └─ styles/
 │  │  └─ vite.config.ts         # vite-plugin-pwa + manifest
@@ -192,76 +197,68 @@ Generated by Workbox (`injectManifest`) from `apps/web/src/pwa/sw.ts`:
 
 - `registerType: 'prompt'`. A new SW installs and **waits**; it does *not* `skipWaiting` automatically.
 - The app shows a toast: **"New version ready · Refresh"**. Tap → `postMessage('SKIP_WAITING')` → `controllerchange` → reload.
-- Before reloading, the sync engine flushes the outbox if online. Pending expenses are in IndexedDB anyway, so an update **never loses them**.
-- Dexie schema has explicit versions with upgrade functions. Outbox items carry `payloadVersion`, and the API keeps accepting older payload versions for at least one release.
+- The toast is held back while a form is open and unsaved, so an update never throws away an expense you're typing.
+- Dexie cache schema has explicit versions. On a breaking change the cache is simply dropped and re-downloaded, since it holds no unsynced data. The API stays backward-compatible for one release so an old installed app keeps working until it refreshes.
 - On app start and on `visibilitychange → visible`, call `registration.update()` so the installed app notices deploys.
 
 ### 3.5 Platform realities we design around
 
 | Reality | What we do |
 |---|---|
-| **iOS has no Background Sync API** | Sync runs when the app opens, on the `online` event, on returning to foreground, right after saving, and every 30s while there are pending items. Chromium Background Sync is used only as a bonus |
+| **iOS has no background refresh for PWAs** | The cache refreshes when the app opens, on the `online` event and on returning to foreground. Nothing needs to run in the background because there are no pending writes |
 | **iOS installed PWA has separate storage/cookies from Safari** | Logging in in Safari doesn't log you into the home-screen app. The installed app has its own login screen, and sessions are long-lived (§7) so you log in once per device |
 | **Invite links from WhatsApp open in Safari, not the installed app (iOS)** | The join page works fully in the browser. After joining it says *"Open NoChickenCall from your home screen"*. "My Trips" also has **Paste invite link** so you can join from inside the installed app |
-| Safari may clear website data for sites not used for a while | Home-screen apps are treated better. We also request persistent storage, and the server is the source of truth, so the worst case is re-downloading after login. Unsynced items are the only thing at risk, and the UI nags until they're synced |
+| Safari may clear website data for sites not used for a while | Home-screen apps are treated better and we request persistent storage. Since the cache is read-only, the worst case is that offline viewing is empty until the next connection. No data can be lost |
 | No push notifications | Out of scope anyway |
 
 ### 3.6 PWA security
 
 - HTTPS only. HSTS. Strict CSP: `default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; frame-ancestors 'none'`.
 - Session is an **httpOnly, Secure, SameSite=Lax cookie**. Nothing auth-related goes in localStorage or IndexedDB.
-- IndexedDB database is **named per user** (`ncc-<userId>`). On logout: warn if unsynced items exist → delete that database → clear any runtime caches → server revokes the session.
+- IndexedDB database is **named per user** (`ncc-<userId>`). On logout: delete that database → clear any runtime caches → server revokes the session.
 - On login as a different user, the previous user's local DB is never opened.
 
 ---
 
-## 4. Offline data & synchronisation design
+## 4. Offline viewing & online-only writes
 
-### 4.1 Local store (Dexie, per user)
+### 4.1 Rule
+**Reads can be offline. Writes are always online.** The server is the only source of truth, and the phone keeps a read-only copy so you can check balances with no signal.
+
+### 4.2 Read-only cache (Dexie, per user)
 
 ```
-trips        (id, name, baseCurrency, status, updatedAt, ...)        ← server snapshot
+trips        (id, name, baseCurrency, status, updatedAt, ...)
 members      ([tripId+userId], displayName, role)
-expenses     (id, tripId, version, ..., payers[], splits[])          ← server snapshot
-balances     (tripId, computedAt, rows[])                            ← server snapshot
-settlement   (tripId, planVersion, isOptimal, transfers[])           ← server snapshot
-fxRates      ([tripId+currency], rate, rateDate, source)             ← for offline entry
-outbox       (clientId PK, tripId, kind, payload, payloadVersion,
-              status, attempts, lastError, createdAt, updatedAt)
-meta         (key, value)    e.g. lastSyncAt per trip
+expenses     (id, tripId, version, ..., payers[], splits[])
+balances     (tripId, rows[])
+settlement   (tripId, planVersion, isProvenOptimal, transfers[], progress)
+syncInfo     (tripId, lastUpdatedAt)     ← time of last successful download
 ```
 
-The UI renders **server data merged with outbox items**. Outbox expenses show a badge, and balances that include them are labelled *"includes 2 unsynced expenses (estimate)"*.
+- Every time a screen loads while online it calls `GET /api/v1/trips/:id/snapshot` (with `ETag`, so unchanged trips cost a tiny `304`) and writes the result into Dexie. The trip list is cached the same way.
+- Refresh triggers: app open, returning to foreground, the `online` event, and right after any successful write.
+- Screens always render from Dexie (`useLiveQuery`), so online and offline look identical apart from the banner.
 
-### 4.2 Outbox item states (shown in UI)
+### 4.3 What the user sees offline
+- A persistent banner: **"Offline · view only · Last updated 3:42 pm (2 h ago)"**, per trip, using `syncInfo.lastUpdatedAt`.
+- Add expense, edit, delete, invite, join, mark sent, confirm, dispute, complete trip: **disabled** with a tooltip "Needs a connection".
+- A trip never opened on this phone shows "Not downloaded yet. Connect once to view it offline."
+- When the connection returns, the banner disappears, data refreshes and the buttons re-enable.
 
-`saved_locally → waiting_to_sync → syncing → synced` (then removed from the outbox)
-or `→ failed (retrying)` / `→ needs_attention` (validation or conflict, the user must act).
+### 4.4 Online writes on flaky travel networks
+Hotel and roaming connections often drop the **response** after the server has already saved the request. To stop double-tapping or retries from creating duplicate expenses:
+1. The Add Expense form gets a **`clientId` (UUIDv7)** when it opens.
+2. `POST /api/v1/trips/:tripId/expenses` sends `clientId` plus an `Idempotency-Key: <clientId>` header.
+3. `UNIQUE (trip_id, client_id)` on the server: a repeat with the same payload returns the original expense (`200`), and a different payload with the same id returns `409`.
+4. If the request fails with no response, the app keeps the form filled in memory and shows **"Not sure it saved. Tap to retry"**. Retrying is safe because of step 3.
+5. Nothing is ever queued in IndexedDB. If the user closes the app, the unsaved form is gone, and that's understood because the button never said "saved".
 
-### 4.3 Sync protocol
+Settlement actions (`sent`, `confirm`, …) are idempotent state transitions, so retrying them is also safe.
 
-1. Each new expense gets a **client UUID (`clientId`, UUIDv7)** at creation time, before any network call.
-2. `POST /api/v1/trips/:tripId/expenses` with `clientId` in the body plus an `Idempotency-Key: <clientId>` header.
-3. Server, inside one DB transaction:
-   - `UNIQUE (trip_id, client_id)` on `expenses`. If it already exists **with the same payload hash**, return `200` with the existing expense: **a duplicate is impossible**.
-   - Same `clientId` but a different payload → `409 conflict` → `needs_attention`.
-   - Validate membership, trip is `active`, splits/payers reconcile, rate present → `201`.
-   - Validation failure (e.g. trip completed meanwhile) → `422` → `needs_attention` with a plain-language reason.
-4. Client replaces the outbox item with the server's expense record.
-5. Network errors and 5xx → exponential backoff (5s → 5min cap), and the item stays in IndexedDB across app restarts.
-6. After pushing, pull fresh snapshots: `GET /api/v1/trips/:id/snapshot` returns trip, members, expenses, balances and the current settlement plan, with an `ETag` so unchanged trips cost a `304`.
-
-### 4.4 Edits and conflicts (D2)
-
-- Every server expense has an integer `version`. Edits/deletes send `If-Match: <version>`. A stale version gets `409` with the current server copy, and the UI shows *"Someone changed this expense"* with theirs vs yours, letting you re-apply or discard. **Nothing is silently overwritten.**
-- Recommended scope (D2): **edit/delete of synced expenses requires a connection**. Unsynced local expenses can be freely edited or deleted offline because they only exist on that phone. This covers the realistic travel case without a full offline merge engine.
-
-### 4.5 Offline rules for money actions
-
-- Mark as sent, confirm receipt, dispute, cancel, complete trip, generate settlement: **online only**. Buttons are disabled offline with a short explanation.
-- Offline foreign-currency expense (D3): uses the last rate downloaded for that trip and stores it with `rateSource = 'offline_cached'` and its `rateDate`. The server **accepts the rate as recorded** (it's explicit and visible, never silently changed), and the expense is labelled with that rate. The user can always type a manual rate instead.
-
----
+### 4.5 Concurrent edits (online)
+- Every expense has an integer `version`. Edit/delete sends `If-Match: <version>`.
+- If someone else changed it first, the server returns `409` with the current copy. The UI shows *"Alice changed this expense a moment ago"* with their version vs yours, so you can re-apply or discard. **Nothing is silently overwritten.**
 
 ## 5. Database schema (PostgreSQL, Drizzle)
 
@@ -306,7 +303,7 @@ expenses
   id PK, trip_id FK, client_id UUID, description, notes,
   original_amount BIGINT CHECK (> 0), original_currency CHAR(3),
   base_currency CHAR(3), exchange_rate NUMERIC(24,12) CHECK (> 0),
-  rate_source ENUM(same_currency, api, trip_fixed, manual, offline_cached),
+  rate_source ENUM(same_currency, api, trip_fixed, manual),
   rate_date DATE, base_amount BIGINT CHECK (> 0),
   split_type ENUM(equal, exact, percentage, shares),
   expense_date DATE, created_by FK, version INT, payload_hash,
@@ -378,7 +375,7 @@ All mutating requests require same-origin `Origin` header + `X-Requested-With: n
 | GET | `/trips` | mine, grouped by status |
 | POST | `/trips` | creator becomes owner |
 | GET | `/trips/:id` | incl. members |
-| GET | `/trips/:id/snapshot` | everything for offline cache, ETag |
+| GET | `/trips/:id/snapshot` | everything for the read-only cache, ETag |
 | PATCH | `/trips/:id` | owner; base currency locked once any expense exists |
 | POST | `/trips/:id/complete` | owner; locks expenses, generates settlement plan |
 | POST | `/trips/:id/reopen` | owner; only if no transfer is `sent`; supersedes pending transfers |
@@ -507,8 +504,8 @@ The plan records `algorithm` and `is_proven_optimal`, and the UI **never** claim
 1. **"Unequal" vs "Exact amount" split** describe the same thing. They're merged (§0).
 2. **Multi-payer currencies**: the spec's `ExpensePayers.currency` column implies payers could use different currencies on one expense. That's complex and rare, so it's simplified to the expense's currency (§0).
 3. **"Installable via Safari" + "invite link joins the trip"**: on iOS the link always opens in Safari, which has storage separate from the installed app. Handled with the Paste-invite flow (§3.5), but the acceptance scenario will involve logging in twice on iOS. That's a platform limit.
-4. **"Sync when connectivity returns" on iOS**: there's no background sync, so it happens when the app is opened or foregrounded (§3.5).
-5. **Offline FX**: live rates can't be fetched offline. Handled with labelled cached/manual rates (D3).
+4. **Offline expense recording** (SPEC §3.4/§15) is dropped by decision D2, which also removes the offline-FX and sync-conflict problems.
+5. **"Sync when connectivity returns" on iOS**: there's no background refresh, so the read-only cache refreshes when the app is opened or foregrounded (§3.5).
 6. **"Edit expenses" + "complete trip"**: the spec is silent on editing after completion. Completing locks expenses and reopening is explicit (§9.5).
 7. **Member removal** isn't specified, but "history intact" is required. No removal once involved (§0).
 8. **Exact optimality is exponential.** Exact up to 20 non-zero balances, labelled heuristic above that (§9.3).
@@ -530,10 +527,10 @@ Each phase ends with something runnable and deployed to a staging URL.
 | **4. Expenses** | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |
 | **5. Settlement optimiser** | Exact DP + fallback, plan generation on complete, Settle Up UI | Optimality property tests green; n=20 < 1s |
 | **6. Settlement tracking** | Sent/confirm/dispute/cancel, events, progress, reopen, final summary | Acceptance steps 15–24 pass |
-| **7. Offline data** | Dexie store, snapshots, outbox, sync engine, conflict UI, logout isolation, storage persist | Playwright offline suite: create offline → reload → reconnect → synced exactly once |
+| **7. Offline viewing** | Dexie snapshot cache, offline banner with last-updated time, disabled actions, idempotent retry UX, logout isolation, storage persist | Playwright offline suite: load trip → go offline → reload installed app → data + "last updated" shown, all writes disabled; flaky-network retry creates exactly one expense |
 | **8. Polish & ship** | Mobile UI refinement, a11y pass, security + financial review, real-device checklist, prod deploy, README/DEPLOY docs | Full acceptance scenario on a real iPhone + Android |
 
-(The PWA shell is built in phase 1 as the spec requires. Offline *data* sync is phase 7, also as the spec says. Expense screens are designed from day one to read from the local store, so phase 7 doesn't need a rewrite.)
+(The PWA shell is built in phase 1 as the spec requires. Screens read from the local cache from day one, so adding offline viewing in phase 7 doesn't need a rewrite.)
 
 ---
 

@@ -86,7 +86,7 @@ Same-origin matters for PWAs: the session cookie is first-party, which avoids Sa
 | Validation | Zod schemas in `packages/contracts`, shared by client and server | |
 | API | Hono on Node 22 | REST, versioned `/api/v1` |
 | DB | PostgreSQL 16 + Drizzle ORM + drizzle-kit migrations | |
-| Money math | `bigint` minor units + `big.js` for rate multiplication | No floats, ever |
+| Money math | `bigint` minor units; rates as exact decimals (`num / 10^scale`, also bigint) | No floats, ever; a test fails the build if float helpers appear in `packages/core` |
 | Passwords | Argon2id via `@node-rs/argon2` | |
 | QR | `qrcode` (client-side, so it works offline too) | |
 | FX | Frankfurter (`api.frankfurter.dev`, free, no key, ~200 currencies, historical) | Manual rate always available as a fallback |
@@ -434,7 +434,7 @@ Errors use a consistent shape: `{ error: { code, message, details? } }`. Codes i
 - Float `number` is **never** used for amounts. Lint rule + tests guard the core package.
 
 ### 8.2 Conversion (one rate per expense)
-1. `baseTotal = roundHalfEven(originalTotal × rate × 10^(baseDecimals − originalDecimals))`, computed with `big.js`.
+1. `baseTotal = roundHalfEven(originalTotal × rate × 10^(baseDecimals − originalDecimals))`, computed exactly with bigint rationals.
 2. Payers' and splits' base amounts are **not** converted one by one, because that causes cent drift. Instead `baseTotal` is **allocated** in proportion to their original amounts using the *largest remainder method*.
 3. Result: `Σ payers_base = Σ splits_base = baseTotal` **exactly**, every time.
 
@@ -524,7 +524,7 @@ Each phase ends with something runnable and deployed to a staging URL.
 |---|---|---|
 | **1. Foundation + PWA shell** ✅ | Monorepo, Vite/React/Tailwind, Hono, Postgres/Drizzle, brand lockup, manifest, icons, iOS splash, SW + update toast, install prompts, CSP, Docker, CI | **Installable on iPhone & Android, opens offline, update toast works**. Chrome reports zero installability errors (Playwright) |
 | **2. Auth & trips** ✅ | Register/login/recovery, sessions, rate-limit, trips, members, invites (link, QR, share sheet, revoke, expiry, limits), join flow incl. paste-invite | e2e: Alice creates trip, Bob joins via link |
-| **3. Financial core (tests first)** | `packages/core`: money, currencies, allocation, splits, FX conversion, ledger; full unit + property tests | 100% branch coverage on core |
+| **3. Financial core (tests first)** ✅ | `packages/core`: money, currencies, allocation, splits, FX conversion, ledger; full unit + property tests | Coverage gate: 100% lines/functions, ≥95% branches (CI fails below) |
 | **4. Expenses** | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |
 | **5. Settlement optimiser** | Exact DP + fallback, plan generation on complete, Settle Up UI | Optimality property tests green; n=20 < 1s |
 | **6. Settlement tracking** | Sent/confirm/dispute/cancel, events, progress, reopen, final summary | Acceptance steps 15–24 pass |

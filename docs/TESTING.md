@@ -4,6 +4,7 @@
 
 | Suite | Command | Covers |
 |---|---|---|
+| Financial core (Vitest + fast-check) | `pnpm --filter @ncc/core test` | money parsing/formatting (no float traps), exact FX conversion with banker’s rounding, largest-remainder allocation, all split methods, multi-payer expenses, cross-currency reconciliation, ledger balances (only confirmed transfers count), **property tests: thousands of random expenses always reconcile to the cent and balances always sum to zero**; a guard test fails if float helpers appear; coverage gate 100% lines |
 | Unit + integration (Vitest) | `pnpm test` (integration tests need `DATABASE_URL`) | currencies, platform detection, link parsing, API health/ping, CSRF guard, static serving, cache + security headers; **auth** (register, Argon2id storage, login/logout, session revocation, rate limiting, recovery codes, password change), **trips** (create, validation, privacy, owner-only edits, base-currency lock), **invites** (hashed tokens, preview, join, no duplicate members, max uses under concurrency, expiry, revoke, closed trips) |
 | E2E (Playwright) | `pnpm build && pnpm test:e2e` | **register → trip → invite link + QR → friend joins**, logout/login, password reset with recovery code, redirect-after-login, bad invite links; manifest validity + icon sizes, iOS tags + launch screens, **Chrome installability (zero errors)**, SW registration, **offline launch on any route**, no API data in Cache Storage, **update prompt → Refresh activates new version**, brand hierarchy, no horizontal scroll, no CSP violations |
 

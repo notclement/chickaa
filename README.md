@@ -18,8 +18,9 @@ A mobile-first **Progressive Web App** for sharing group-trip expenses across cu
 |---|---|---|
 | 1 | Foundation + PWA shell | ✅ done |
 | 2 | Accounts, trips, invite links + QR | ✅ done |
-| 3 | Financial core (money, splits, ledger) | next |
-| 4–8 | Expenses, settlement, tracking, offline viewing, polish | planned |
+| 3 | Financial core (money, splits, ledger) | ✅ done |
+| 4 | Expenses (add/edit, multi-currency, FX rates, balances) | next |
+| 5–8 | Settlement optimiser, tracking, offline viewing, polish | planned |
 
 ## Stack
 

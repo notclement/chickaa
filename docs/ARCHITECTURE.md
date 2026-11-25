@@ -499,7 +499,7 @@ The plan records `algorithm` and `is_proven_optimal`, and the UI **never** claim
 
 ### 9.5 Settlement lifecycle
 - **Complete trip** → expenses locked → plan v1 generated from current nets.
-- Transfer states: `pending → sent` (debtor) `→ confirmed` (creditor, terminal); `sent → disputed` (creditor) `→ sent` (debtor re-marks); `pending/disputed → cancelled` (owner).
+- Transfer states: `pending → sent` (debtor) `→ confirmed` (creditor, terminal); the creditor may also confirm straight from `pending` (e.g. paid in cash). `sent → disputed` (creditor, optional note) `→ sent` (debtor re-marks); `pending/disputed → cancelled` (owner). Repeating an action is a no-op. Endpoints: `POST /settlements/:id/{sent,confirm,dispute,cancel}`, `GET /settlements/:id/events`; `GET /trips/:id/settlement`, `POST /trips/:id/{complete,reopen}`.
 - Progress: "3 of 5 transfers confirmed". **Fully settled** = every non-cancelled transfer in the current plan is confirmed **and** every net balance is 0. Generating a plan alone never counts as settled.
 - **Reopen** (owner): blocked while any transfer is `sent`. Pending transfers are superseded. Confirmed ones stay and count in the ledger. Completing again creates plan v2 from what's left to settle.
 
@@ -531,8 +531,8 @@ Each phase ends with something runnable and deployed to a staging URL.
 | **2. Auth & trips** ✅ | Register/login/recovery, sessions, rate-limit, trips, members, invites (link, QR, share sheet, revoke, expiry, limits), join flow incl. paste-invite | e2e: Alice creates trip, Bob joins via link |
 | **3. Financial core (tests first)** ✅ | `packages/core`: money, currencies, allocation, splits, FX conversion, ledger; full unit + property tests | Coverage gate: 100% lines/functions, ≥95% branches (CI fails below) |
 | **4. Expenses** ✅ | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |
-| **5. Settlement optimiser** | Exact DP + fallback, plan generation on complete, Settle Up UI | Optimality property tests green; n=20 < 1s |
-| **6. Settlement tracking** | Sent/confirm/dispute/cancel, events, progress, reopen, final summary | Acceptance steps 15–24 pass |
+| **5. Settlement optimiser** ✅ | Exact DP + fallback, plan generation on complete, Settle Up UI | Optimality property tests green; n=20 < 1s |
+| **6. Settlement tracking** ✅ | Sent/confirm/dispute/cancel, events, progress, reopen, final summary | Acceptance steps 15–24 pass |
 | **7. Offline viewing** | Dexie snapshot cache, offline banner with last-updated time, disabled actions, idempotent retry UX, logout isolation, storage persist | Playwright offline suite: load trip → go offline → reload installed app → data + "last updated" shown, all writes disabled; flaky-network retry creates exactly one expense |
 | **8. Polish & ship** | Mobile UI refinement, a11y pass, security + financial review, real-device checklist, prod deploy, README/DEPLOY docs | Full acceptance scenario on a real iPhone + Android |
 

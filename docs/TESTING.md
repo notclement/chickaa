@@ -43,6 +43,14 @@ Run on the staging URL after each phase. ✅ = pass.
 - [ ] Settings → set a fixed rate for a currency → new expenses in it say “Trip’s fixed rate”
 - [ ] Settings → Delete trip is blocked while anyone owes, works once all are settled
 
+### Settle up (Phases 5–6)
+- [ ] Settle up preview shows who pays whom and “Minimum possible”
+- [ ] Owner: Finish trip → expenses locked (no Add expense)
+- [ ] Payer: Copy amount → pay in bank app → “I’ve sent it”
+- [ ] Recipient: “Got it ✓” (and try “Not received” with a note on another transfer)
+- [ ] Progress updates on both phones; last confirmation shows “🎉 All settled!”
+- [ ] Owner: Reopen trip with an unpaid transfer → it’s recalculated after finishing again
+
 ### Android, Chrome
 - [ ] Install card shows **Install app** button → native install dialog → icon on home screen (round mask looks right)
 - [ ] Launches standalone with orange status bar

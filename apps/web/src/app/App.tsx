@@ -6,6 +6,7 @@ import { BalancesScreen } from '../screens/BalancesScreen.tsx';
 import { ExpenseDetailScreen } from '../screens/ExpenseDetailScreen.tsx';
 import { EditExpenseScreen, NewExpenseScreen } from '../screens/ExpenseFormScreen.tsx';
 import { ExpenseListScreen } from '../screens/ExpenseListScreen.tsx';
+import { SettleUpScreen } from '../screens/SettleUpScreen.tsx';
 import { LoginScreen, RecoverScreen, RegisterScreen } from '../screens/AuthScreens.tsx';
 import { InviteScreen } from '../screens/InviteScreen.tsx';
 import { JoinScreen } from '../screens/JoinScreen.tsx';
@@ -37,6 +38,7 @@ export function App() {
               <Route path="trips/:id/expenses" element={<ExpenseListScreen />} />
               <Route path="trips/:id/expenses/new" element={<NewExpenseScreen />} />
               <Route path="trips/:id/balances" element={<BalancesScreen />} />
+              <Route path="trips/:id/settle" element={<SettleUpScreen />} />
               <Route path="expenses/:eid" element={<ExpenseDetailScreen />} />
               <Route path="expenses/:eid/edit" element={<EditExpenseScreen />} />
               <Route path="account" element={<AccountScreen />} />

@@ -334,3 +334,47 @@ export type DeleteTripRequest = z.input<typeof DeleteTripRequest>;
 // ---------- profile photos ----------
 export const AVATAR_MAX_BYTES = 24 * 1024;
 export const AVATAR_TYPES = ['image/webp', 'image/jpeg'] as const;
+
+// ---------- settlement ----------
+export const SettlementStatus = z.enum(['pending', 'sent', 'confirmed', 'disputed', 'cancelled']);
+export type SettlementStatus = z.infer<typeof SettlementStatus>;
+
+export const SettlementTransfer = z.object({
+  /** null in a preview (nothing stored yet). */
+  id: z.string().nullable(),
+  fromUserId: z.string(),
+  toUserId: z.string(),
+  /** Minor units of `currency` (the trip's base currency). */
+  amount: z.string(),
+  currency: z.string(),
+  status: SettlementStatus,
+  updatedAt: z.string().nullable(),
+});
+export type SettlementTransfer = z.infer<typeof SettlementTransfer>;
+
+export const SettlementResponse = z.object({
+  /** preview = trip still active, computed live; plan = trip completed, stored transfers. */
+  state: z.enum(['preview', 'plan']),
+  planVersion: z.number().nullable(),
+  algorithm: z.enum(['exact_dp', 'heuristic']),
+  /** Only true when the transfer count is the proven minimum. */
+  provenOptimal: z.boolean(),
+  nonZeroCount: z.number(),
+  baseCurrency: z.string(),
+  transfers: z.array(SettlementTransfer),
+  progress: z.object({ confirmed: z.number(), total: z.number(), fullySettled: z.boolean() }),
+});
+export type SettlementResponse = z.infer<typeof SettlementResponse>;
+
+export const DisputeRequest = z.object({ note: z.string().trim().max(300).optional().nullable() });
+
+export const SettlementEvent = z.object({
+  fromStatus: SettlementStatus.nullable(),
+  toStatus: SettlementStatus,
+  actor: z.object({ userId: z.string(), displayName: z.string() }),
+  note: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type SettlementEvent = z.infer<typeof SettlementEvent>;
+export const SettlementEventsResponse = z.object({ events: z.array(SettlementEvent) });
+export type SettlementEventsResponse = z.infer<typeof SettlementEventsResponse>;

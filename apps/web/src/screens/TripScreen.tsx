@@ -1,4 +1,4 @@
-import type { BalancesResponse, ExpenseListResponse } from '@ncc/contracts';
+import type { BalancesResponse, ExpenseListResponse, SettlementResponse } from '@ncc/contracts';
 import { Link, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
@@ -17,6 +17,7 @@ export function TripScreen() {
   const { trip, error, loading, reload, nameOf } = useTrip(id);
   const balances = useApi(() => api<BalancesResponse>(`/trips/${id}/balances`), [id]);
   const expenses = useApi(() => api<ExpenseListResponse>(`/trips/${id}/expenses`), [id]);
+  const settle = useApi(() => api<SettlementResponse>(`/trips/${id}/settlement`), [id, trip?.status]);
 
   if (loading && !trip) return <Loading />;
   if (error) {
@@ -62,6 +63,39 @@ export function TripScreen() {
       </section>
 
       {trip.description && <p className="whitespace-pre-line px-1 text-ink-700">{trip.description}</p>}
+
+      {settle.data && (active ? (balances.data?.expenseCount ?? 0) > 0 : true) && (
+        <Link
+          to={`/trips/${trip.id}/settle`}
+          data-testid="settle-entry"
+          className={`flex items-center gap-3 rounded-3xl p-4 shadow-sm ring-1 ring-ink-900/5 ${
+            settle.data.progress.fullySettled ? 'bg-owed/10' : active ? 'bg-white' : 'bg-sun-300/40'
+          }`}
+        >
+          <span className="text-2xl" aria-hidden>
+            {settle.data.progress.fullySettled ? '🎉' : '💸'}
+          </span>
+          <span className="flex-1">
+            <span className="block font-bold">
+              {settle.data.progress.fullySettled
+                ? 'All settled'
+                : active
+                  ? 'Settle up'
+                  : `Settling up · ${settle.data.progress.confirmed} of ${settle.data.progress.total} confirmed`}
+            </span>
+            <span className="block text-sm text-ink-700">
+              {active
+                ? `${settle.data.transfers.length} transfer${settle.data.transfers.length === 1 ? '' : 's'} would square everyone up`
+                : settle.data.progress.fullySettled
+                  ? 'Everyone has paid and been paid back'
+                  : 'See who pays whom'}
+            </span>
+          </span>
+          <span aria-hidden className="text-ink-500">
+            ›
+          </span>
+        </Link>
+      )}
 
       <Card>
         <div className="flex items-center justify-between">

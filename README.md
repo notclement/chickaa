@@ -3,73 +3,43 @@
 
 **Travel together. Don't sweat the split.**
 
-A mobile-first **Progressive Web App** for sharing group-trip expenses across currencies and settling everyone with the fewest possible bank transfers.
+NoChickenCall is a group-trip expense app. Log what everyone pays during the trip, in any currency. At the end it works out the **fewest bank transfers** that settle everyone up, and tracks those payments until the trip is fully settled.
 
-| Doc | What's in it |
+It's a Progressive Web App: open it in your phone's browser and add it to your home screen. There's nothing to download from an app store.
+
+**Live app:** https://nochickencall.onrender.com
+
+## Highlights
+
+- 🧾 Expenses in 17 currencies, converted at that day's rate (or your own)
+- ➗ Split equally, by amounts, by percentage, or by shares, with one or several payers
+- ⚖️ Live balances that always add up to the cent
+- 💸 Settle up with the proven minimum number of transfers
+- ✅ "I've sent it" / "Got it" tracking until everyone is settled
+- 🔗 Invite friends with a link or QR code, no email or phone number needed
+- 📲 Installs on iPhone and Android, and opens even with no signal
+
+## Documentation
+
+| | |
 |---|---|
-| [docs/SPEC.md](docs/SPEC.md) | Product requirements |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Agreed design: stack, PWA, schema, API, settlement algorithm, phases |
-| [docs/DEPLOY.md](docs/DEPLOY.md) | Production deployment (Render + Neon) |
-| [docs/TESTING.md](docs/TESTING.md) | Automated tests + real-phone checklist |
+| [User guide](docs/USER_GUIDE.md) | How to use the app, step by step |
+| [Features](docs/FEATURES.md) | Everything the app does today |
+| [Phases](docs/PHASES.md) | Roadmap and what each phase delivered |
+| [Changelog](CHANGELOG.md) | What changed, version by version |
+| [Architecture](docs/ARCHITECTURE.md) · [Deploy](docs/DEPLOY.md) · [Testing](docs/TESTING.md) | Technical docs (final versions come at release) |
+| [Spec](docs/SPEC.md) | Original product requirements |
 
-## Status
+## Run it locally
 
-| Phase | | |
-|---|---|---|
-| 1 | Foundation + PWA shell | ✅ done |
-| 2 | Accounts, trips, invite links + QR | ✅ done |
-| 3 | Financial core (money, splits, ledger) | ✅ done |
-| 4 | Expenses (add/edit, multi-currency, FX rates, balances), trip deletion | ✅ done |
-| 5 | Settle up: minimum-transfer optimiser | next |
-| 6–8 | Transfer tracking, offline viewing, polish | planned |
-
-## Stack
-
-React 19 + Vite + Tailwind v4 (PWA via `vite-plugin-pwa` / Workbox) · Hono API on Node 22 · PostgreSQL 16 + Drizzle · pnpm workspaces · Vitest + Playwright.
-
-```
-apps/web         the PWA (screens, service worker, install + update UX)
-apps/api         Hono server: /api/v1 + serves the built PWA (one container)
-packages/core    pure financial engine (money, splits, ledger, settlement)
-packages/contracts  shared zod request/response schemas
-packages/db      Drizzle schema + SQL migrations
-e2e              Playwright: installability, offline, updates, layout
-scripts          icon + iOS launch-screen generator
-```
-
-## Local setup
-
-Needs **Node 22+**, **pnpm 10** (`corepack enable`), and **PostgreSQL 16** (Docker is easiest).
+Needs Node 22+, pnpm 10 and PostgreSQL 16.
 
 ```bash
 pnpm install
 cp .env.example .env
-docker compose up -d db          # or point DATABASE_URL at any Postgres 16
+docker compose up -d db
 pnpm db:migrate
-pnpm dev                         # web on http://localhost:5173, API on :8080 (proxied)
+pnpm dev            # http://localhost:5173
 ```
 
-The service worker is **off in `pnpm dev`** (hot reload and offline caching fight each other).
-To try the real PWA (install prompt, offline, updates):
-
-```bash
-pnpm build
-PUBLIC_ORIGIN=http://localhost:8080 pnpm start   # http://localhost:8080
-```
-
-To open it on your phone on the same Wi-Fi you need HTTPS (service workers require it, except on
-localhost). Deploy to staging ([DEPLOY.md](docs/DEPLOY.md)) or use a tunnel such as `cloudflared tunnel --url http://localhost:8080`.
-
-## Scripts
-
-| Command | |
-|---|---|
-| `pnpm dev` | Vite + API in watch mode |
-| `pnpm build` | Typecheck + production build of web and API |
-| `pnpm start` | Run the production server (serves API + PWA) |
-| `pnpm typecheck` | TypeScript across all packages |
-| `pnpm test` | Unit + API tests (Vitest) |
-| `pnpm test:e2e` | Playwright against the production build (`pnpm build` first) |
-| `pnpm db:generate` | New migration from `packages/db/src/schema.ts` changes |
-| `pnpm db:migrate` | Apply migrations to `DATABASE_URL` |
-| `pnpm icons` | Regenerate icons + iOS launch screens from `scripts/brand.mjs` |
+More detail (production build, tests, deployment) is in the technical docs above.

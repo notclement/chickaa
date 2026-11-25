@@ -11,6 +11,7 @@ import { frankfurter, type FxProvider } from './fx/provider.ts';
 import { authRoutes } from './routes/auth.ts';
 import { avatarRoutes, myAvatarRoutes } from './routes/avatars.ts';
 import { expenseRoutes, tripExpenseRoutes } from './routes/expenses.ts';
+import { settlementRoutes, transferRoutes } from './routes/settlement.ts';
 import { inviteRoutes } from './routes/invites.ts';
 import { invitationRoutes, tripRoutes } from './routes/trips.ts';
 import { serveWeb } from './static.ts';
@@ -67,7 +68,9 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
   api.route('/users', avatarRoutes);
   api.route('/trips', tripRoutes);
   api.route('/trips', tripExpenseRoutes);
+  api.route('/trips', settlementRoutes);
   api.route('/expenses', expenseRoutes);
+  api.route('/settlements', transferRoutes);
   api.route('/invitations', invitationRoutes);
   api.route('/invites', inviteRoutes);
 

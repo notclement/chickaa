@@ -27,6 +27,7 @@ if (!database) console.warn('DATABASE_URL not set; running without a database');
 
 const app = createApp({
   config,
+  db: database?.db ?? null,
   pingDb: async () => {
     if (!database) return false;
     await database.db.execute(sql`select 1`);

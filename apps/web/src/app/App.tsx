@@ -1,17 +1,85 @@
-import { BrowserRouter, Route, Routes } from 'react-router';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
+import { AuthProvider, useAuth } from '../auth/AuthContext.tsx';
 import { AppShell } from '../components/AppShell.tsx';
-import { HomeScreen } from '../screens/HomeScreen.tsx';
+import { AccountScreen } from '../screens/AccountScreen.tsx';
+import { LoginScreen, RecoverScreen, RegisterScreen } from '../screens/AuthScreens.tsx';
+import { InviteScreen } from '../screens/InviteScreen.tsx';
+import { JoinScreen } from '../screens/JoinScreen.tsx';
+import { MyTripsScreen } from '../screens/MyTripsScreen.tsx';
 import { NotFoundScreen } from '../screens/NotFoundScreen.tsx';
+import { CreateTripScreen, EditTripScreen } from '../screens/TripFormScreen.tsx';
+import { TripScreen } from '../screens/TripScreen.tsx';
+import { WelcomeScreen } from '../screens/WelcomeScreen.tsx';
+import { Button, Loading } from '../ui/index.tsx';
 
 export function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<HomeScreen />} />
-          <Route path="*" element={<NotFoundScreen />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<Home />} />
+            <Route element={<SignedOutOnly />}>
+              <Route path="login" element={<LoginScreen />} />
+              <Route path="register" element={<RegisterScreen />} />
+              <Route path="recover" element={<RecoverScreen />} />
+            </Route>
+            <Route path="join/:token" element={<JoinScreen />} />
+            <Route element={<SignedInOnly />}>
+              <Route path="trips/new" element={<CreateTripScreen />} />
+              <Route path="trips/:id" element={<TripScreen />} />
+              <Route path="trips/:id/edit" element={<EditTripScreen />} />
+              <Route path="trips/:id/invite" element={<InviteScreen />} />
+              <Route path="account" element={<AccountScreen />} />
+            </Route>
+            <Route path="*" element={<NotFoundScreen />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+
+function Home() {
+  const { status } = useAuth();
+  if (status === 'loading') return <Loading />;
+  if (status === 'unreachable') return <Unreachable />;
+  return status === 'authed' ? <MyTripsScreen /> : <WelcomeScreen />;
+}
+
+function SignedInOnly() {
+  const { status } = useAuth();
+  const loc = useLocation();
+  if (status === 'loading') return <Loading />;
+  if (status === 'unreachable') return <Unreachable />;
+  if (status === 'anon') return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
+  return <Outlet />;
+}
+
+function SignedOutOnly() {
+  const { status } = useAuth();
+  const loc = useLocation();
+  if (status === 'authed') {
+    const next = new URLSearchParams(loc.search).get('next');
+    return <Navigate to={next?.startsWith('/') && !next.startsWith('//') ? next : '/'} replace />;
+  }
+  return <Outlet />;
+}
+
+function Unreachable() {
+  const { refresh } = useAuth();
+  return (
+    <div className="py-16 text-center">
+      <div className="text-5xl" aria-hidden>
+        📡
+      </div>
+      <h1 className="mt-3 text-xl font-extrabold">Can’t reach NoChickenCall</h1>
+      <p className="mt-1 text-ink-700">
+        {navigator.onLine ? 'The server didn’t answer. It may be waking up; give it a moment.' : 'You’re offline. Connect to sign in.'}
+      </p>
+      <Button variant="secondary" className="mt-5" onClick={() => void refresh()}>
+        Try again
+      </Button>
+    </div>
   );
 }

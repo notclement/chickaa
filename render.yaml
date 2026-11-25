@@ -7,7 +7,9 @@ services:
     plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/v1/health
+    # /ping never touches the database, so frequent health checks don't keep Neon awake
+    # (Neon free = 100 compute-hours/month; an always-awake database would exceed it).
+    healthCheckPath: /api/v1/ping
     # Only deploy commits whose GitHub CI checks passed.
     autoDeployTrigger: checksPass
     envVars:

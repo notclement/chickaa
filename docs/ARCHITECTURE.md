@@ -364,7 +364,8 @@ All mutating requests require same-origin `Origin` header + `X-Requested-With: n
 | POST | `/auth/register` | `{username, password, displayName}` → sets session, returns **one-time recovery code** |
 | POST | `/auth/login` | rate-limited per IP and per username |
 | POST | `/auth/logout` | revokes session |
-| GET | `/auth/me` | |
+| GET | `/auth/session` | `{user \| null}`: never 401, called on app start |
+| GET / PATCH | `/auth/me` | profile (display name) |
 | POST | `/auth/recover` | `{username, recoveryCode, newPassword}` → new session + **new** recovery code |
 | POST | `/auth/recovery-code` | regenerate (requires password) |
 | POST | `/auth/password` | change password |
@@ -418,8 +419,8 @@ Errors use a consistent shape: `{ error: { code, message, details? } }`. Codes i
 
 ## 7. Auth design
 
-- Argon2id (memory ≈ 19 MiB, t=2, p=1, the OWASP minimum, tuned to the host).
-- Session token: 32 random bytes, sent as an httpOnly cookie, stored **hashed** (SHA-256) in `sessions`. 90-day sliding expiry, because re-logging into an installed PWA is painful.
+- Argon2id (memory ≈ 19 MiB, t=2, p=1, the OWASP minimum) via `hash-wasm` (WebAssembly, so the bundled server needs no native modules).
+- Session token: 32 random bytes, sent as an httpOnly cookie (`__Host-ncc_session` in production), stored **hashed** (SHA-256) in `sessions`. 90-day sliding expiry, because re-logging into an installed PWA is painful.
 - Recovery code: 16 random chars in groups (`XXXX-XXXX-XXXX-XXXX`), shown once at registration with a "copy / I've saved it" step, Argon2id-hashed. Using it rotates it and revokes all other sessions.
 - Rate limit: 5 failed logins / 15 min per username, 20 / 15 min per IP, stored in Postgres.
 - Usernames are case-insensitive (CITEXT), 3–24 chars `[a-z0-9_.]`.
@@ -522,7 +523,7 @@ Each phase ends with something runnable and deployed to a staging URL.
 | Phase | Deliverable | Exit check |
 |---|---|---|
 | **1. Foundation + PWA shell** ✅ | Monorepo, Vite/React/Tailwind, Hono, Postgres/Drizzle, brand lockup, manifest, icons, iOS splash, SW + update toast, install prompts, CSP, Docker, CI | **Installable on iPhone & Android, opens offline, update toast works**. Chrome reports zero installability errors (Playwright) |
-| **2. Auth & trips** | Register/login/recovery, sessions, rate-limit, trips, members, invites (link, QR, share sheet, revoke, expiry, limits), join flow incl. paste-invite | e2e: Alice creates trip, Bob joins via link |
+| **2. Auth & trips** ✅ | Register/login/recovery, sessions, rate-limit, trips, members, invites (link, QR, share sheet, revoke, expiry, limits), join flow incl. paste-invite | e2e: Alice creates trip, Bob joins via link |
 | **3. Financial core (tests first)** | `packages/core`: money, currencies, allocation, splits, FX conversion, ledger; full unit + property tests | 100% branch coverage on core |
 | **4. Expenses** | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |
 | **5. Settlement optimiser** | Exact DP + fallback, plan generation on complete, Settle Up UI | Optimality property tests green; n=20 < 1s |

@@ -1,8 +1,9 @@
-import { AppStatusCard } from '../components/AppStatusCard.tsx';
 import { InstallCard } from '../components/InstallCard.tsx';
 import { Logo } from '../components/Logo.tsx';
+import { ButtonLink } from '../ui/index.tsx';
 
-export function HomeScreen() {
+/** Signed-out home. */
+export function WelcomeScreen() {
   return (
     <div className="space-y-4 pt-2">
       <section className="relative overflow-hidden rounded-3xl bg-tangerine-500 px-6 pb-7 pt-8 text-white shadow-sm">
@@ -17,18 +18,15 @@ export function HomeScreen() {
           Log what everyone pays, in any currency. At the end we work out the fewest bank transfers to square up.
         </p>
       </section>
-
+      <div className="grid gap-2">
+        <ButtonLink to="/register" block>
+          Create account
+        </ButtonLink>
+        <ButtonLink to="/login" variant="secondary" block>
+          Log in
+        </ButtonLink>
+      </div>
       <InstallCard />
-
-      <section className="rounded-3xl border-2 border-dashed border-ink-900/10 p-6 text-center">
-        <div className="text-3xl" aria-hidden>
-          🧳
-        </div>
-        <h2 className="mt-2 font-bold">Your trips will live here</h2>
-        <p className="mt-1 text-sm text-ink-700">Sign-up, trips and invites arrive in the next update.</p>
-      </section>
-
-      <AppStatusCard />
     </div>
   );
 }

@@ -13,7 +13,7 @@ function setup(pingDb = async () => true) {
   writeFileSync(join(dist, 'manifest.webmanifest'), '{}');
   writeFileSync(join(dist, 'assets', 'app-abc123.js'), 'console.log(1)');
   const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: 'https://ncc.test' }), webDist: dist };
-  return createApp({ config, pingDb });
+  return createApp({ config, db: null, pingDb });
 }
 
 describe('api', () => {
@@ -33,7 +33,7 @@ describe('api', () => {
   });
 
   it('returns JSON 404 for unknown API routes (never the SPA)', async () => {
-    const res = await setup().request('/api/v1/nope');
+    const res = await setup().request('/api/v2/nope');
     expect(res.status).toBe(404);
     expect((await res.json()).error.code).toBe('NOT_FOUND');
   });
@@ -46,7 +46,7 @@ describe('api', () => {
       method: 'POST',
       headers: { origin: 'https://ncc.test', 'x-requested-with': 'ncc' },
     });
-    expect(ok.status).toBe(404); // passes CSRF, then no POST route
+    expect(ok.status).not.toBe(403); // passes CSRF
   });
 });
 
@@ -96,5 +96,18 @@ describe('config', () => {
     expect(
       loadConfig({ RENDER_EXTERNAL_URL: 'https://ncc.onrender.com', PUBLIC_ORIGIN: 'https://split.example.com' }).publicOrigin,
     ).toBe('https://split.example.com');
+  });
+});
+
+describe('keep-alive', () => {
+  it('answers /ping without touching the database', async () => {
+    let pinged = false;
+    const res = await setup(async () => {
+      pinged = true;
+      return true;
+    }).request('/api/v1/ping');
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe('pong');
+    expect(pinged).toBe(false);
   });
 });

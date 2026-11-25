@@ -10,6 +10,8 @@ export interface Config {
   webDist: string;
   appVersion: string;
   runMigrationsOnStart: boolean;
+  /** Multiplier for all rate limits (tests only). */
+  rateLimitScale: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -23,5 +25,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     webDist: env.WEB_DIST ?? new URL('../../web/dist', import.meta.url).pathname,
     appVersion: env.APP_VERSION ?? '0.1.0',
     runMigrationsOnStart: env.RUN_MIGRATIONS_ON_START === 'true',
+    rateLimitScale: Number(env.RATE_LIMIT_SCALE ?? 1) || 1,
   };
 }

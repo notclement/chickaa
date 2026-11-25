@@ -1,0 +1,166 @@
+import {
+  ChangePasswordRequest,
+  LoginRequest,
+  RecoverRequest,
+  RegenerateRecoveryRequest,
+  RegisterRequest,
+  UpdateProfileRequest,
+  type AuthWithRecoveryResponse,
+  type MeResponse,
+  type SessionResponse,
+} from '@ncc/contracts';
+import { schema } from '@ncc/db';
+import { eq } from 'drizzle-orm';
+import { Hono } from 'hono';
+import { burnVerifyTime, hashSecret, newRecoveryCode, verifySecret } from '../auth/crypto.ts';
+import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession } from '../auth/session.ts';
+import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';
+import { rateLimit, resetRateLimit } from '../lib/rateLimit.ts';
+import type { Env } from '../lib/types.ts';
+
+const MIN = 60;
+const publicUser = (u: { id: string; username: string; displayName: string }) => ({
+  id: u.id,
+  username: u.username,
+  displayName: u.displayName,
+});
+
+export const authRoutes = new Hono<Env>();
+
+authRoutes.post('/register', async (c) => {
+  const db = c.var.db;
+  await rateLimit(db, `register:ip:${clientIp(c)}`, 20, 60 * MIN);
+  const input = await body(c, RegisterRequest);
+
+  const recovery = newRecoveryCode();
+  const [passwordHash, recoveryCodeHash] = await Promise.all([
+    hashSecret(input.password),
+    hashSecret(recovery.normalized),
+  ]);
+
+  let user;
+  try {
+    [user] = await db
+      .insert(schema.users)
+      .values({ username: input.username, displayName: input.displayName, passwordHash, recoveryCodeHash })
+      .returning();
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new HttpError(409, 'USERNAME_TAKEN', 'That username is taken');
+    throw err;
+  }
+
+  await startSession(c, user!.id);
+  const res: AuthWithRecoveryResponse = { user: publicUser(user!), recoveryCode: recovery.display };
+  return c.json(res, 201);
+});
+
+authRoutes.post('/login', async (c) => {
+  const db = c.var.db;
+  const input = await body(c, LoginRequest);
+  await rateLimit(db, `login:ip:${clientIp(c)}`, 30, 15 * MIN);
+  await rateLimit(db, `login:user:${input.username}`, 8, 15 * MIN);
+
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.username, input.username)).limit(1);
+  if (!user) {
+    await burnVerifyTime(input.password);
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Wrong username or password');
+  }
+  if (!(await verifySecret(input.password, user.passwordHash))) {
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Wrong username or password');
+  }
+
+  await resetRateLimit(db, `login:user:${input.username}`);
+  await startSession(c, user.id);
+  const res: MeResponse = { user: publicUser(user) };
+  return c.json(res);
+});
+
+authRoutes.post('/logout', async (c) => {
+  await endSession(c);
+  return c.json({ ok: true });
+});
+
+/** The app calls this on start. Signed out is a normal answer, not an error. */
+authRoutes.get('/session', (c) => {
+  const res: SessionResponse = { user: c.var.user };
+  return c.json(res);
+});
+
+authRoutes.get('/me', requireAuth, (c) => {
+  const res: MeResponse = { user: currentUser(c) };
+  return c.json(res);
+});
+
+authRoutes.patch('/me', requireAuth, async (c) => {
+  const me = currentUser(c);
+  const input = await body(c, UpdateProfileRequest);
+  const [user] = await c.var.db
+    .update(schema.users)
+    .set({ displayName: input.displayName, updatedAt: new Date() })
+    .where(eq(schema.users.id, me.id))
+    .returning();
+  return c.json({ user: publicUser(user!) } satisfies MeResponse);
+});
+
+/** Forgot password: username + recovery code → new password. Rotates the code and signs out other devices. */
+authRoutes.post('/recover', async (c) => {
+  const db = c.var.db;
+  const input = await body(c, RecoverRequest);
+  await rateLimit(db, `recover:ip:${clientIp(c)}`, 20, 60 * MIN);
+  await rateLimit(db, `recover:user:${input.username}`, 5, 60 * MIN);
+
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.username, input.username)).limit(1);
+  const ok = user ? await verifySecret(input.recoveryCode, user.recoveryCodeHash) : (await burnVerifyTime(input.recoveryCode), false);
+  if (!user || !ok) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Username or recovery code is wrong');
+
+  const recovery = newRecoveryCode();
+  const [passwordHash, recoveryCodeHash] = await Promise.all([
+    hashSecret(input.newPassword),
+    hashSecret(recovery.normalized),
+  ]);
+  await db
+    .update(schema.users)
+    .set({ passwordHash, recoveryCodeHash, updatedAt: new Date() })
+    .where(eq(schema.users.id, user.id));
+  await revokeOtherSessions(db, user.id, null);
+  await resetRateLimit(db, `login:user:${input.username}`);
+  await startSession(c, user.id);
+
+  const res: AuthWithRecoveryResponse = { user: publicUser(user), recoveryCode: recovery.display };
+  return c.json(res);
+});
+
+authRoutes.post('/password', requireAuth, async (c) => {
+  const db = c.var.db;
+  const me = currentUser(c);
+  await rateLimit(db, `password:user:${me.id}`, 10, 15 * MIN);
+  const input = await body(c, ChangePasswordRequest);
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, me.id)).limit(1);
+  if (!user || !(await verifySecret(input.currentPassword, user.passwordHash))) {
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Current password is wrong');
+  }
+  await db
+    .update(schema.users)
+    .set({ passwordHash: await hashSecret(input.newPassword), updatedAt: new Date() })
+    .where(eq(schema.users.id, me.id));
+  await revokeOtherSessions(db, me.id, c.var.sessionId);
+  return c.json({ ok: true });
+});
+
+authRoutes.post('/recovery-code', requireAuth, async (c) => {
+  const db = c.var.db;
+  const me = currentUser(c);
+  await rateLimit(db, `password:user:${me.id}`, 10, 15 * MIN);
+  const input = await body(c, RegenerateRecoveryRequest);
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, me.id)).limit(1);
+  if (!user || !(await verifySecret(input.password, user.passwordHash))) {
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Password is wrong');
+  }
+  const recovery = newRecoveryCode();
+  await db
+    .update(schema.users)
+    .set({ recoveryCodeHash: await hashSecret(recovery.normalized), updatedAt: new Date() })
+    .where(eq(schema.users.id, me.id));
+  const res: AuthWithRecoveryResponse = { user: publicUser(user), recoveryCode: recovery.display };
+  return c.json(res);
+});

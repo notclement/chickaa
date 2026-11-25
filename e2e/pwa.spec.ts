@@ -96,8 +96,7 @@ test.describe('service worker & offline', () => {
   test('registers and controls the page', async ({ page }) => {
     await page.goto('/');
     await waitForServiceWorker(page);
-    await expect(page.getByText('Works without internet')).toBeVisible();
-    await expect(page.getByText('Ready', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => navigator.serviceWorker.controller?.state)).toBe('activated');
   });
 
   test('app opens with no network, on any route', async ({ page, context }) => {
@@ -106,18 +105,20 @@ test.describe('service worker & offline', () => {
 
     await context.setOffline(true);
     await page.reload();
-    await expect(page.getByRole('heading', { name: /Travel together/ })).toBeVisible();
+    // The shell loads from the phone; signing in needs a connection.
     await expect(page.getByText('Offline · view only')).toBeVisible();
-    await expect(page.getByText('Offline', { exact: true }).first()).toBeVisible(); // server status row
+    await expect(page.getByRole('heading', { name: 'Can’t reach NoChickenCall' })).toBeVisible();
+    await expect(page.getByText('You’re offline. Connect to sign in.')).toBeVisible();
 
     // Deep link that was never visited: still served by the precached shell.
-    await page.goto('/trips/never-seen-before');
+    await page.goto('/some/deep/link/never-visited');
     await expect(page.getByRole('heading', { name: 'Nothing to see here' })).toBeVisible();
+    await expect(page.getByText('Offline · view only')).toBeVisible();
 
     await context.setOffline(false);
     await page.goto('/');
     await expect(page.getByText('Offline · view only')).toHaveCount(0);
-    await expect(page.getByText('Connected').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Travel together/ })).toBeVisible();
   });
 
   test('API responses are never stored in Cache Storage', async ({ page }) => {

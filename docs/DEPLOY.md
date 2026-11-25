@@ -24,6 +24,24 @@ Migrations run automatically on start. `PUBLIC_ORIGIN` comes from Render's `REND
 Every push to `main` runs CI on GitHub. Render deploys it **only if CI passes** (`autoDeployTrigger: checksPass`).
 Installed apps notice the new version and show **"New version ready · Refresh"**.
 
+## Keep it awake (free uptime pinger)
+Render's free server sleeps after 15 idle minutes. One service running all month uses ≤ 744 of the
+750 free hours, so a pinger every 10 minutes keeps it awake for free.
+
+1. Sign up at https://console.cron-job.org/signup (free).
+2. **Create cronjob**:
+   - URL: `https://nochickencall.onrender.com/api/v1/ping`
+   - Schedule: **every 10 minutes**
+   - Save.
+
+Ping `/api/v1/ping`, **not** `/api/v1/health`: `/ping` doesn't touch the database, so Neon can still
+sleep between real uses. Neon's free plan has 100 compute-hours/month, and a database that's
+kept awake 24/7 would use them up mid-month.
+
+The app also wakes the server itself: opening the app (or bringing it back to the foreground) fires a
+background `/api/v1/health` request, and any request slower than 2.5 s shows a
+"Waking up the server…" banner instead of a frozen screen.
+
 ## Free-tier behaviour to know
 - The server **sleeps after 15 min** with no visitors and takes **up to ~1 min** to wake.
   The installed app still **opens instantly** because the shell is cached on the phone; only loading data waits for the server.

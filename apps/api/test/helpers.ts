@@ -1,0 +1,91 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createDb } from '@ncc/db';
+import { runMigrations } from '@ncc/db/migrate';
+import { sql } from 'drizzle-orm';
+import { createApp } from '../src/app.ts';
+import { loadConfig } from '../src/config.ts';
+
+export const ORIGIN = 'https://ncc.test';
+export const TEST_DB_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+
+let shared: ReturnType<typeof createDb> | null = null;
+let migrated = false;
+
+/** App wired to the real test database. Tables are truncated before each test file's tests. */
+export async function testApp() {
+  if (!TEST_DB_URL) throw new Error('Set TEST_DATABASE_URL or DATABASE_URL to run integration tests');
+  if (!migrated) {
+    await runMigrations(TEST_DB_URL);
+    migrated = true;
+  }
+  shared ??= createDb(TEST_DB_URL, { max: 5 });
+  const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
+  writeFileSync(join(dist, 'index.html'), '<!doctype html>');
+  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN }), webDist: dist };
+  const app = createApp({ config, db: shared.db, pingDb: async () => true });
+  return { app, db: shared.db };
+}
+
+export async function resetDb() {
+  const { db } = await testApp();
+  await db.execute(sql`
+    truncate table settlement_events, settlements, settlement_plans, expense_revisions, expense_splits,
+      expense_payers, expenses, trip_fx_rates, fx_rate_cache, invitations, trip_members, trips,
+      sessions, rate_limits, users restart identity cascade
+  `);
+}
+
+type App = Awaited<ReturnType<typeof testApp>>['app'];
+
+/** A browser-like client: keeps the session cookie and sends CSRF headers on writes. */
+export function client(app: App, ip = '203.0.113.1') {
+  let cookie = '';
+  async function call(method: string, path: string, body?: unknown) {
+    const headers: Record<string, string> = { 'x-forwarded-for': ip };
+    if (cookie) headers.cookie = cookie;
+    if (method !== 'GET') {
+      headers.origin = ORIGIN;
+      headers['x-requested-with'] = 'ncc';
+    }
+    if (body !== undefined) headers['content-type'] = 'application/json';
+    const res = await app.request(`/api/v1${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const set = res.headers.get('set-cookie');
+    if (set) {
+      const [pair] = set.split(';');
+      cookie = /=$/.test(pair!) || /Max-Age=0/i.test(set) ? '' : pair!;
+    }
+    const text = await res.text();
+    let json: any = null;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      json = text;
+    }
+    return { status: res.status, body: json, setCookie: set };
+  }
+  return {
+    get: (p: string) => call('GET', p),
+    post: (p: string, b?: unknown) => call('POST', p, b ?? {}),
+    patch: (p: string, b: unknown) => call('PATCH', p, b),
+    del: (p: string) => call('DELETE', p),
+    get cookie() {
+      return cookie;
+    },
+    clearCookie() {
+      cookie = '';
+    },
+  };
+}
+
+export async function registered(app: App, username: string, ip?: string) {
+  const c = client(app, ip);
+  const res = await c.post('/auth/register', { username, password: 'correct horse battery', displayName: username.toUpperCase() });
+  if (res.status !== 201) throw new Error(`register failed: ${JSON.stringify(res.body)}`);
+  return { c, user: res.body.user as { id: string }, recoveryCode: res.body.recoveryCode as string };
+}

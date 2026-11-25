@@ -26,6 +26,7 @@ test('register → create trip → invite link + QR → friend joins → both se
   // Alice signs up (no email/phone) and creates a trip.
   await page.goto('/');
   await page.getByRole('link', { name: 'Create account' }).click();
+  await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
   await register(page, 'Alice', alice);
   await expect(page.getByRole('heading', { name: 'My trips' })).toBeVisible();
   await expect(page.getByText('No trips yet')).toBeVisible();
@@ -57,6 +58,7 @@ test('register → create trip → invite link + QR → friend joins → both se
   await expect(bobPage.getByText('Alice invited you to')).toBeVisible();
   await expect(bobPage.getByRole('heading', { name: 'Bali 2027' })).toBeVisible();
   await bobPage.getByRole('link', { name: 'Create account to join' }).click();
+  await expect(bobPage.getByRole('heading', { name: 'Create your account' })).toBeVisible();
   await register(bobPage, 'Bob', bob);
   await bobPage.getByRole('button', { name: 'Join as Bob' }).click();
   await expect(bobPage.getByRole('heading', { name: 'Bali 2027' })).toBeVisible();
@@ -89,6 +91,7 @@ test('log out, log back in, and reset a forgotten password with the recovery cod
 
   // Wrong password.
   await page.getByRole('link', { name: 'Log in' }).click();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   await page.getByLabel('Username').fill(user);
   await page.getByLabel('Password').fill('wrong password!');
   await page.getByRole('button', { name: 'Log in' }).click();
@@ -96,6 +99,7 @@ test('log out, log back in, and reset a forgotten password with the recovery cod
 
   // Forgot password → recovery code.
   await page.getByRole('link', { name: 'Forgot password?' }).click();
+  await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
   await page.getByLabel('Username').fill(user);
   await page.getByLabel('Recovery code').fill(code.toLowerCase());
   await page.getByLabel('New password').fill('a whole new password');
@@ -113,6 +117,7 @@ test('signed-out visitors are sent to log in, then back to where they were going
   await page.goto('/trips/new');
   await expect(page).toHaveURL(/\/login\?next=%2Ftrips%2Fnew/);
   await page.getByRole('link', { name: 'Create account' }).click();
+  await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
   await register(page, 'Dan', user);
   await expect(page.getByRole('heading', { name: 'New trip' })).toBeVisible();
 });

@@ -14,6 +14,17 @@ The only extension used is `citext`, which Neon allows.
 
 ## 2. App: Fly.io
 
+### Automatic (recommended): GitHub Actions
+`.github/workflows/deploy.yml` deploys every green push to `main`. One-time setup:
+1. Create a Fly.io account and an **org token** (dashboard → Tokens).
+2. In GitHub → repo **Settings → Secrets and variables → Actions → New repository secret**, add
+   `FLY_API_TOKEN` (the token) and `DATABASE_URL` (Neon string).
+3. Optional: add a repo **variable** `FLY_APP` to choose the subdomain (default `nochickencall-clem`).
+4. Actions tab → **Deploy** → *Run workflow* (or just push). It creates the app on first run,
+   sets `DATABASE_URL` + `PUBLIC_ORIGIN`, deploys to Singapore and checks `/api/v1/health`.
+
+### Manual
+
 ```bash
 brew install flyctl            # or see fly.io/docs/flyctl/install
 fly auth login

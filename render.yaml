@@ -1,0 +1,21 @@
+# Render Blueprint: one free Docker web service (API + PWA) in Singapore.
+# Database: Neon (Render's free Postgres expires), so DATABASE_URL is entered once on setup.
+services:
+  - type: web
+    name: nochickencall
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    # Only deploy commits whose GitHub CI checks passed.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste the Neon connection string when prompted
+      - key: NODE_ENV
+        value: production
+      - key: RUN_MIGRATIONS_ON_START
+        value: "true"
+      # PUBLIC_ORIGIN defaults to Render's RENDER_EXTERNAL_URL (https://<name>.onrender.com).
+      # Set it here only if you add a custom domain.

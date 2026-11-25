@@ -1,73 +1,55 @@
 # Deploying NoChickenCall
 
-Production is **one Docker container** (API + PWA, same origin) plus a **Postgres** database.
-Recommended: **Fly.io** (Singapore region) + **Neon** (free Postgres). Any host that runs a Dockerfile works the same way (Render, Railway, a VPS).
+Production is **one Docker container** (API + PWA, same origin) plus **Postgres**.
+Current setup: **Render free web service** (Singapore) + **Neon free Postgres**. Neither needs a credit card.
 
-## 1. Database: Neon
+## One-time setup
 
-1. Create a project at neon.tech, region **Asia Pacific (Singapore)**.
-2. Copy the connection string. It looks like
-   `postgres://user:pass@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
+### 1. Database: Neon
+1. Sign up at https://console.neon.tech/signup (Sign in with GitHub is quickest).
+2. Create a project: any name, Postgres 16+, region **AWS Asia Pacific (Singapore)**.
+3. On the project dashboard click **Connect**, then copy the connection string. It looks like
+   `postgresql://neondb_owner:…@ep-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
 
-Migrations run automatically when the container starts (`RUN_MIGRATIONS_ON_START=true` in the image).
-The only extension used is `citext`, which Neon allows.
+### 2. App: Render
+1. Open https://render.com/deploy?repo=https://github.com/notclement/nochickencall
+2. Sign up / sign in **with GitHub** and allow Render access to the `nochickencall` repo.
+3. Render reads `render.yaml` and asks for **DATABASE_URL**: paste the Neon string, then click **Apply / Deploy Blueprint**.
+4. The first build takes ~3–5 min. The app is then live at `https://nochickencall.onrender.com`
+   (Render adds a suffix if that name is taken; the dashboard shows the real URL).
 
-## 2. App: Fly.io
+Migrations run automatically on start. `PUBLIC_ORIGIN` comes from Render's `RENDER_EXTERNAL_URL` automatically.
 
-### Automatic (recommended): GitHub Actions
-`.github/workflows/deploy.yml` deploys every green push to `main`. One-time setup:
-1. Create a Fly.io account and an **org token** (dashboard → Tokens).
-2. In GitHub → repo **Settings → Secrets and variables → Actions → New repository secret**, add
-   `FLY_API_TOKEN` (the token) and `DATABASE_URL` (Neon string).
-3. Optional: add a repo **variable** `FLY_APP` to choose the subdomain (default `nochickencall-clem`).
-4. Actions tab → **Deploy** → *Run workflow* (or just push). It creates the app on first run,
-   sets `DATABASE_URL` + `PUBLIC_ORIGIN`, deploys to Singapore and checks `/api/v1/health`.
+## After that: automatic
+Every push to `main` runs CI on GitHub. Render deploys it **only if CI passes** (`autoDeployTrigger: checksPass`).
+Installed apps notice the new version and show **"New version ready · Refresh"**.
 
-### Manual
+## Free-tier behaviour to know
+- The server **sleeps after 15 min** with no visitors and takes **up to ~1 min** to wake.
+  The installed app still **opens instantly** because the shell is cached on the phone; only loading data waits for the server.
+- 750 free hours/month per workspace, enough for one always-available service.
+- To remove the sleep: change `plan: free` to `plan: starter` in `render.yaml` (paid).
 
-```bash
-brew install flyctl            # or see fly.io/docs/flyctl/install
-fly auth login
-fly launch --no-deploy --copy-config --name <your-app-name> --region sin
-fly secrets set \
-  DATABASE_URL='postgres://…?sslmode=require' \
-  PUBLIC_ORIGIN='https://<your-app-name>.fly.dev'
-fly deploy --build-arg APP_VERSION=$(git rev-parse --short HEAD)
-```
-
-Open `https://<your-app-name>.fly.dev`. The **App status** card should show *Server: Connected* and *Database: Connected*.
-
-`fly.toml` lets the machine sleep when idle (`min_machines_running = 0`), which is free/cheap but makes the first request after a while take a few seconds. Set it to `1` if that bothers you.
-
-### Custom domain (optional)
-```bash
-fly certs add split.example.com
-fly secrets set PUBLIC_ORIGIN='https://split.example.com'
-```
-Then add the DNS records Fly prints. `PUBLIC_ORIGIN` **must** match the address people use, or writes are rejected by the CSRF check.
+## Custom domain (optional)
+Render dashboard → service → **Settings → Custom Domains**. Then add an env var
+`PUBLIC_ORIGIN=https://your.domain` (must match exactly, or writes are rejected by the CSRF check).
 
 ## Environment variables
 
-| Name | Required | Notes |
+| Name | Set by | Notes |
 |---|---|---|
-| `DATABASE_URL` | yes | Postgres URL; add `?sslmode=require` for Neon |
-| `PUBLIC_ORIGIN` | yes | `https://host`, no trailing slash |
-| `APP_VERSION` | no | Shown in the app; pass as a build arg |
-| `RUN_MIGRATIONS_ON_START` | no | `true` in the image |
-| `PORT` | no | default 8080 |
+| `DATABASE_URL` | you (once) | Neon string with `?sslmode=require` |
+| `PUBLIC_ORIGIN` | automatic | Falls back to `RENDER_EXTERNAL_URL`; override for custom domains |
+| `NODE_ENV`, `RUN_MIGRATIONS_ON_START` | render.yaml | |
+| `PORT` | Render | Injected automatically |
 
-## Updating
+## Caching rules (don't override with a CDN)
+`sw.js`, `index.html` and the manifest are `no-cache`; hashed `/assets/*` are cached for a year.
 
-`fly deploy` again. Installed apps check for a new version on launch and when brought to the
-foreground, and show **"New version ready · Refresh"**. Nobody is force-reloaded mid-task.
-
-HTTP caching is set up for this: `sw.js`, `index.html` and the manifest are `no-cache`;
-hashed `/assets/*` are cached for a year. Don't put a CDN in front that overrides those headers.
+## Other hosts
+Any platform that builds a Dockerfile works the same way (Fly.io config is in `fly.toml`):
+set `DATABASE_URL` and `PUBLIC_ORIGIN`, expose port `$PORT`.
 
 ## Rollback
-
-```bash
-fly releases            # find the previous version
-fly deploy --image <previous image ref>
-```
-Migrations are forward-only, so take a Neon branch/snapshot before deploying a schema change.
+Render dashboard → service → **Events** → pick a previous deploy → **Rollback**.
+Migrations are forward-only: create a Neon branch (snapshot) before deploying schema changes.

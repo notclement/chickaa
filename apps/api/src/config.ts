@@ -3,7 +3,8 @@ export interface Config {
   port: number;
   nodeEnv: 'development' | 'production' | 'test';
   databaseUrl: string | undefined;
-  /** Public origin, e.g. https://nochickencall.fly.dev. Used for CSRF origin checks and invite URLs. */
+  /** Public origin, e.g. https://nochickencall.onrender.com. Used for CSRF origin checks and invite URLs.
+   *  Falls back to Render's RENDER_EXTERNAL_URL, then localhost. */
   publicOrigin: string;
   /** Folder containing the built PWA (apps/web/dist). */
   webDist: string;
@@ -18,7 +19,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port,
     nodeEnv,
     databaseUrl: env.DATABASE_URL,
-    publicOrigin: env.PUBLIC_ORIGIN ?? `http://localhost:${port}`,
+    publicOrigin: (env.PUBLIC_ORIGIN ?? env.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
     webDist: env.WEB_DIST ?? new URL('../../web/dist', import.meta.url).pathname,
     appVersion: env.APP_VERSION ?? '0.1.0',
     runMigrationsOnStart: env.RUN_MIGRATIONS_ON_START === 'true',

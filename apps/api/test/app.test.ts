@@ -89,3 +89,12 @@ describe('static PWA serving', () => {
     expect(res.headers.get('x-frame-options')).toBe('DENY');
   });
 });
+
+describe('config', () => {
+  it('uses Render\'s external URL when PUBLIC_ORIGIN is not set', () => {
+    expect(loadConfig({ RENDER_EXTERNAL_URL: 'https://ncc.onrender.com/' }).publicOrigin).toBe('https://ncc.onrender.com');
+    expect(
+      loadConfig({ RENDER_EXTERNAL_URL: 'https://ncc.onrender.com', PUBLIC_ORIGIN: 'https://split.example.com' }).publicOrigin,
+    ).toBe('https://split.example.com');
+  });
+});

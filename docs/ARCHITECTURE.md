@@ -16,7 +16,7 @@ correctness comes a close second. Everything else comes after those two.
 | D1 | Frontend/backend stack | **Vite + React SPA + Hono API, same origin, one deployable** (see §1.1) |
 | D2 | What works offline | **Read-only.** With no signal the installed app opens and shows the last-loaded trips, expenses, balances and settlement plan, with a clear **"Offline · view only · last updated <time>"** banner. **Every change (add/edit/delete expense, join, settle, confirm) requires a connection.** |
 | D3 | Offline FX rate | Not applicable: expenses can't be recorded offline |
-| D4 | Hosting | **Single Docker container (API + static PWA) on Fly.io / Render / Railway + Neon Postgres** |
+| D4 | Hosting | **Single Docker container (API + static PWA): Render free web service (Singapore) + Neon free Postgres.** Fly.io config kept as an alternative |
 
 > **Deliberate deviation from SPEC §3.4 / §15:** offline expense recording, the IndexedDB outbox and offline sync are **dropped** at the owner's request.
 > What's kept: installable PWA, offline app shell, read-only offline viewing (SPEC §3.4 "Available offline" list) with a last-updated time, and duplicate-submission protection.

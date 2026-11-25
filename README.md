@@ -9,7 +9,7 @@ A mobile-first **Progressive Web App** for sharing group-trip expenses across cu
 |---|---|
 | [docs/SPEC.md](docs/SPEC.md) | Product requirements |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Agreed design: stack, PWA, schema, API, settlement algorithm, phases |
-| [docs/DEPLOY.md](docs/DEPLOY.md) | Production deployment (Fly.io + Neon) |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Production deployment (Render + Neon) |
 | [docs/TESTING.md](docs/TESTING.md) | Automated tests + real-phone checklist |
 
 ## Status

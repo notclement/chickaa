@@ -27,6 +27,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 const citext = customType<{ data: string }>({ dataType: () => 'citext' });
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
 
 const money = (name: string) => bigint(name, { mode: 'bigint' });
 const rate = (name: string) => numeric(name, { precision: 24, scale: 12 });
@@ -58,6 +59,11 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   displayName: text('display_name').notNull(),
   recoveryCodeHash: text('recovery_code_hash').notNull(),
+  /** Profile photo: tiny (≤ 24 KB) square WebP/JPEG, compressed in the browser before upload. */
+  avatar: bytea('avatar'),
+  avatarType: text('avatar_type'),
+  /** Bumped on every change; part of the image URL so it can be cached forever. */
+  avatarVersion: integer('avatar_version'),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

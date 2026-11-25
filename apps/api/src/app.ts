@@ -9,6 +9,7 @@ import type { Env } from './lib/types.ts';
 import { csrfGuard, securityHeaders } from './middleware/security.ts';
 import { frankfurter, type FxProvider } from './fx/provider.ts';
 import { authRoutes } from './routes/auth.ts';
+import { avatarRoutes, myAvatarRoutes } from './routes/avatars.ts';
 import { expenseRoutes, tripExpenseRoutes } from './routes/expenses.ts';
 import { inviteRoutes } from './routes/invites.ts';
 import { invitationRoutes, tripRoutes } from './routes/trips.ts';
@@ -34,7 +35,8 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
     c.set('config', config);
     c.set('fx', fx);
     await next();
-    c.res.headers.set('Cache-Control', 'no-store'); // user data never lands in HTTP caches
+    // User data never lands in shared HTTP caches (routes may opt into private caching, e.g. avatars).
+    if (!c.res.headers.has('Cache-Control')) c.res.headers.set('Cache-Control', 'no-store');
   });
   api.use('*', csrfGuard(config.publicOrigin));
 
@@ -60,7 +62,9 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
   });
   api.use('*', loadSession);
 
+  api.route('/auth/me/avatar', myAvatarRoutes);
   api.route('/auth', authRoutes);
+  api.route('/users', avatarRoutes);
   api.route('/trips', tripRoutes);
   api.route('/trips', tripExpenseRoutes);
   api.route('/expenses', expenseRoutes);

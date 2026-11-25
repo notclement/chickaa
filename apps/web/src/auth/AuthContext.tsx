@@ -1,6 +1,7 @@
 import type { SessionResponse, User } from '@ncc/contracts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, post } from '../api/client.ts';
+import { registerAvatars } from '../lib/avatars.ts';
 
 type Status = 'loading' | 'authed' | 'anon' | 'unreachable';
 
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<User | null>(null);
 
   const setUser = useCallback((u: User | null) => {
+    if (u) registerAvatars([u]);
     setUserState(u);
     setStatus(u ? 'authed' : 'anon');
   }, []);

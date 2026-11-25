@@ -366,6 +366,8 @@ All mutating requests require same-origin `Origin` header + `X-Requested-With: n
 | POST | `/auth/logout` | revokes session |
 | GET | `/auth/session` | `{user \| null}`: never 401, called on app start |
 | GET / PATCH | `/auth/me` | profile (display name) |
+| PUT / DELETE | `/auth/me/avatar` | profile photo: raw JPEG/WebP ≤ 24 KB, already shrunk to 128×128 in the browser; checked by magic bytes |
+| GET | `/users/:id/avatar?v=N` | only to yourself and people you share a trip with; versioned URL → `private, immutable` caching |
 | POST | `/auth/recover` | `{username, recoveryCode, newPassword}` → new session + **new** recovery code |
 | POST | `/auth/recovery-code` | regenerate (requires password) |
 | POST | `/auth/password` | change password |

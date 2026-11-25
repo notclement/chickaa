@@ -63,7 +63,7 @@ type App = Awaited<ReturnType<typeof testApp>>['app'];
 /** A browser-like client: keeps the session cookie and sends CSRF headers on writes. */
 export function client(app: App, ip = '203.0.113.1') {
   let cookie = '';
-  async function call(method: string, path: string, body?: unknown) {
+  async function call(method: string, path: string, body?: unknown, raw?: { bytes: Uint8Array; type: string }) {
     const headers: Record<string, string> = { 'x-forwarded-for': ip };
     if (cookie) headers.cookie = cookie;
     if (method !== 'GET') {
@@ -71,15 +71,19 @@ export function client(app: App, ip = '203.0.113.1') {
       headers['x-requested-with'] = 'ncc';
     }
     if (body !== undefined) headers['content-type'] = 'application/json';
+    if (raw) headers['content-type'] = raw.type;
     const res = await app.request(`/api/v1${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: raw ? (raw.bytes as unknown as BodyInit) : body === undefined ? undefined : JSON.stringify(body),
     });
     const set = res.headers.get('set-cookie');
     if (set) {
       const [pair] = set.split(';');
       cookie = /=$/.test(pair!) || /Max-Age=0/i.test(set) ? '' : pair!;
+    }
+    if (res.headers.get('content-type')?.startsWith('image/')) {
+      return { status: res.status, body: new Uint8Array(await res.arrayBuffer()), setCookie: set, headers: res.headers };
     }
     const text = await res.text();
     let json: any = null;
@@ -88,7 +92,7 @@ export function client(app: App, ip = '203.0.113.1') {
     } catch {
       json = text;
     }
-    return { status: res.status, body: json, setCookie: set };
+    return { status: res.status, body: json, setCookie: set, headers: res.headers };
   }
   return {
     get: (p: string) => call('GET', p),

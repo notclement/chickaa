@@ -75,6 +75,7 @@ async function members(db: Db, tripId: string): Promise<Member[]> {
       userId: users.id,
       username: users.username,
       displayName: users.displayName,
+      avatarVersion: users.avatarVersion,
       role: tripMembers.role,
       joinedAt: tripMembers.joinedAt,
     })

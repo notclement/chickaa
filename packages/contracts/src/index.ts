@@ -77,7 +77,13 @@ export const RegenerateRecoveryRequest = z.object({ password: z.string().min(1) 
 
 export const UpdateProfileRequest = z.object({ displayName: DisplayName });
 
-export const User = z.object({ id: z.string(), username: z.string(), displayName: z.string() });
+export const User = z.object({
+  id: z.string(),
+  username: z.string(),
+  displayName: z.string(),
+  /** null = no photo. Otherwise part of the photo URL: /api/v1/users/:id/avatar?v=N */
+  avatarVersion: z.number().nullable(),
+});
 export type User = z.infer<typeof User>;
 
 export const MeResponse = z.object({ user: User });
@@ -130,6 +136,7 @@ export const Member = z.object({
   userId: z.string(),
   username: z.string(),
   displayName: z.string(),
+  avatarVersion: z.number().nullable(),
   role: MemberRole,
   joinedAt: z.string(),
 });
@@ -323,3 +330,7 @@ export type BalancesResponse = z.infer<typeof BalancesResponse>;
 /** Owner deletes a trip once everyone is settled. Typing the trip name confirms it. */
 export const DeleteTripRequest = z.object({ confirmName: z.string() });
 export type DeleteTripRequest = z.input<typeof DeleteTripRequest>;
+
+// ---------- profile photos ----------
+export const AVATAR_MAX_BYTES = 24 * 1024;
+export const AVATAR_TYPES = ['image/webp', 'image/jpeg'] as const;

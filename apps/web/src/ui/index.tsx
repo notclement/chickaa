@@ -1,5 +1,7 @@
 import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { useState as useStateUi } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { useAvatarUrl } from '../lib/avatars.ts';
 
 // ---------- Button ----------
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -166,7 +168,23 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 // ---------- Avatar ----------
 const AVATAR_COLORS = ['bg-sun-300', 'bg-tangerine-100', 'bg-[#CDEBDF]', 'bg-[#DDE3FF]', 'bg-[#FFD9E6]', 'bg-[#E8DDFB]'];
-export function Avatar({ name, id, size = 'md' }: { name: string; id: string; size?: 'sm' | 'md' }) {
+export function Avatar({ name, id, size = 'md' }: { name: string; id: string; size?: 'sm' | 'md' | 'lg' }) {
+  const url = useAvatarUrl(id);
+  const [broken, setBroken] = useStateUi<string | null>(null);
+  const dims = size === 'sm' ? 'size-8 text-xs' : size === 'lg' ? 'size-24 text-2xl' : 'size-11 text-sm';
+  if (url && broken !== url) {
+    return (
+      <img
+        src={url}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        onError={() => setBroken(url)}
+        className={`shrink-0 rounded-full bg-cream object-cover ${dims}`}
+      />
+    );
+  }
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const initials = name
@@ -179,9 +197,7 @@ export function Avatar({ name, id, size = 'md' }: { name: string; id: string; si
   return (
     <span
       aria-hidden
-      className={`grid shrink-0 place-items-center rounded-full font-extrabold text-ink-900 ${AVATAR_COLORS[h % AVATAR_COLORS.length]} ${
-        size === 'sm' ? 'size-8 text-xs' : 'size-11 text-sm'
-      }`}
+      className={`grid shrink-0 place-items-center rounded-full font-extrabold text-ink-900 ${AVATAR_COLORS[h % AVATAR_COLORS.length]} ${dims}`}
     >
       {initials || '🐣'}
     </span>

@@ -6,6 +6,7 @@ import { useAuth, useMe } from '../auth/AuthContext.tsx';
 import { RecoveryCodePanel } from '../auth/RecoveryCodePanel.tsx';
 import { AppStatusCard } from '../components/AppStatusCard.tsx';
 import { InstallCard } from '../components/InstallCard.tsx';
+import { ProfilePhotoCard } from '../components/ProfilePhotoCard.tsx';
 import { Avatar, Button, Card, FormError, ScreenTitle, TextField } from '../ui/index.tsx';
 
 export function AccountScreen() {
@@ -24,6 +25,7 @@ export function AccountScreen() {
           <div className="text-sm text-ink-500">@{me.username}</div>
         </div>
       </Card>
+      <ProfilePhotoCard />
       <DisplayNameCard />
       <PasswordCard />
       <RecoveryCard />

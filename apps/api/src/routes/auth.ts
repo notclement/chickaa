@@ -19,10 +19,11 @@ import { rateLimit, resetRateLimit } from '../lib/rateLimit.ts';
 import type { Env } from '../lib/types.ts';
 
 const MIN = 60;
-const publicUser = (u: { id: string; username: string; displayName: string }) => ({
+const publicUser = (u: { id: string; username: string; displayName: string; avatarVersion: number | null }) => ({
   id: u.id,
   username: u.username,
   displayName: u.displayName,
+  avatarVersion: u.avatarVersion,
 });
 
 export const authRoutes = new Hono<Env>();

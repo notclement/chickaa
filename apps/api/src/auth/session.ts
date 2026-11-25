@@ -83,6 +83,7 @@ export const loadSession: MiddlewareHandler<Env> = async (c, next) => {
         id: schema.users.id,
         username: schema.users.username,
         displayName: schema.users.displayName,
+        avatarVersion: schema.users.avatarVersion,
       })
       .from(schema.sessions)
       .innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
@@ -96,7 +97,7 @@ export const loadSession: MiddlewareHandler<Env> = async (c, next) => {
       .limit(1);
 
     if (row) {
-      c.set('user', { id: row.id, username: row.username, displayName: row.displayName });
+      c.set('user', { id: row.id, username: row.username, displayName: row.displayName, avatarVersion: row.avatarVersion });
       c.set('sessionId', row.sessionId);
       if (Date.now() - row.lastSeenAt.getTime() > DAY_MS) {
         await c.var.db

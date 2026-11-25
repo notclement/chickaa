@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+/* Self-hosted Latin subset only: keeps the precache small. Chinese text uses the
+   phone's system CJK font (PingFang on iOS, Noto Sans CJK on Android). */
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('../../node_modules/@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@theme {
+  --font-sans: 'Nunito Variable', ui-rounded, system-ui, -apple-system, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  --color-tangerine-50: #fff4ec;
+  --color-tangerine-100: #ffe4d2;
+  --color-tangerine-500: #ff7a3d;
+  --color-tangerine-600: #f0622a;
+  --color-tangerine-700: #c94a18;
+  --color-sun-300: #ffd66b;
+  --color-sun-400: #ffc93c;
+  --color-ink-900: #2b2118;
+  --color-ink-700: #5a4a3c;
+  --color-ink-500: #8a7867;
+  --color-cream: #fff7ec;
+  --color-owed: #1f9d6b;   /* gets money back */
+  --color-owes: #d1483b;   /* owes money */
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    background: var(--color-cream);
+  }
+  body {
+    @apply font-sans text-ink-900 antialiased;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+    background: var(--color-cream);
+  }
+  /* Inputs ≥16px so iOS Safari never auto-zooms on focus. */
+  input, select, textarea { font-size: max(16px, 1rem); }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--color-tangerine-500); outline-offset: 2px; }
+}
+
+@utility pt-safe { padding-top: max(env(safe-area-inset-top), 0.75rem); }
+@utility pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
+@utility px-safe {
+  padding-left: max(env(safe-area-inset-left), 1rem);
+  padding-right: max(env(safe-area-inset-right), 1rem);
+}
+@utility bottom-safe { bottom: max(env(safe-area-inset-bottom), 1rem); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
+@keyframes slide-up { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@utility animate-slide-up { animation: slide-up 220ms ease-out both; }

@@ -1,0 +1,29 @@
+# Local development database. Start with: docker compose up -d db
+# (`docker compose up --build app` also runs the production container on :8080.)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ncc
+      POSTGRES_PASSWORD: ncc
+      POSTGRES_DB: ncc
+    ports: ['5432:5432']
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ncc']
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    profiles: [app]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://ncc:ncc@db:5432/ncc
+      PUBLIC_ORIGIN: http://localhost:8080
+      NODE_ENV: production
+    ports: ['8080:8080']
+
+volumes:
+  pgdata:

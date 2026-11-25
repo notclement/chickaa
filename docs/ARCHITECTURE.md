@@ -79,7 +79,7 @@ Same-origin matters for PWAs: the session cookie is first-party, which avoids Sa
 
 | Layer | Choice | Notes |
 |---|---|---|
-| UI | React 19, TypeScript, Tailwind CSS v4, React Router (or TanStack Router) | Mobile-first, accessible primitives (Radix/Ark) |
+| UI | React 19, TypeScript, Tailwind CSS v4, React Router | Mobile-first, accessible components |
 | PWA | `vite-plugin-pwa` (Workbox), `injectManifest` mode with our own `sw.ts` | Lets us control the update prompt |
 | Local data | Dexie (IndexedDB) + `dexie-react-hooks` `useLiveQuery` | Read-only snapshot cache for offline viewing. Never a source of truth |
 | Server state fetch | Thin fetch client + TanStack Query for online-only actions | |
@@ -90,7 +90,7 @@ Same-origin matters for PWAs: the session cookie is first-party, which avoids Sa
 | Passwords | Argon2id via `@node-rs/argon2` | |
 | QR | `qrcode` (client-side, so it works offline too) | |
 | FX | Frankfurter (`api.frankfurter.dev`, free, no key, ~200 currencies, historical) | Manual rate always available as a fallback |
-| Tests | Vitest (unit/integration, incl. property tests with fast-check), Playwright (e2e + offline), Lighthouse CI (PWA checks) | Real iOS device testing is manual, see §9 |
+| Tests | Vitest (unit/integration, incl. property tests with fast-check), Playwright (e2e, offline, installability via Chrome DevTools Protocol, update flow) | Real iOS device testing is manual, see §9 |
 
 ---
 
@@ -133,7 +133,7 @@ nochickencall/
 ├─ e2e/                         # Playwright: flows, offline, sync, install manifest
 ├─ docs/  SPEC.md  ARCHITECTURE.md  DECISIONS.md  DEPLOY.md
 ├─ Dockerfile  docker-compose.yml (local Postgres)  .env.example
-└─ .github/workflows/ci.yml     # lint, typecheck, unit, integration (pg service), e2e, lighthouse
+└─ .github/workflows/ci.yml     # typecheck, unit, build, migrations, e2e, docker build
 ```
 
 `packages/core` runs on **both** sides. The client uses it to preview splits and balances, including offline.
@@ -521,7 +521,7 @@ Each phase ends with something runnable and deployed to a staging URL.
 
 | Phase | Deliverable | Exit check |
 |---|---|---|
-| **1. Foundation + PWA shell** | Monorepo, Vite/React/Tailwind, Hono, Postgres/Drizzle, brand lockup, manifest, icons, iOS splash, SW + update toast, install prompts, CSP, Docker, CI | **Installable on iPhone & Android, opens offline, update toast works**. Lighthouse PWA checks pass |
+| **1. Foundation + PWA shell** ✅ | Monorepo, Vite/React/Tailwind, Hono, Postgres/Drizzle, brand lockup, manifest, icons, iOS splash, SW + update toast, install prompts, CSP, Docker, CI | **Installable on iPhone & Android, opens offline, update toast works**. Chrome reports zero installability errors (Playwright) |
 | **2. Auth & trips** | Register/login/recovery, sessions, rate-limit, trips, members, invites (link, QR, share sheet, revoke, expiry, limits), join flow incl. paste-invite | e2e: Alice creates trip, Bob joins via link |
 | **3. Financial core (tests first)** | `packages/core`: money, currencies, allocation, splits, FX conversion, ledger; full unit + property tests | 100% branch coverage on core |
 | **4. Expenses** | Add/edit/delete, all splits, multi-payer, multi-currency, Frankfurter + trip-fixed + manual rates, revisions, balances screen | Ledger reconciles to 0 across random e2e data |

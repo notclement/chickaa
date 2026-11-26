@@ -80,12 +80,13 @@ async function members(db: Db, tripId: string): Promise<Member[]> {
       avatarVersion: users.avatarVersion,
       role: tripMembers.role,
       joinedAt: tripMembers.joinedAt,
+      disabledAt: users.disabledAt,
     })
     .from(tripMembers)
     .innerJoin(users, eq(users.id, tripMembers.userId))
     .where(and(eq(tripMembers.tripId, tripId), isNull(tripMembers.leftAt)))
     .orderBy(asc(tripMembers.joinedAt), asc(users.id));
-  return rows.map((r) => ({ ...r, joinedAt: r.joinedAt.toISOString() }));
+  return rows.map(({ disabledAt, ...r }) => ({ ...r, joinedAt: r.joinedAt.toISOString(), disabled: !!disabledAt }));
 }
 
 export async function detail(db: Db, trip: TripRow, myRole: Role): Promise<TripDetail> {

@@ -99,4 +99,34 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   await forever.click();
   await expect(page.getByTestId('admin-trip').filter({ hasText: empty })).toHaveCount(0);
   await expect(page.getByTestId('admin-trip').filter({ hasText: busy })).toHaveCount(1);
+
+  // Disable an account → it moves to the Disabled folder and their app turns read-only.
+  const deeCtx = await browser.newContext();
+  const dee = await deeCtx.newPage();
+  const deeId = `dee_${uid()}`;
+  await dee.goto('/register');
+  await register(dee, 'Dee', deeId);
+  await page.goto('/admin?tab=users');
+  await page.getByLabel('Search users').fill(deeId);
+  const deeRow = page.getByTestId('admin-user').filter({ hasText: `@${deeId}` });
+  await deeRow.locator('summary').click();
+  await deeRow.getByRole('button', { name: 'Disable account…' }).click();
+  await deeRow.getByLabel('Private note (optional)').fill('testing');
+  await deeRow.getByRole('button', { name: 'Disable', exact: true }).click();
+  await expect(page.getByTestId('admin-user').filter({ hasText: `@${deeId}` })).toHaveCount(0); // left the Active folder
+  await page.getByRole('button', { name: /Disabled · / }).click();
+  await expect(page.getByTestId('admin-user').filter({ hasText: `@${deeId}` })).toHaveCount(1);
+
+  await dee.reload();
+  await expect(dee.getByTestId('disabled-banner')).toContainText('PM @mashpotatas on Telegram');
+  await expect(dee.getByRole('link', { name: /New trip/ })).toHaveCount(0); // greyed out, not a link
+
+  // Enable again.
+  const back = page.getByTestId('admin-user').filter({ hasText: `@${deeId}` });
+  await back.locator('summary').click();
+  await back.getByRole('button', { name: 'Enable account' }).click();
+  await expect(page.getByTestId('admin-user').filter({ hasText: `@${deeId}` })).toHaveCount(0);
+  await dee.reload();
+  await expect(dee.getByTestId('disabled-banner')).toHaveCount(0);
+  await deeCtx.close();
 });

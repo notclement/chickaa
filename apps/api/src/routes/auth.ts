@@ -14,7 +14,7 @@ import { schema } from '@ncc/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { timingSafeEqual } from 'node:crypto';
-import { ADMIN_USERNAME } from '@ncc/contracts';
+import { ACCOUNT_DISABLED_MESSAGE, ADMIN_USERNAME } from '@ncc/contracts';
 import { burnVerifyTime, hashSecret, newRecoveryCode, sha256, verifySecret } from '../auth/crypto.ts';
 import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession } from '../auth/session.ts';
 import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';
@@ -171,6 +171,7 @@ authRoutes.post('/recover', async (c) => {
   const [user] = await db.select().from(schema.users).where(eq(schema.users.username, input.username)).limit(1);
   const ok = user ? await verifySecret(input.recoveryCode, user.recoveryCodeHash) : (await burnVerifyTime(input.recoveryCode), false);
   if (!user || !ok) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Username or recovery code is wrong');
+  if (user.disabledAt) throw new HttpError(403, 'ACCOUNT_DISABLED', ACCOUNT_DISABLED_MESSAGE);
 
   const recovery = newRecoveryCode();
   const [passwordHash, recoveryCodeHash] = await Promise.all([

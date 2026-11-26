@@ -64,6 +64,10 @@ export const RecoveryCode = z
   .transform((s) => s.replace(/[^A-Z0-9]/g, ''))
   .pipe(z.string().length(16, 'Recovery codes are 16 letters/numbers'));
 
+/** Telegram handle people message about their account or supporting. */
+export const SUPPORT_TELEGRAM = 'mashpotatas';
+export const ACCOUNT_DISABLED_MESSAGE = `Your account is disabled. PM @${SUPPORT_TELEGRAM} on Telegram to find out why.`;
+
 export const RegisterRequest = z.object({
   username: Username,
   password: Password,
@@ -101,6 +105,8 @@ export const User = z.object({
     /** End of a time-limited supporter period (may be in the past). */
     until: z.string().nullable(),
   }),
+  /** Disabled by the admin: read-only. */
+  disabled: z.boolean(),
 });
 export type User = z.infer<typeof User>;
 
@@ -176,6 +182,8 @@ export const Member = z.object({
   avatarVersion: z.number().nullable(),
   role: MemberRole,
   joinedAt: z.string(),
+  /** Account disabled by the admin (the trip can't be reopened while they're in it). */
+  disabled: z.boolean(),
 });
 export type Member = z.infer<typeof Member>;
 
@@ -484,9 +492,15 @@ export const AdminUser = z.object({
   invited: z.number(),
   /** Their PayNow reference (NCC-<code>), once they've opened Invite a friend or the Supporter page. */
   reference: z.string().nullable(),
+  disabledAt: z.string().nullable(),
+  disabledNote: z.string().nullable(),
   trips: z.array(AdminUserTrip),
 });
 export type AdminUser = z.infer<typeof AdminUser>;
+/** POST /admin/users/:id/disable */
+export const DisableUserRequest = z.object({ note: z.string().trim().max(300).optional() });
+export type DisableUserRequest = z.infer<typeof DisableUserRequest>;
+
 /** POST /admin/users/:id/supporter */
 export const SetSupporterRequest = z.object({ action: z.enum(['month', 'lifetime', 'remove']) });
 export type SetSupporterRequest = z.infer<typeof SetSupporterRequest>;

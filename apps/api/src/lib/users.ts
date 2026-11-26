@@ -13,6 +13,7 @@ export interface UserRow {
   isAdmin: boolean;
   supporterUntil: Date | null;
   supporterLifetime: boolean;
+  disabledAt: Date | null;
 }
 
 export function supporterOf(u: Pick<UserRow, 'supporterUntil' | 'supporterLifetime'>, now = new Date()): User['supporter'] {
@@ -30,6 +31,7 @@ export const publicUser = (u: UserRow): User => ({
   avatarVersion: u.avatarVersion,
   isAdmin: u.isAdmin,
   supporter: supporterOf(u),
+  disabled: !!u.disabledAt,
 });
 
 /** No 0/O, 1/I/L: easy to read out loud. */

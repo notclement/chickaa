@@ -88,6 +88,7 @@ export const loadSession: MiddlewareHandler<Env> = async (c, next) => {
         isAdmin: schema.users.isAdmin,
         supporterUntil: schema.users.supporterUntil,
         supporterLifetime: schema.users.supporterLifetime,
+        disabledAt: schema.users.disabledAt,
       })
       .from(schema.sessions)
       .innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))

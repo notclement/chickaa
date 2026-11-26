@@ -1,6 +1,8 @@
-import { DeleteTripRequest, SetSupporterRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@ncc/contracts';
+import { DeleteTripRequest, DisableUserRequest, SetSupporterRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@ncc/contracts';
 import { schema } from '@ncc/db';
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { formatAmount, isCurrencyCode } from '@ncc/core';
+import { tripBalances } from './expenses.ts';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
 import { body, HttpError, notFound, uuidParam } from '../lib/http.ts';
@@ -114,6 +116,8 @@ adminRoutes.get('/users', async (c) => {
       supporterUntil: users.supporterUntil,
       supporterLifetime: users.supporterLifetime,
       referralCode: users.referralCode,
+      disabledAt: users.disabledAt,
+      disabledNote: users.disabledNote,
       referredBy: sql<string | null>`(select r.username::text from users r where r.id = "users"."referred_by")`,
       invited: sql<number>`(select count(*)::int from users r where r.referred_by = "users"."id")`,
       lastSeenMs: sql<number | null>`(select (extract(epoch from max(s.last_seen_at)) * 1000)::float8 from sessions s where s.user_id = "users"."id")`,
@@ -147,6 +151,8 @@ adminRoutes.get('/users', async (c) => {
       referredBy: p.referredBy,
       invited: p.invited,
       reference: p.referralCode ? `NCC-${p.referralCode}` : null,
+      disabledAt: p.disabledAt?.toISOString() ?? null,
+      disabledNote: p.disabledNote,
       lastSeenAt: p.lastSeenMs == null ? null : new Date(Number(p.lastSeenMs)).toISOString(),
       trips: (perUser.get(p.id) ?? []).sort((a, b) => a.order - b.order).map((x) => x.trip),
     })),
@@ -206,4 +212,48 @@ adminRoutes.post('/users/:id/supporter', async (c) => {
     .returning({ supporterUntil: users.supporterUntil, supporterLifetime: users.supporterLifetime });
   if (!u) throw notFound();
   return c.json({ supporter: supporterOf(u) });
+});
+
+/**
+ * Disable an account: they can still sign in and look, but can't change anything. Refused while
+ * they owe or are owed money in any trip, so nobody is left waiting on a disabled person.
+ */
+adminRoutes.post('/users/:id/disable', async (c) => {
+  const db = c.var.db;
+  const id = uuidParam(c, 'id');
+  const { note } = await body(c, DisableUserRequest);
+  const [u] = await db.select({ isAdmin: users.isAdmin, username: users.username }).from(users).where(eq(users.id, id));
+  if (!u) throw notFound();
+  if (u.isAdmin) throw new HttpError(400, 'VALIDATION', 'The admin account can’t be disabled');
+
+  const theirTrips = await db
+    .select({ trip: trips })
+    .from(tripMembers)
+    .innerJoin(trips, eq(trips.id, tripMembers.tripId))
+    .where(and(eq(tripMembers.userId, id), isNull(tripMembers.leftAt), isNull(trips.deletedAt)));
+  const outstanding: { tripId: string; name: string; net: string; currency: string }[] = [];
+  for (const { trip } of theirTrips) {
+    const b = await tripBalances(db, trip);
+    const net = b.balances.find((x) => x.userId === id)?.net ?? '0';
+    if (net !== '0') outstanding.push({ tripId: trip.id, name: trip.name, net, currency: trip.baseCurrency });
+  }
+  if (outstanding.length) {
+    const fmt = (o: (typeof outstanding)[number]) => {
+      const v = BigInt(o.net);
+      const amt = isCurrencyCode(o.currency) ? `${o.currency} ${formatAmount(v < 0n ? -v : v, o.currency)}` : o.net;
+      return `${o.name} (${v < 0n ? 'owes' : 'is owed'} ${amt})`;
+    };
+    throw new HttpError(409, 'OUTSTANDING', `@${u.username} still has unsettled balances: ${outstanding.map(fmt).join('; ')}. Settle these first.`, {
+      outstanding,
+    });
+  }
+  await db.update(users).set({ disabledAt: new Date(), disabledNote: note || null }).where(eq(users.id, id));
+  return c.json({ disabled: true });
+});
+
+adminRoutes.post('/users/:id/enable', async (c) => {
+  const id = uuidParam(c, 'id');
+  const [u] = await c.var.db.update(users).set({ disabledAt: null, disabledNote: null }).where(eq(users.id, id)).returning({ id: users.id });
+  if (!u) throw notFound();
+  return c.json({ disabled: false });
 });

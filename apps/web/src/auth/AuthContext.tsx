@@ -120,3 +120,8 @@ export function useMe(): User {
   if (!user) throw new Error('useMe used on a signed-out screen');
   return user;
 }
+
+/** Signed in with an account the admin disabled: the app is read-only. Safe outside the provider. */
+export function useAccountDisabled(): boolean {
+  return !!useContext(Ctx)?.user?.disabled;
+}

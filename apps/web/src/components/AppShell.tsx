@@ -1,3 +1,4 @@
+import { SUPPORT_TELEGRAM } from '@ncc/contracts';
 import { useMemo } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useServerWaking } from '../api/serverStatus.ts';
@@ -36,6 +37,7 @@ export function AppShell() {
             )}
           </div>
         </div>
+        {user?.disabled && <DisabledBanner />}
         <OfflineBanner lastUpdated={lastUpdated} />
         <WakingBanner />
       </header>
@@ -61,6 +63,19 @@ function WakingBanner() {
           <b>Waking up the server…</b> can take up to a minute after a quiet spell.
         </span>
       </div>
+    </div>
+  );
+}
+
+/** Shown on every screen while the account is disabled. */
+function DisabledBanner() {
+  return (
+    <div role="alert" className="bg-owes px-4 py-2.5 text-center text-sm font-semibold text-white" data-testid="disabled-banner">
+      Account disabled. PM{' '}
+      <a href={`https://t.me/${SUPPORT_TELEGRAM}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+        @{SUPPORT_TELEGRAM}
+      </a>{' '}
+      on Telegram to figure out why. You can still view your trips.
     </div>
   );
 }

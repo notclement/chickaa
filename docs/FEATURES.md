@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v1.5.0**. See [PHASES.md](PHASES.md) for what's next.
+What NoChickenCall does as of **v1.6.0**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **display name, user ID and password**. No email or phone number.
@@ -53,6 +53,7 @@ What NoChickenCall does as of **v1.5.0**. See [PHASES.md](PHASES.md) for what's 
 - **All trips** screen with filters and colour-coded tags: 🔵 Active · 🟢 On-going · 🟣 Needs finishing · 🟠 Pending settlement · ⚪ Ended · 🔴 Deleted.
 - **Users** tab: every account (display name, @ID, joined, last active), searchable; expand one to see the trips they own or belong to, with tags.
 - Set anyone's **Supporter** status: +1 month, lifetime, or remove; see who invited whom and their PayNow reference (searchable).
+- **Disable accounts** (only when they're fully settled): read-only for them, a 🚫 Disabled folder, enable again any time. Trips with a disabled member can't be reopened.
 - **Delete permanently** any trip (test trips), typing its name to confirm.
 - Opens any trip **read-only**. In trips the admin has joined, they're a normal member.
 

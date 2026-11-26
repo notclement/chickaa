@@ -559,6 +559,14 @@ Each phase ends with something runnable and deployed to a staging URL.
 - **PayNow (v1.5.0):** `PAYNOW_QR_PAYLOAD` (validated: EMV fields, SG.PAYNOW, CRC-16/CCITT-FALSE) holds the owner's static QR text. `GET /supporter/paynow` adds tag 62.01 = `NCC-<referral code>` and recomputes the CRC (`withPayNowReference` in core), so the bank record carries the reference. The web draws the QR locally. Matching is manual (Telegram + admin Lifetime button); a gateway (Stripe/HitPay PayNow webhook) can automate it later.
 - Nothing checks supporter status yet; future extras gate on `user.supporter.active`.
 
+## 12c. Disabled accounts (v1.6.0)
+
+- `users.disabled_at`, `disabled_note` (migration `0009_user_disabled`); `User.disabled`, `Member.disabled`.
+- A middleware after `loadSession` refuses every non-GET request from a disabled user (except log out) with `403 ACCOUNT_DISABLED`; `/auth/recover` refuses them too. Login works, so they can view.
+- `POST /admin/users/:id/disable {note?}`: refused for the admin and while `tripBalances` shows a non-zero net for them in any non-deleted trip they're in (`409 OUTSTANDING`, listing trips). `POST /admin/users/:id/enable` undoes it.
+- Reopen is refused while an active member is disabled (`409 MEMBER_DISABLED`, names them); creating or editing an expense that includes a disabled person is refused the same way.
+- Web: red banner on every screen; `needsNetwork` buttons/links are greyed out for disabled accounts; admin Users has Active / Disabled folders.
+
 ## 13. Known limitations
 
 - **Free hosting sleeps** after 15 idle minutes (Render free). The app wakes it on open and shows "Waking up the server…"; the cron pinger keeps it awake.

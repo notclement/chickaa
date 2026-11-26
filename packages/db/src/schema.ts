@@ -69,6 +69,10 @@ export const users = pgTable('users', {
   referralCode: text('referral_code').unique(),
   /** Who invited this user (set at sign-up from an invite-a-friend link). */
   referredBy: uuid('referred_by'),
+  /** Disabled by the admin: can sign in and look, but can't change anything. */
+  disabledAt: ts('disabled_at'),
+  /** Admin's private note on why (never shown to the user). */
+  disabledNote: text('disabled_note'),
   /** Profile photo: tiny (≤ 24 KB) square WebP/JPEG, compressed in the browser before upload. */
   avatar: bytea('avatar'),
   avatarType: text('avatar_type'),

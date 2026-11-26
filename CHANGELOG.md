@@ -2,6 +2,12 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.6.0] - 2026-11-26 · Disable accounts
+### Added
+- **Admin: disable an account** (Users → tap a person → Disable account…, optional private note). Only possible once they're settled in every trip. Disabled accounts move to a **🚫 Disabled** folder and can be enabled again.
+- A disabled person can still sign in and **view** their trips, but nothing else: no new trips, joining, expenses, payments, profile, photo or password changes (password recovery too). Every screen shows **"Account disabled. PM @mashpotatas on Telegram to figure out why."**
+- Trips with a disabled member **can't be reopened**; the owner sees who (display name and @ID) and is pointed to @mashpotatas. Disabled people also can't be added to new or edited expenses.
+
 ## [1.5.0] - 2026-11-26 · Become a Supporter (PayNow)
 ### Added
 - **Become a Supporter** (Account → 💛 Support): a one-off S$5 by PayNow for lifetime Supporter.

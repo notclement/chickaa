@@ -9,6 +9,7 @@ export interface AuthUser {
   avatarVersion: number | null;
   isAdmin: boolean;
   supporter: { active: boolean; lifetime: boolean; until: string | null };
+  disabled: boolean;
 }
 
 export interface Env {

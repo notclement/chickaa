@@ -27,7 +27,7 @@ import {
   type SplitInput,
 } from '@ncc/core';
 import { schema, type Db } from '@ncc/db';
-import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { z } from 'zod';
 import { sha256 } from '../auth/crypto.ts';
@@ -333,6 +333,7 @@ tripExpenseRoutes.post('/:id/expenses', async (c) => {
   const tripId = uuidParam(c, 'id');
   const { trip } = await membership(db, tripId, me.id);
   const input = await body(c, CreateExpenseRequest);
+  await assertNobodyDisabled(db, input);
   const { clientId, ...fields } = input;
   const payloadHash = sha256(stableStringify(fields));
 
@@ -390,6 +391,30 @@ tripExpenseRoutes.post('/:id/expenses', async (c) => {
     throw err;
   }
 });
+
+/** People whose accounts are disabled can't be added to new or changed expenses. */
+async function assertNobodyDisabled(
+  db: Db,
+  f: { payers: { userId: string }[]; split: CreateExpenseRequest['split'] },
+): Promise<void> {
+  const ids = new Set(f.payers.map((p) => p.userId));
+  const split = f.split;
+  const add = (list: { userId: string }[]) => list.forEach((x) => ids.add(x.userId));
+  if (split.type === 'equal') split.participants.forEach((id) => ids.add(id));
+  else if (split.type === 'exact') add(split.amounts);
+  else if (split.type === 'percentage') add(split.percents);
+  else add(split.shares);
+  const list = [...ids].filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  if (!list.length) return;
+  const off = await db
+    .select({ displayName: users.displayName, username: users.username })
+    .from(users)
+    .where(and(inArray(users.id, list), isNotNull(users.disabledAt)));
+  if (off.length) {
+    const who = off.map((u) => `${u.displayName} (@${u.username})`).join(', ');
+    throw new HttpError(409, 'MEMBER_DISABLED', `${who} ${off.length === 1 ? 'has a' : 'have'} disabled account${off.length === 1 ? '' : 's'} and can't be in new or changed expenses.`);
+  }
+}
 
 /** Current balances for a trip (non-deleted expenses + confirmed transfers). */
 export async function tripBalances(db: Db, trip: TripRow): Promise<BalancesResponse> {
@@ -577,6 +602,7 @@ expenseRoutes.put('/:id', async (c) => {
   if (!canEdit(expense, role, me.id)) throw forbidden('Only whoever added this expense, or the trip owner, can change it');
   if (expense.deletedAt) throw new HttpError(410, 'NOT_FOUND', 'This expense was deleted');
   const { version, ...fields } = await body(c, UpdateExpenseRequest);
+  await assertNobodyDisabled(db, fields);
   const rate = await decideRate(db, c.var.fx, trip, fields, expense);
 
   await db.transaction(async (tx) => {

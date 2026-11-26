@@ -3,6 +3,7 @@ import { useState as useStateUi } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAvatarUrl } from '../lib/avatars.ts';
 import { useOnline } from '../offline/useOnline.ts';
+import { useAccountDisabled } from '../auth/AuthContext.tsx';
 
 // ---------- Button ----------
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -29,11 +30,12 @@ export function Button({
   needsNetwork?: boolean;
 }) {
   const online = useOnline();
-  const offline = needsNetwork && !online;
+  const accountDisabled = useAccountDisabled();
+  const offline = needsNetwork && (!online || accountDisabled);
   return (
     <button
       {...rest}
-      title={offline ? 'Needs a connection' : rest.title}
+      title={offline ? (accountDisabled ? 'Your account is disabled' : 'Needs a connection') : rest.title}
       disabled={rest.disabled || loading || offline}
       className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 font-bold transition-colors ${
         block ? 'w-full' : ''
@@ -59,15 +61,16 @@ export function ButtonLink({
   children: ReactNode;
 }) {
   const online = useOnline();
-  if (needsNetwork && !online) {
+  const accountDisabled = useAccountDisabled();
+  if (needsNetwork && (!online || accountDisabled)) {
     return (
       <span
         aria-disabled="true"
-        title="Needs a connection"
+        title={accountDisabled ? 'Your account is disabled' : 'Needs a connection'}
         className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 font-bold opacity-50 ${block ? 'w-full' : ''} ${VARIANTS[variant]}`}
       >
         {children}
-        <span className="text-xs font-semibold">· needs a connection</span>
+        <span className="text-xs font-semibold">{accountDisabled ? '· account disabled' : '· needs a connection'}</span>
       </span>
     );
   }

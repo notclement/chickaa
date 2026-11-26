@@ -108,10 +108,16 @@ The app has one admin account (`admin`). It can only be created with a private o
 - Switch to the **Users** tab to see every account: display name, @ID, when they joined and were last active. Search by name or ID, and tap a person to see the trips they own or are in (with each trip's tag). Tap a trip to open it.
 - Matching a payment: search **Users** for the `NCC-…` reference from the Telegram message or bank record, then tap **Lifetime**.
 - In **Users**, tap a person to set their **Supporter** status (**+1 month**, **Lifetime**, **Remove**) and see who invited them.
+- **Disable account…** (Users → tap a person): only once they're settled in every trip. They can still view their trips but can't change anything, and see a message to PM @mashpotatas. Find them under **🚫 Disabled**, where **Enable account** undoes it. A trip with a disabled member can't be reopened.
 - **Delete permanently…** on a trip in the list removes it and everything in it for everyone, forever (for test trips). Type the trip name to confirm.
 - Opening a trip you're not in is **read-only**. In trips you've joined, you're a normal member.
 
 ## FAQ
+
+**"Account disabled"?** Your account can only view trips for now. PM [@mashpotatas](https://t.me/mashpotatas) on Telegram to find out why.
+
+**"This trip can't be reopened"?** Someone in the trip has a disabled account. PM @mashpotatas on Telegram for more info.
+
 **Why is a payment marked "sent" not counted yet?**
 Only the person receiving the money can confirm it. Until then, balances don't change.
 

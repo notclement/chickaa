@@ -1,4 +1,4 @@
-import type { BalancesResponse, SettlementEventsResponse, SettlementResponse, SettlementTransfer, TripDetail } from '@ncc/contracts';
+import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementEventsResponse, type SettlementResponse, type SettlementTransfer, type TripDetail } from '@ncc/contracts';
 import { formatAmount, isCurrencyCode } from '@ncc/core';
 import { useState } from 'react';
 import { useParams } from 'react-router';
@@ -104,7 +104,24 @@ export function SettleUpScreen() {
 
       {data.state === 'plan' && balances.data && <SummaryCard data={data} balances={balances.data} who={who} />}
 
-      {data.state === 'plan' && owner && !data.progress.fullySettled && (
+      {data.state === 'plan' && owner && trip.members.some((m) => m.disabled) && (
+        <Card className="ring-owes/20" data-testid="reopen-blocked">
+          <h2 className="font-bold">This trip can’t be reopened</h2>
+          <p className="mt-1 text-sm text-ink-700">
+            {trip.members
+              .filter((m) => m.disabled)
+              .map((m) => `${m.displayName} (@${m.username})`)
+              .join(', ')}{' '}
+            {trip.members.filter((m) => m.disabled).length === 1 ? 'has a disabled account' : 'have disabled accounts'}. PM{' '}
+            <a href={`https://t.me/${SUPPORT_TELEGRAM}`} target="_blank" rel="noopener noreferrer" className="font-semibold underline">
+              @{SUPPORT_TELEGRAM}
+            </a>{' '}
+            on Telegram for more info.
+          </p>
+        </Card>
+      )}
+
+      {data.state === 'plan' && owner && !data.progress.fullySettled && !trip.members.some((m) => m.disabled) && (
         <Card>
           <h2 className="font-bold">Forgot an expense?</h2>
           <p className="mt-1 text-sm text-ink-700">

@@ -15,6 +15,7 @@
 | — | Expense categories + filter, admin permanent delete | ✅ Done | 1.3.0 |
 | — | Supporter status, Invite a friend, admin supporter controls | ✅ Done | 1.4.0 |
 | — | Become a Supporter page (PayNow QR + reference, Telegram) | ✅ Done | 1.5.0 |
+| — | Admin: disable accounts (read-only), Disabled folder | ✅ Done | 1.6.0 |
 | — | Supporter extras (exports, trip recap, receipt photos) + PayNow | ⏳ Later | — |
 
 ## 1 · Foundation + PWA shell

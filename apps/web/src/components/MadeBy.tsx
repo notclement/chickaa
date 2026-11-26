@@ -1,4 +1,6 @@
-export const DEVELOPER = { name: 'Clement', linkedin: 'https://www.linkedin.com/in/clementsg/', telegram: 'mashpotatas' } as const;
+import { SUPPORT_TELEGRAM } from '@ncc/contracts';
+
+export const DEVELOPER = { name: 'Clement', linkedin: 'https://www.linkedin.com/in/clementsg/', telegram: SUPPORT_TELEGRAM } as const;
 
 /** Small developer credit shown on Account and the login / sign-up screens. */
 export function MadeBy({ className = '' }: { className?: string }) {

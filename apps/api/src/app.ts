@@ -1,3 +1,4 @@
+import { ACCOUNT_DISABLED_MESSAGE } from '@ncc/contracts';
 import type { HealthResponse } from '@ncc/contracts';
 import type { Db } from '@ncc/db';
 import { Hono } from 'hono';
@@ -77,6 +78,12 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
     await next();
   });
   api.use('*', loadSession);
+  // Disabled accounts are read-only: every change is refused (they can still look, and log out).
+  api.use('*', async (c, next) => {
+    const readOnly = ['GET', 'HEAD', 'OPTIONS'].includes(c.req.method) || c.req.path.endsWith('/auth/logout');
+    if (c.var.user?.disabled && !readOnly) throw new HttpError(403, 'ACCOUNT_DISABLED', ACCOUNT_DISABLED_MESSAGE);
+    await next();
+  });
 
   api.route('/auth/me/avatar', myAvatarRoutes);
   api.route('/auth', authRoutes);

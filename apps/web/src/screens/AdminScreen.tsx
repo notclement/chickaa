@@ -112,6 +112,70 @@ function TripsTab() {
   );
 }
 
+/** Disable (read-only) or enable an account. Disabling is refused while they have unsettled balances. */
+function AccountControls({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const call = async (path: string, json: unknown) => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      await api(path, { method: 'POST', json });
+      setOpen(false);
+      setNote('');
+      onChanged();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (user.disabledAt) {
+    return (
+      <div className="mb-2 space-y-2 rounded-2xl bg-owes/5 p-3" data-testid="account-controls">
+        <div className="text-sm">
+          <b>🚫 Disabled</b> on {new Date(user.disabledAt).toLocaleDateString()}
+          {user.disabledNote && <span className="block text-ink-700">Note: {user.disabledNote}</span>}
+        </div>
+        <Button variant="secondary" block loading={busy} onClick={() => void call(`/admin/users/${user.id}/enable`, {})}>
+          Enable account
+        </Button>
+        <FormError message={error} />
+      </div>
+    );
+  }
+  if (!open) {
+    return (
+      <div className="mb-2 flex justify-end">
+        <button type="button" onClick={() => setOpen(true)} className="min-h-9 text-sm font-semibold text-owes">
+          Disable account…
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-2 space-y-3 rounded-2xl bg-owes/5 p-3" data-testid="account-controls">
+      <p className="text-sm text-ink-700">
+        <b>@{user.username}</b> will only be able to view their trips: no new trips, joining, expenses, payments or profile changes. They’ll see “Account
+        disabled, PM @mashpotatas on Telegram”. Only possible once they’re settled in every trip.
+      </p>
+      <TextField label="Private note (optional)" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} />
+      <FormError message={error} />
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="ghost" onClick={() => (setOpen(false), setError(undefined))}>
+          Cancel
+        </Button>
+        <Button variant="danger" loading={busy} onClick={() => void call(`/admin/users/${user.id}/disable`, { note: note.trim() || undefined })}>
+          Disable
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Supporter status for one user: +1 month, lifetime, or remove. */
 function SupporterControls({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
   const [busy, setBusy] = useState<SetSupporterRequest['action'] | null>(null);
@@ -207,9 +271,12 @@ function HardDelete({ trip, onDeleted }: { trip: AdminTrip; onDeleted: () => voi
 function UsersTab() {
   const { data, error, loading, reload } = useApi(() => api<AdminUsersResponse>('/admin/users'), []);
   const [q, setQ] = useState('');
+  const [folder, setFolder] = useState<'active' | 'disabled'>('active');
   if (error) return <ErrorState message={errorMessage(error)} onRetry={reload} />;
   if (loading && !data) return <Loading />;
-  const all = data?.users ?? [];
+  const everyone = data?.users ?? [];
+  const disabledCount = everyone.filter((u) => u.disabledAt).length;
+  const all = everyone.filter((u) => (folder === 'disabled' ? !!u.disabledAt : !u.disabledAt));
   const needle = q.trim().toLowerCase();
   const users = needle
     ? all.filter((u) => [u.username, u.displayName, u.reference ?? ''].some((s) => s.toLowerCase().includes(needle)))
@@ -217,6 +284,14 @@ function UsersTab() {
 
   return (
     <div className="space-y-3">
+      <div className="flex gap-2" role="group" aria-label="User folders">
+        <FilterChip active={folder === 'active'} onClick={() => setFolder('active')}>
+          Active · {everyone.length - disabledCount}
+        </FilterChip>
+        <FilterChip active={folder === 'disabled'} onClick={() => setFolder('disabled')}>
+          🚫 Disabled · {disabledCount}
+        </FilterChip>
+      </div>
       <input
         type="search"
         value={q}
@@ -226,7 +301,7 @@ function UsersTab() {
         className="min-h-11 w-full rounded-2xl bg-white px-4 ring-1 ring-ink-900/10 focus:outline-none focus:ring-2 focus:ring-ink-900"
       />
       {users.length === 0 ? (
-        <Card className="text-center text-ink-500">No users.</Card>
+        <Card className="text-center text-ink-500">{folder === 'disabled' ? 'No disabled accounts.' : 'No users.'}</Card>
       ) : (
         <ul className="space-y-2">
           {users.map((u) => {
@@ -254,6 +329,7 @@ function UsersTab() {
                     <span aria-hidden className="text-ink-500 transition-transform group-open:rotate-90">›</span>
                   </summary>
                   <div className="border-t border-ink-900/5 px-4 pb-3 pt-2">
+                    {!u.isAdmin && <AccountControls user={u} onChanged={reload} />}
                     <SupporterControls user={u} onChanged={reload} />
                     {u.trips.length === 0 ? (
                       <p className="py-1 text-sm text-ink-500">Not in any trip yet.</p>

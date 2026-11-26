@@ -1,4 +1,4 @@
-import type { BalancesResponse, SettlementResponse } from '@ncc/contracts';
+import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementResponse } from '@ncc/contracts';
 import { planSettlement, verifySettlement } from '@ncc/core';
 import { schema, type Db } from '@ncc/db';
 import { and, asc, eq, inArray, isNotNull, isNull, max } from 'drizzle-orm';
@@ -9,7 +9,7 @@ import type { Env } from '../lib/types.ts';
 import { tripBalances } from './expenses.ts';
 import { membership, viewAccess } from './trips.ts';
 
-const { trips, settlementPlans, settlements, settlementEvents } = schema;
+const { trips, settlementPlans, settlements, settlementEvents, tripMembers, users } = schema;
 type TripRow = typeof trips.$inferSelect;
 
 type SettlementRow = typeof settlements.$inferSelect;
@@ -172,6 +172,20 @@ settlementRoutes.post('/:id/reopen', async (c) => {
   const tripId = uuidParam(c, 'id');
   const { role } = await membership(db, tripId, me.id);
   if (role !== 'owner') throw forbidden('Only the trip creator can reopen the trip');
+  const off = await db
+    .select({ displayName: users.displayName, username: users.username })
+    .from(tripMembers)
+    .innerJoin(users, eq(users.id, tripMembers.userId))
+    .where(and(eq(tripMembers.tripId, tripId), isNull(tripMembers.leftAt), isNotNull(users.disabledAt)));
+  if (off.length) {
+    const who = off.map((u) => `${u.displayName} (@${u.username})`).join(', ');
+    throw new HttpError(
+      409,
+      'MEMBER_DISABLED',
+      `This trip can’t be reopened because ${who} ${off.length === 1 ? 'has a disabled account' : 'have disabled accounts'}. PM @${SUPPORT_TELEGRAM} on Telegram for more info.`,
+      { members: off },
+    );
+  }
 
   await db.transaction(async (tx) => {
     const [row] = await tx.select().from(trips).where(eq(trips.id, tripId)).for('update');

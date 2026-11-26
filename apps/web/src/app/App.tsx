@@ -55,7 +55,7 @@ function Home() {
   const { status } = useAuth();
   if (status === 'loading') return <Loading />;
   if (status === 'unreachable') return <Unreachable />;
-  return status === 'authed' ? <MyTripsScreen /> : <WelcomeScreen />;
+  return status === 'authed' || status === 'offline' ? <MyTripsScreen /> : <WelcomeScreen />;
 }
 
 function SignedInOnly() {
@@ -63,6 +63,7 @@ function SignedInOnly() {
   const loc = useLocation();
   if (status === 'loading') return <Loading />;
   if (status === 'unreachable') return <Unreachable />;
+  // 'offline' = signed in on this device but no connection: screens show the saved copy, read-only.
   if (status === 'anon') return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   return <Outlet />;
 }
@@ -70,7 +71,7 @@ function SignedInOnly() {
 function SignedOutOnly() {
   const { status } = useAuth();
   const loc = useLocation();
-  if (status === 'authed') {
+  if (status === 'authed' || status === 'offline') {
     const next = new URLSearchParams(loc.search).get('next');
     return <Navigate to={next?.startsWith('/') && !next.startsWith('//') ? next : '/'} replace />;
   }

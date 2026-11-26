@@ -452,7 +452,7 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
           </div>
         )}
         <div className="sticky bottom-safe z-10">
-          <Button type="submit" block loading={busy} className="shadow-lg">
+          <Button type="submit" block loading={busy} needsNetwork className="shadow-lg">
             {uncertain ? 'Try saving again' : existing ? 'Save changes' : pv.ok ? `Save · ${money(pv.built.total, f.currency)}` : 'Save expense'}
           </Button>
         </div>

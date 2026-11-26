@@ -1,13 +1,19 @@
-import { Link, Outlet } from 'react-router';
+import { useMemo } from 'react';
+import { Link, Outlet, useLocation } from 'react-router';
 import { useServerWaking } from '../api/serverStatus.ts';
 import { useAuth } from '../auth/AuthContext.tsx';
 import { OfflineBanner } from '../offline/OfflineBanner.tsx';
+import { staleness, useLastUpdated } from '../offline/staleness.ts';
 import { Avatar } from '../ui/index.tsx';
 import { BrandLockup } from './BrandLockup.tsx';
 import { UpdateToast } from './UpdateToast.tsx';
 
 export function AppShell() {
   const { user } = useAuth();
+  const location = useLocation();
+  // New screen → forget the previous screen's "last updated" time (runs before child effects).
+  useMemo(() => staleness.reset(), [location.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lastUpdated = useLastUpdated();
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 bg-cream/90 backdrop-blur supports-[backdrop-filter]:bg-cream/75">
@@ -23,7 +29,7 @@ export function AppShell() {
             )}
           </div>
         </div>
-        <OfflineBanner />
+        <OfflineBanner lastUpdated={lastUpdated} />
         <WakingBanner />
       </header>
       <main className="flex-1 px-safe pb-safe">

@@ -94,7 +94,7 @@ export function SettleUpScreen() {
           <p className="mt-1 text-sm text-ink-700">
             Reopen the trip to add or fix expenses. Transfers already received stay counted; the rest are recalculated when you finish again.
           </p>
-          <Button
+          <Button needsNetwork
             variant="secondary"
             block
             className="mt-3"
@@ -137,7 +137,7 @@ function PreviewCard({ data, trip, owner, busy, onFinish }: { data: SettlementRe
       {owner ? (
         <>
           <p className="mt-3 text-sm text-ink-500">When the trip’s over, finish it. Expenses lock, and everyone can start paying and confirming.</p>
-          <Button
+          <Button needsNetwork
             block
             className="mt-3"
             loading={busy}
@@ -252,21 +252,21 @@ function TransferCard(props: {
         <div className="mt-3 flex flex-wrap gap-2">
           {iPay && (t.status === 'pending' || t.status === 'disputed') && (
             <>
-              <Button variant="secondary" className="!min-h-10 text-sm" onClick={copy}>
+              <Button needsNetwork variant="secondary" className="!min-h-10 text-sm" onClick={copy}>
                 {copied ? '✓ Copied' : `Copy ${amountPlain}`}
               </Button>
-              <Button className="!min-h-10 flex-1 text-sm" loading={busy('sent')} onClick={() => props.act(`sent:${t.id}`, `/settlements/${t.id}/sent`)}>
+              <Button needsNetwork className="!min-h-10 flex-1 text-sm" loading={busy('sent')} onClick={() => props.act(`sent:${t.id}`, `/settlements/${t.id}/sent`)}>
                 I’ve sent it
               </Button>
             </>
           )}
           {iReceive && (t.status === 'sent' || t.status === 'pending') && (
-            <Button className="!min-h-10 flex-1 text-sm" loading={busy('confirm')} onClick={() => props.act(`confirm:${t.id}`, `/settlements/${t.id}/confirm`)}>
+            <Button needsNetwork className="!min-h-10 flex-1 text-sm" loading={busy('confirm')} onClick={() => props.act(`confirm:${t.id}`, `/settlements/${t.id}/confirm`)}>
               Got it ✓
             </Button>
           )}
           {iReceive && t.status === 'sent' && (
-            <Button
+            <Button needsNetwork
               variant="danger"
               className="!min-h-10 text-sm"
               loading={busy('dispute')}

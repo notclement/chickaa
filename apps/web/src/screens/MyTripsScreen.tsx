@@ -1,11 +1,12 @@
 import type { TripListResponse, TripSummary } from '@ncc/contracts';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
 import { InstallCard } from '../components/InstallCard.tsx';
 import { extractInviteToken, formatDateRange } from '../lib/format.ts';
+import { prefetchTrips } from '../offline/prefetch.ts';
 import { Badge, Button, ButtonLink, Card, ErrorState, Loading, TextField } from '../ui/index.tsx';
 
 export function MyTripsScreen() {
@@ -14,6 +15,9 @@ export function MyTripsScreen() {
   const trips = data?.trips ?? [];
   const active = trips.filter((t) => t.status === 'active');
   const done = trips.filter((t) => t.status !== 'active');
+  useEffect(() => {
+    if (data?.trips.length) void prefetchTrips(data.trips);
+  }, [data]);
 
   return (
     <div className="space-y-5 pt-2">
@@ -23,7 +27,7 @@ export function MyTripsScreen() {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <ButtonLink to="/trips/new">＋ New trip</ButtonLink>
+        <ButtonLink to="/trips/new" needsNetwork>＋ New trip</ButtonLink>
         <JoinByLinkButton />
       </div>
 
@@ -108,7 +112,7 @@ function JoinByLinkButton() {
 
   if (!open) {
     return (
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button variant="secondary" needsNetwork onClick={() => setOpen(true)}>
         🔗 Join a trip
       </Button>
     );

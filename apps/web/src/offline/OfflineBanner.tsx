@@ -1,8 +1,8 @@
 import { useOnline } from './useOnline.ts';
 
 /**
- * Shown whenever the device is offline. From Phase 7 it also shows when the
- * data on screen was last updated ("Last updated 3:42 pm").
+ * Shown whenever the device is offline, with when the data on screen was last saved
+ * ("Last updated 3:42 pm", or with the date if it's older than today).
  */
 export function OfflineBanner({ lastUpdated }: { lastUpdated?: Date | undefined }) {
   const online = useOnline();
@@ -14,7 +14,12 @@ export function OfflineBanner({ lastUpdated }: { lastUpdated?: Date | undefined 
         <span className="font-semibold">Offline · view only</span>
         {lastUpdated && (
           <span className="text-cream/70">
-            · Last updated {lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            · Last updated{' '}
+            <span data-testid="last-updated">
+              {lastUpdated.toDateString() === new Date().toDateString()
+                ? lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                : lastUpdated.toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+            </span>
           </span>
         )}
       </div>

@@ -137,7 +137,7 @@ export function TripScreen() {
           ))}
         </ul>
         {owner && active ? (
-          <ButtonLink to={`/trips/${trip.id}/invite`} variant="secondary" block>
+          <ButtonLink to={`/trips/${trip.id}/invite`} variant="secondary" block needsNetwork>
             ＋ Invite people
           </ButtonLink>
         ) : (
@@ -148,7 +148,7 @@ export function TripScreen() {
       {active && (
         <div className="fixed inset-x-0 bottom-safe z-10 px-safe">
           <div className="mx-auto max-w-xl">
-            <ButtonLink to={`/trips/${trip.id}/expenses/new`} block>
+            <ButtonLink to={`/trips/${trip.id}/expenses/new`} block needsNetwork>
               ＋ Add expense
             </ButtonLink>
           </div>

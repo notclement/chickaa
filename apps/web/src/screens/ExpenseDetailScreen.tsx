@@ -102,10 +102,10 @@ export function ExpenseDetailScreen() {
 
       {canEdit && (
         <div className="grid grid-cols-2 gap-2">
-          <ButtonLink to={`/expenses/${e.id}/edit`} variant="secondary">
+          <ButtonLink to={`/expenses/${e.id}/edit`} variant="secondary" needsNetwork>
             Edit
           </ButtonLink>
-          <Button variant="danger" loading={busy} onClick={remove}>
+          <Button variant="danger" loading={busy} needsNetwork onClick={remove}>
             Delete
           </Button>
         </div>

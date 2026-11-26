@@ -1,4 +1,6 @@
 import type { ApiError } from '@ncc/contracts';
+import { cacheGet, cachePut, isCacheable } from '../offline/cache.ts';
+import { staleness } from '../offline/staleness.ts';
 import { serverStatus } from './serverStatus.ts';
 
 export class ApiRequestError extends Error {
@@ -29,6 +31,12 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
   if (method !== 'GET') headers.set('X-Requested-With', 'ncc');
   if (json !== undefined) headers.set('Content-Type', 'application/json');
 
+  // Changes always need the server (decision D2): fail fast and clearly when offline.
+  if (method !== 'GET' && !navigator.onLine) {
+    throw new ApiRequestError(0, 'OFFLINE', 'You’re offline. Changes need a connection.');
+  }
+  const cacheable = method === 'GET' && isCacheable(path);
+
   const done = serverStatus.track();
   let res: Response;
   try {
@@ -40,6 +48,14 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
       body: json !== undefined ? JSON.stringify(json) : rest.body,
     });
   } catch {
+    // Offline (or server unreachable): show the last copy we saved, if any (read-only).
+    if (cacheable) {
+      const hit = await cacheGet<T>(path);
+      if (hit) {
+        staleness.servedFromCache(hit.savedAt);
+        return hit.data;
+      }
+    }
     throw new ApiRequestError(
       0,
       'NETWORK',
@@ -60,7 +76,9 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
       body?.error.details,
     );
   }
-  return (await res.json()) as T;
+  const data = (await res.json()) as T;
+  if (cacheable) void cachePut(path, data);
+  return data;
 }
 
 export const post = <T>(path: string, json: unknown = {}) => api<T>(path, { method: 'POST', json });

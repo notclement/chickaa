@@ -2,6 +2,7 @@ import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes,
 import { useState as useStateUi } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAvatarUrl } from '../lib/avatars.ts';
+import { useOnline } from '../offline/useOnline.ts';
 
 // ---------- Button ----------
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -16,14 +17,24 @@ export function Button({
   variant = 'primary',
   loading,
   block,
+  needsNetwork,
   className = '',
   children,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; loading?: boolean; block?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  loading?: boolean;
+  block?: boolean;
+  /** Disabled with a hint while offline (all changes need the server). */
+  needsNetwork?: boolean;
+}) {
+  const online = useOnline();
+  const offline = needsNetwork && !online;
   return (
     <button
       {...rest}
-      disabled={rest.disabled || loading}
+      title={offline ? 'Needs a connection' : rest.title}
+      disabled={rest.disabled || loading || offline}
       className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 font-bold transition-colors ${
         block ? 'w-full' : ''
       } ${VARIANTS[variant]} ${className}`}
@@ -34,7 +45,32 @@ export function Button({
   );
 }
 
-export function ButtonLink({ to, variant = 'primary', block, children }: { to: string; variant?: Variant; block?: boolean; children: ReactNode }) {
+export function ButtonLink({
+  to,
+  variant = 'primary',
+  block,
+  needsNetwork,
+  children,
+}: {
+  to: string;
+  variant?: Variant;
+  block?: boolean;
+  needsNetwork?: boolean;
+  children: ReactNode;
+}) {
+  const online = useOnline();
+  if (needsNetwork && !online) {
+    return (
+      <span
+        aria-disabled="true"
+        title="Needs a connection"
+        className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 font-bold opacity-50 ${block ? 'w-full' : ''} ${VARIANTS[variant]}`}
+      >
+        {children}
+        <span className="text-xs font-semibold">· needs a connection</span>
+      </span>
+    );
+  }
   return (
     <Link
       to={to}

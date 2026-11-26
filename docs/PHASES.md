@@ -7,8 +7,8 @@
 | 3 | Financial engine (exact money, splits, ledger) | ✅ Done | 0.3.0 |
 | 4 | Expenses, currencies, balances, trip deletion, profile photos | ✅ Done | 0.4.0 – 0.4.1 |
 | 5 | Settle up: minimum-transfer plan, finish/reopen trip | ✅ Done | 0.5.0 |
-| 6 | Transfer tracking: sent / confirmed / disputed, fully settled | ✅ Done | 0.6.0 · **MVP** |
-| 7 | Offline viewing: last-loaded trips with "last updated" time | ⏳ Planned | |
+| 6 | Transfer tracking: sent / confirmed / disputed, fully settled | ✅ Done | 0.6.0 – 0.6.2 · **MVP** |
+| 7 | Offline viewing: last-loaded trips with "last updated" time | ✅ Done | 0.7.0 |
 | 8 | Release: polish, security + money review, real-device testing, final docs | ⏳ Planned | 1.0.0 |
 
 ## 1 · Foundation + PWA shell
@@ -29,8 +29,8 @@ The fewest-transfers plan (proven minimum for up to 20 people with something owi
 ## 6 · Transfer tracking (MVP)
 *I've sent it* (payer), *Got it* / *Not received* (recipient), cancel (owner), progress, transfer history, "All settled" state and the trip summary.
 
-## 7 · Offline viewing (planned)
-Trips, expenses, balances and the settle-up plan viewable with no signal, with a "last updated" time.
+## 7 · Offline viewing
+Trips, expenses, balances, who owes who and the settle-up plan viewable with no signal, with a "last updated" time. Trips are downloaded in the background. Changes are disabled offline. The offline copy is per user and wiped on log out.
 
 ## 8 · Release (planned)
 UI polish, accessibility, security and financial-integrity review, testing on real iPhones and Android phones, and final technical documentation.

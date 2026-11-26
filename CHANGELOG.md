@@ -2,6 +2,16 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [0.7.0] - 2026-11-26 · Phase 7
+### Added
+- **Offline viewing:** with no signal, the app still shows your trips, expenses, balances, who owes who and the settle-up plan as last loaded, with an **“Offline · view only · Last updated 3:42 pm”** banner.
+- Trips on *My trips* are downloaded in the background (while online), so they can be viewed offline even if not opened recently.
+- If you were logged in, the app opens straight into offline mode instead of a “can’t reach” screen.
+### Changed
+- Anything that changes data (add/edit/delete, invite, finish, mark sent/received) is disabled offline and says “needs a connection”.
+### Security
+- The offline copy is stored per user on the device and **deleted on log out**, when the session has expired, or when a different user signs in.
+
 ## [0.6.2] - 2026-11-26
 Fixes from the 7-day, 4-person Okinawa test run (money logic verified: balances summed to S$0.00, minimum 3 transfers).
 ### Fixed

@@ -2,6 +2,14 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [0.6.2] - 2026-11-26
+Fixes from the 7-day, 4-person Okinawa test run (money logic verified: balances summed to S$0.00, minimum 3 transfers).
+### Fixed
+- Expense detail and edit screens no longer request `/api/v1/trips/undefined` (a 404) before the expense has loaded.
+- Offline message now reads “You’re offline. Connect to the internet and try again.” instead of telling logged-in users to sign in.
+- Exchange-rate inputs (Settings → Fixed exchange rates, and “Use my own rate”) show “Enter rate” instead of a THB-specific example number.
+- Payers and people in a split are now always listed in the same order (member join order). Before, the database could return them in any order. Display only; amounts were never affected.
+
 ## [0.6.1] - 2026-11-26
 ### Added
 - **Who owes who** on the trip page: a live, Splitwise-style list (e.g. "Bob owes Alice S$40.00") using the fewest transfers, always up to date while the trip is active. Once the trip is finished it shows each payment's status.

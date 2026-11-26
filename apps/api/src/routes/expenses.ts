@@ -213,10 +213,24 @@ export async function loadExpenses(db: Db, where: { tripId?: string; ids?: strin
     .orderBy(desc(expenses.expenseDate), desc(expenses.createdAt));
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
-  const [payers, splits] = await Promise.all([
+  // Payers/splits come back in member join order (then user id) so lists are stable everywhere.
+  const tripIds = [...new Set(rows.map((r) => r.tripId))];
+  const [payers, splits, order] = await Promise.all([
     db.select().from(expensePayers).where(inArray(expensePayers.expenseId, ids)),
     db.select().from(expenseSplits).where(inArray(expenseSplits.expenseId, ids)),
+    db
+      .select({ tripId: tripMembers.tripId, userId: tripMembers.userId })
+      .from(tripMembers)
+      .where(inArray(tripMembers.tripId, tripIds))
+      .orderBy(asc(tripMembers.joinedAt), asc(tripMembers.userId)),
   ]);
+  const rank = new Map(order.map((m, i) => [`${m.tripId}:${m.userId}`, i]));
+  const tripOf = new Map(rows.map((r) => [r.id, r.tripId]));
+  const byMember = <T extends { expenseId: string; userId: string }>(a: T, b: T) =>
+    (rank.get(`${tripOf.get(a.expenseId)}:${a.userId}`) ?? 1e9) - (rank.get(`${tripOf.get(b.expenseId)}:${b.userId}`) ?? 1e9) ||
+    a.userId.localeCompare(b.userId);
+  payers.sort(byMember);
+  splits.sort(byMember);
   return rows.map((e) => serialize(e, payers.filter((p) => p.expenseId === e.id), splits.filter((s) => s.expenseId === e.id)));
 }
 

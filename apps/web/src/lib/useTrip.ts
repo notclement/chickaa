@@ -5,7 +5,8 @@ import { useApi } from '../api/useApi.ts';
 import { registerAvatars } from './avatars.ts';
 
 export function useTrip(id: string | undefined) {
-  const res = useApi(() => api<TripDetail>(`/trips/${id}`), [id]);
+  // Only fetch once there's an id (e.g. an expense screen learns its tripId after loading).
+  const res = useApi(() => (id ? api<TripDetail>(`/trips/${id}`) : Promise.resolve(undefined)), [id]);
   useEffect(() => {
     if (res.data) registerAvatars(res.data.members.map((m) => ({ id: m.userId, avatarVersion: m.avatarVersion })));
   }, [res.data]);

@@ -3,6 +3,13 @@ import { tripWithTwo } from './helpers.ts';
 
 test('add expenses (multi-payer, foreign currency, shares), see balances, edit and delete', async ({ page, browser }) => {
   const { alice, bob, bobCtx, tripUrl } = await tripWithTwo(page, browser);
+  const badRequests: string[] = [];
+  alice.on('request', (r) => {
+    if (r.url().includes('/undefined')) badRequests.push(r.url());
+  });
+  alice.on('response', (r) => {
+    if (r.status() === 404 && r.url().includes('/api/')) badRequests.push(`404 ${r.url()}`);
+  });
 
   // 1. SGD 300 dinner, Alice paid 200 + Bob 100, split equally → each 150. Alice +50, Bob −50.
   await alice.getByRole('link', { name: /Add expense/ }).click();
@@ -75,6 +82,9 @@ test('add expenses (multi-payer, foreign currency, shares), see balances, edit a
   await alice.getByRole('button', { name: 'Delete' }).click();
   await expect(alice.getByTestId('my-balance')).toHaveText('S$20.00');
   await expect(alice.getByTestId('expense-row').filter({ hasText: 'massage' })).toHaveCount(0);
+
+  // Opening an expense and its Edit screen must not request /trips/undefined (test-run bug, v0.6.2).
+  expect(badRequests).toEqual([]);
 
   // 5. Balances screen.
   await alice.getByTestId('who-owes-who').getByRole('link', { name: 'Balances' }).click();

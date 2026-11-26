@@ -64,7 +64,7 @@ export function TripRatesCard({ tripId, baseCurrency }: { tripId: string; baseCu
             </option>
           ))}
         </SelectField>
-        <TextField label={`1 ${currency} = ? ${baseCurrency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="0.0375" />
+        <TextField label={`1 ${currency} = ? ${baseCurrency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="Enter rate" />
         <div className="col-span-2">
           <FormError message={error} />
           <Button type="submit" variant="secondary" block loading={busy} disabled={!rate.trim()} className="mt-2">

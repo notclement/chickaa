@@ -108,7 +108,7 @@ test.describe('service worker & offline', () => {
     // The shell loads from the phone; signing in needs a connection.
     await expect(page.getByText('Offline · view only')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Can’t reach NoChickenCall' })).toBeVisible();
-    await expect(page.getByText('You’re offline. Connect to sign in.')).toBeVisible();
+    await expect(page.getByText('You’re offline. Connect to the internet and try again.')).toBeVisible();
 
     // Deep link that was never visited: still served by the precached shell.
     await page.goto('/some/deep/link/never-visited');

@@ -525,7 +525,7 @@ function RateBox(props: {
           <TextField
             label={`1 ${f.currency} = ? ${base}`}
             inputMode="decimal"
-            placeholder="0.0375"
+            placeholder="Enter rate"
             value={f.manualRate}
             onChange={(e) => props.setManual(e.target.value)}
             hint="The rate you actually got, e.g. from your bank app"

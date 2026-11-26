@@ -65,6 +65,7 @@ describe.skipIf(!TEST_DB_URL)('supporter + invite a friend', () => {
 
     const listed = (await admin.get('/admin/users')).body.users.find((u: { username: string }) => u.username === 'bob');
     expect(listed).toMatchObject({ supporter: { active: true, lifetime: true }, referredBy: null, invited: 0 });
+    expect(listed.reference).toMatch(/^CHICKAA-[A-Z2-9]{8}$/); // everyone has one from sign-up
 
     expect((await admin.post(url, { action: 'remove' })).body.supporter).toEqual({ active: false, lifetime: false, until: null });
     expect((await admin.post(url, { action: 'forever' })).status).toBe(400);

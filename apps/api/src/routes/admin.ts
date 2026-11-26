@@ -7,7 +7,7 @@ import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
 import { body, HttpError, notFound, uuidParam } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
-import { supporterOf } from '../lib/users.ts';
+import { ensureReferralCode, supporterOf } from '../lib/users.ts';
 
 const {
   trips,
@@ -106,6 +106,9 @@ adminRoutes.get('/users', async (c) => {
   const db = c.var.db;
   const tripList = await allTrips(db, currentUser(c).id, c.var.config.timeZone);
   const byId = new Map(tripList.map((t, i) => [t.id, { t, i }]));
+  // Everyone gets a reference so the admin can look anyone up by it.
+  const missing = await db.select({ id: users.id }).from(users).where(isNull(users.referralCode));
+  for (const m of missing) await ensureReferralCode(db, m.id);
   const people = await db
     .select({
       id: users.id,

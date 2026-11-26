@@ -201,11 +201,7 @@ function SupporterControls({ user, onChanged }: { user: AdminUser; onChanged: ()
       </div>
       <div className="text-xs text-ink-500">
         {user.referredBy ? `Invited by @${user.referredBy}` : 'Signed up without an invite'} · invited {user.invited}
-        {user.reference && (
-          <>
-            {' '}· PayNow ref <b className="font-mono">{user.reference}</b>
-          </>
-        )}
+
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         <Button variant="secondary" loading={busy === 'month'} disabled={!!busy || s.lifetime} onClick={() => void act('month')}>
@@ -219,6 +215,32 @@ function SupporterControls({ user, onChanged }: { user: AdminUser; onChanged: ()
         </Button>
       </div>
       <FormError message={error} />
+    </div>
+  );
+}
+
+/** Lower-case letters and digits only. */
+const squash = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+
+/** "CHICKAA-" small, the code big and orange, with the searched part highlighted. */
+function RefCode({ reference, needle }: { reference: string; needle: string }) {
+  const code = reference.replace(/^CHICKAA-/, '');
+  const at = needle ? code.toLowerCase().indexOf(needle.replace(/^chickaa/, '')) : -1;
+  const len = needle.replace(/^chickaa/, '').length;
+  return (
+    <div className="mt-0.5 flex items-baseline gap-0.5 font-mono" data-testid="user-ref">
+      <span className="text-xs font-semibold text-ink-500">CHICKAA-</span>
+      <span className="text-lg font-extrabold tracking-wider text-tangerine-600">
+        {at >= 0 && len > 0 ? (
+          <>
+            {code.slice(0, at)}
+            <mark className="rounded bg-sun-300 px-0.5 text-tangerine-700">{code.slice(at, at + len)}</mark>
+            {code.slice(at + len)}
+          </>
+        ) : (
+          code
+        )}
+      </span>
     </div>
   );
 }
@@ -277,10 +299,10 @@ function UsersTab() {
   const everyone = data?.users ?? [];
   const disabledCount = everyone.filter((u) => u.disabledAt).length;
   const all = everyone.filter((u) => (folder === 'disabled' ? !!u.disabledAt : !u.disabledAt));
-  const needle = q.trim().toLowerCase();
-  const users = needle
-    ? all.filter((u) => [u.username, u.displayName, u.reference ?? ''].some((s) => s.toLowerCase().includes(needle)))
-    : all;
+  // Live, anywhere-in-the-text match; spaces, dashes, dots and case are ignored, so "cde" finds
+  // CHICKAA-ABCDEFGH and "chickaa-k7q" finds CHICKAA-K7QM2XPA.
+  const needle = squash(q);
+  const users = needle ? all.filter((u) => [u.username, u.displayName, u.reference ?? ''].some((s) => squash(s).includes(needle))) : all;
 
   return (
     <div className="space-y-3">
@@ -296,7 +318,10 @@ function UsersTab() {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'} by name, ID or CHICKAA- ref`}
+        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'} by name, ID or ref code`}
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         aria-label="Search users"
         className="min-h-11 w-full rounded-2xl bg-white px-4 ring-1 ring-ink-900/10 focus:outline-none focus:ring-2 focus:ring-ink-900"
       />
@@ -318,6 +343,7 @@ function UsersTab() {
                         <SupporterBadge supporter={u.supporter} className="ml-2" />
                       </div>
                       <div className="truncate text-sm text-ink-500">@{u.username}</div>
+                      {u.reference && <RefCode reference={u.reference} needle={needle} />}
                       <div className="text-xs text-ink-500">
                         joined {new Date(u.createdAt).toLocaleDateString()}
                         {u.lastSeenAt ? ` · last active ${new Date(u.lastSeenAt).toLocaleDateString()}` : ''}

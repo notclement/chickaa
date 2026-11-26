@@ -2,6 +2,11 @@
 
 All notable changes to ChickAA. Dates are Singapore time.
 
+## [1.7.1] - 2026-11-26 · Find people by ref code
+### Changed
+- **Admin → Users** shows everyone's ref code (`CHICKAA-` + the code in big orange letters). Every account gets one at sign-up.
+- Search updates as you type and matches anywhere in a name, ID or ref code (ignoring case, dashes and spaces), with the matching part of the code highlighted.
+
 ## [1.7.0] - 2026-11-26 · New name: ChickAA
 ### Changed
 - **New name: ChickAA** (AA制 is Chinese slang for going dutch), with the Chinese name **别鸡较** (bié jī jiào: 别计较 "don't squabble over every cent", with 鸡 for chicken). Same chick, same colours, same link; accounts and trips are unchanged.

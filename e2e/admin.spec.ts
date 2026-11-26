@@ -73,6 +73,14 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   await expect(page.getByRole('heading', { name: 'All users' })).toBeVisible();
   await page.getByLabel('Search users').fill(aliceId);
   const row = page.getByTestId('admin-user').filter({ hasText: `@${aliceId}` });
+  // Every user shows their ref code; typing any middle part finds them, live.
+  const refText = (await row.getByTestId('user-ref').textContent())!;
+  expect(refText).toMatch(/^CHICKAA-[A-Z2-9]{8}$/);
+  const middle = refText.slice('CHICKAA-'.length + 2, 'CHICKAA-'.length + 5).toLowerCase();
+  await page.getByLabel('Search users').fill(middle);
+  await expect(row).toBeVisible();
+  await expect(row.locator('mark')).toHaveText(middle.toUpperCase());
+  await page.getByLabel('Search users').fill(aliceId);
   await expect(row.getByTestId('user-trip-count')).toHaveText('2 trips');
   await row.locator('summary').click();
   // Supporter controls.

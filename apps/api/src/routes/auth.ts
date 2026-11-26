@@ -20,7 +20,7 @@ import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession
 import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';
 import { rateLimit, rateLimitHit, rateLimitPeek, resetRateLimit } from '../lib/rateLimit.ts';
 import type { Env } from '../lib/types.ts';
-import { ensureReferralCode, publicUser, REFERRAL_CAP_MONTHS } from '../lib/users.ts';
+import { ensureReferralCode, newReferralCode, publicUser, REFERRAL_CAP_MONTHS } from '../lib/users.ts';
 
 const MIN = 60;
 
@@ -71,6 +71,7 @@ authRoutes.post('/register', async (c) => {
           passwordHash,
           recoveryCodeHash,
           isAdmin,
+          referralCode: newReferralCode(),
           ...(referrer && { referredBy: referrer.id, supporterUntil: sql`now() + interval '1 month'` }),
         })
         .returning();

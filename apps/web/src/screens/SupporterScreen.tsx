@@ -6,6 +6,7 @@ import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
 import { DEVELOPER } from '../components/MadeBy.tsx';
 import { SupporterBadge, supporterUntilText } from '../components/SupporterBadge.tsx';
+import { SupporterPerks } from '../components/SupporterPerks.tsx';
 import { Button, ButtonLink, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
 
 const PAYNOW_PURPLE = '#7C1A78';
@@ -29,9 +30,9 @@ export function SupporterScreen() {
   if (error && !notSetUp) return <ErrorState message={errorMessage(error)} onRetry={reload} />;
   if (loading && !data && !error) return <Loading />;
 
-  const amount = data?.amount ? `S$${data.amount}` : 'S$5';
+  const amount = data?.amount ? `S$${data.amount.replace(/\.00$/, '')}` : 'S$5';
   const message = data
-    ? `Hi,\nJust transferred you ${amount.replace(/\.00$/, '')} to show my support for NoChickenCall\nHere is my reference code: ${data.reference}\nThank you!`
+    ? `Hi,\nJust transferred you ${amount} to show my support for NoChickenCall\nHere is my reference code: ${data.reference}\nThank you!`
     : '';
   const telegram = `https://t.me/${DEVELOPER.telegram}?text=${encodeURIComponent(message)}`;
   const copy = async (what: 'ref' | 'msg', text: string) => {
@@ -66,10 +67,13 @@ export function SupporterScreen() {
 
       <Card>
         <p className="text-sm text-ink-700">
-          NoChickenCall is a small side project by one person, so this part is a bit manual for now. Sorry it’s a little janky! If you’d like to chip in <b>{amount}</b>
-          towards development and hosting, you’ll be a <b>💛 lifetime Supporter</b>. Thank you!
+          NoChickenCall is a small side project by one person, so this part is a bit manual for now. Sorry it’s a little janky! If you’d like to chip in{' '}
+          <b>{amount}</b> towards development and hosting, you’ll be a <b>💛 lifetime Supporter</b>. Thank you!
         </p>
-        <p className="mt-2 text-xs text-ink-500">Everything you use today stays free. Supporter extras (exports, trip recap, receipt photos) are on the way.</p>
+      </Card>
+
+      <Card>
+        <SupporterPerks />
       </Card>
 
       {notSetUp || !data ? (

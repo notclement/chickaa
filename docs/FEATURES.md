@@ -44,7 +44,7 @@ What NoChickenCall does as of **v1.5.0**. See [PHASES.md](PHASES.md) for what's 
 - A **trip summary** shows total spent, each person's position before and after, and transfers confirmed.
 
 ## Supporter
-- **💛 Supporter** badge, for a month at a time or for life. Nothing is locked behind it yet.
+- **💛 Supporter**, for a month at a time or for life. Supporters get: the Supporter badge (now); trip export to PDF/CSV, trip recap charts, receipt photos and early access to new features (coming soon). Everything else stays free with no limits.
 - **Become a Supporter:** one-off S$5 by PayNow (QR with your own reference), then message the developer on Telegram; the admin switches on Lifetime.
 - **Invite a friend:** your own link; each friend who signs up with it gives you both 1 month as Supporter (stacks, up to 12 months ahead).
 

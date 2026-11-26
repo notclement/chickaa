@@ -4,6 +4,7 @@ import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
 import { SupporterBadge, supporterUntilText } from '../components/SupporterBadge.tsx';
+import { SupporterPerks } from '../components/SupporterPerks.tsx';
 import { Button, ButtonLink, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
 
 /** "Invite a friend": a personal link; each friend who signs up gives you both a month as Supporter. */
@@ -85,8 +86,11 @@ export function InviteFriendScreen() {
           )}
         </div>
       </Card>
+      <Card>
+        <SupporterPerks />
+      </Card>
       <p className="px-2 text-center text-xs text-ink-500">
-        Supporters help keep NoChickenCall free for everyone. Everything you use today stays free; Supporter extras are coming soon.
+        Supporters help keep NoChickenCall free for everyone.
       </p>
       <ButtonLink to="/supporter" variant="ghost" block>
         💛 Or become a lifetime Supporter

@@ -8,7 +8,8 @@ test('Supporter page: PayNow QR with my reference, Telegram message', async ({ p
   await page.goto('/account');
   await page.getByRole('link', { name: '💛 Support' }).click();
   await expect(page.getByRole('heading', { name: 'Become a Supporter' })).toBeVisible();
-  await expect(page.getByText(/a bit manual for now/)).toBeVisible();
+  await expect(page.getByText(/chip in S\$5 towards development/)).toBeVisible(); // spacing around the amount
+  await expect(page.getByTestId('supporter-perks')).toContainText('Export trips');
   const ref = (await page.getByTestId('paynow-reference').textContent())!;
   expect(ref).toMatch(/^NCC-[A-Z2-9]{8}$/);
   await expect(page.getByTestId('paynow-qr').locator('svg')).toBeVisible();

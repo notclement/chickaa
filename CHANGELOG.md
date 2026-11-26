@@ -9,6 +9,7 @@ All notable changes to NoChickenCall. Dates are Singapore time.
   - Then one tap opens **Telegram to @mashpotatas** with a ready-made thank-you message and the reference; the admin switches on Lifetime.
   - The QR's PayNow details come from the server setting `PAYNOW_QR_PAYLOAD`, not the code.
 - **Admin → Users:** each person's PayNow reference; search by reference.
+- **What Supporters get** list on the Supporter and Invite a friend pages: badge (now); PDF/CSV export, trip recap, receipt photos, early access (coming soon).
 
 ## [1.4.0] - 2026-11-26 · Supporter + Invite a friend
 ### Added

@@ -1,5 +1,5 @@
 import type { BalancesResponse, SettlementResponse } from '@ncc/contracts';
-import { planSettlement } from '@ncc/core';
+import { planSettlement, verifySettlement } from '@ncc/core';
 import { schema, type Db } from '@ncc/db';
 import { and, asc, eq, inArray, isNull, max } from 'drizzle-orm';
 import { Hono } from 'hono';
@@ -99,6 +99,9 @@ settlementRoutes.post('/:id/complete', async (c) => {
 
     const balances = await tripBalances(t, row);
     const p = plan(balances);
+    // Financial integrity: independently re-check the plan settles every balance to the cent.
+    const nets = balances.balances.map((r) => ({ userId: r.userId, net: BigInt(r.net) }));
+    if (!verifySettlement(nets, p.transfers)) throw new HttpError(500, 'INTERNAL', 'Settlement plan failed its integrity check');
     const [{ v } = { v: 0 }] = await tx.select({ v: max(settlementPlans.version) }).from(settlementPlans).where(eq(settlementPlans.tripId, tripId));
     const [stored] = await tx
       .insert(settlementPlans)

@@ -9,7 +9,7 @@
 | 5 | Settle up: minimum-transfer plan, finish/reopen trip | ✅ Done | 0.5.0 |
 | 6 | Transfer tracking: sent / confirmed / disputed, fully settled | ✅ Done | 0.6.0 – 0.6.2 · **MVP** |
 | 7 | Offline viewing: last-loaded trips with "last updated" time | ✅ Done | 0.7.0 |
-| 8 | Release: polish, security + money review, real-device testing, final docs | ⏳ Planned | 1.0.0 |
+| 8 | Release: polish, security + money review, real-device testing, final docs | ✅ Done (real-phone checklist pending) | 1.0.0-rc.1 |
 
 ## 1 · Foundation + PWA shell
 Project setup, brand (NoChickenCall / 别计较 and the chick icon), installable app with icons and iPhone launch screens, offline app shell, update prompt, install instructions, security headers, Docker, automated tests and CI.
@@ -32,5 +32,7 @@ The fewest-transfers plan (proven minimum for up to 20 people with something owi
 ## 7 · Offline viewing
 Trips, expenses, balances, who owes who and the settle-up plan viewable with no signal, with a "last updated" time. Trips are downloaded in the background. Changes are disabled offline. The offline copy is per user and wiped on log out.
 
-## 8 · Release (planned)
-UI polish, accessibility, security and financial-integrity review, testing on real iPhones and Android phones, and final technical documentation.
+## 8 · Release
+Security and financial-integrity review ([SECURITY.md](SECURITY.md)) with hardening: request-size limits, trusted client IPs for rate limiting, settle-up plans independently re-verified before saving, overflow guard, session and rate-limit cleanup. Final technical docs: architecture as built, deploy, testing, known limitations.
+
+**To reach 1.0.0:** run the real-phone checklist in [TESTING.md](TESTING.md) on an iPhone and an Android phone (installed app). That's the one step that can't be automated.

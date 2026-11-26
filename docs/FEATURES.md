@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v0.6.1** (the MVP). See [PHASES.md](PHASES.md) for what's next.
+What NoChickenCall does as of **v1.0.0-rc.1**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **name, username and password**. No email or phone number.
@@ -41,7 +41,7 @@ What NoChickenCall does as of **v0.6.1** (the MVP). See [PHASES.md](PHASES.md) f
 ## App (PWA)
 - Install to the home screen on iPhone (Share → Add to Home Screen) or Android/desktop (Install button).
 - Full-screen app with icon and launch screen.
-- Opens with no signal. Changes need a connection.
+- **Works offline (read-only):** trips, expenses, balances, who owes who and settle-up as last loaded, with a “Last updated” time. Trips are downloaded in the background. Changes need a connection and are greyed out offline. The offline copy is wiped on log out.
 - "New version ready · Refresh" when an update is out. It waits while you're typing.
 - "Waking up the server…" notice when the free server is starting up.
 

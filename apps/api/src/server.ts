@@ -4,6 +4,7 @@ import { createDb } from '@ncc/db';
 import { runMigrations } from '@ncc/db/migrate';
 import { sql } from 'drizzle-orm';
 import { createApp } from './app.ts';
+import { cleanup } from './maintenance.ts';
 import { FxUnavailableError, type FxProvider } from './fx/provider.ts';
 import { loadConfig } from './config.ts';
 
@@ -55,6 +56,12 @@ const app = createApp({
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`NoChickenCall API listening on :${info.port} (${config.nodeEnv})`);
 });
+
+if (database) {
+  const run = () => cleanup(database.db).catch((err) => console.error('[maintenance] cleanup failed', err));
+  void run();
+  setInterval(run, 6 * 60 * 60 * 1000).unref();
+}
 
 function shutdown() {
   server.close();

@@ -58,7 +58,14 @@ export function uuidParam(c: Context, name: string): string {
   return v;
 }
 
+/**
+ * Client IP for rate limiting. Prefer headers set by the hosting edge (True-Client-IP /
+ * CF-Connecting-IP); otherwise the LAST X-Forwarded-For hop, which our proxy appended. The first
+ * hop is whatever the client claimed, so it can't be trusted.
+ */
 export function clientIp(c: Context): string {
-  const fwd = c.req.header('x-forwarded-for');
-  return fwd?.split(',')[0]?.trim() || c.req.header('x-real-ip') || 'unknown';
+  const edge = c.req.header('true-client-ip') ?? c.req.header('cf-connecting-ip');
+  if (edge) return edge.trim();
+  const hops = c.req.header('x-forwarded-for')?.split(',').map((h) => h.trim()).filter(Boolean);
+  return hops?.at(-1) || c.req.header('x-real-ip') || 'unknown';
 }

@@ -111,3 +111,14 @@ describe('keep-alive', () => {
     expect(pinged).toBe(false);
   });
 });
+
+describe('hardening', () => {
+  it('rejects oversized request bodies', async () => {
+    const res = await setup().request('/api/v1/health', {
+      method: 'POST',
+      headers: { origin: 'https://ncc.test', 'x-requested-with': 'ncc', 'content-type': 'application/json' },
+      body: JSON.stringify({ x: 'a'.repeat(70 * 1024) }),
+    });
+    expect(res.status).toBe(413);
+  });
+});

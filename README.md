@@ -7,7 +7,7 @@ NoChickenCall is a group-trip expense app. Log what everyone pays during the tri
 
 It's a Progressive Web App: open it in your phone's browser and add it to your home screen. There's nothing to download from an app store.
 
-**Live app:** https://nochickencall.onrender.com
+**Live app:** https://nochickencall.onrender.com · **Version:** 1.0.0-rc.1
 
 ## Highlights
 
@@ -17,7 +17,7 @@ It's a Progressive Web App: open it in your phone's browser and add it to your h
 - 💸 Settle up with the proven minimum number of transfers
 - ✅ "I've sent it" / "Got it" tracking until everyone is settled
 - 🔗 Invite friends with a link or QR code, no email or phone number needed
-- 📲 Installs on iPhone and Android, and opens even with no signal
+- 📲 Installs on iPhone and Android; trips stay viewable with no signal
 
 ## Documentation
 
@@ -27,7 +27,7 @@ It's a Progressive Web App: open it in your phone's browser and add it to your h
 | [Features](docs/FEATURES.md) | Everything the app does today |
 | [Phases](docs/PHASES.md) | Roadmap and what each phase delivered |
 | [Changelog](CHANGELOG.md) | What changed, version by version |
-| [Architecture](docs/ARCHITECTURE.md) · [Deploy](docs/DEPLOY.md) · [Testing](docs/TESTING.md) | Technical docs (final versions come at release) |
+| [Architecture](docs/ARCHITECTURE.md) · [Deploy](docs/DEPLOY.md) · [Testing](docs/TESTING.md) · [Security](docs/SECURITY.md) | Technical docs |
 | [Spec](docs/SPEC.md) | Original product requirements |
 
 ## Run it locally

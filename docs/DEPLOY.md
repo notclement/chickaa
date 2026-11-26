@@ -68,6 +68,15 @@ Render dashboard → service → **Settings → Custom Domains**. Then add an en
 Any platform that builds a Dockerfile works the same way (Fly.io config is in `fly.toml`):
 set `DATABASE_URL` and `PUBLIC_ORIGIN`, expose port `$PORT`.
 
+## Housekeeping
+The server deletes sessions that ended more than 7 days ago and old rate-limit records every 6 hours. No cron job is needed.
+
+## Release checklist
+1. CI green on `main` (typecheck, unit, API, e2e, Docker build).
+2. Render shows the new commit deployed; **Account → App status** shows the same version for app and server.
+3. Real-phone checklist in [TESTING.md](TESTING.md) on iPhone + Android.
+4. Tag the release: `git tag v1.0.0 && git push --tags`, and move the CHANGELOG entry from `-rc` to the final version.
+
 ## Rollback
 Render dashboard → service → **Events** → pick a previous deploy → **Rollback**.
 Migrations are forward-only: create a Neon branch (snapshot) before deploying schema changes.

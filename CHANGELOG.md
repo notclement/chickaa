@@ -2,6 +2,19 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.0.0-rc.1] - 2026-11-26 · Phase 8 (release candidate)
+Becomes 1.0.0 once the real-phone checklist in docs/TESTING.md passes.
+### Security
+- Request bodies capped at 64 KB.
+- Rate limiting uses the client IP set by the hosting edge / last proxy hop, not a client-supplied header.
+- Expired/revoked sessions and old rate-limit records are cleaned up automatically.
+- Production dependencies audited: no known vulnerabilities.
+### Fixed
+- Settle-up plans are independently re-checked to settle every balance to the cent before they're saved.
+- Extremely large totals can no longer overflow the optimiser; they use the verified fallback plan.
+### Docs
+- New **SECURITY.md** (security + financial-integrity review). Final ARCHITECTURE (as built, known limitations), DEPLOY and TESTING.
+
 ## [0.7.0] - 2026-11-26 · Phase 7
 ### Added
 - **Offline viewing:** with no signal, the app still shows your trips, expenses, balances, who owes who and the settle-up plan as last loaded, with an **“Offline · view only · Last updated 3:42 pm”** banner.

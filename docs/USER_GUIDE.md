@@ -72,7 +72,10 @@ Open the trip → **⚙︎ Settings**:
 - **Delete trip:** only when everyone's balance is zero. Type the trip name to confirm. It disappears for all members.
 
 ## 8. Using it without signal
-The installed app still opens with no signal and shows **"Offline · view only"**. Adding or changing anything needs a connection.
+With no signal (e.g. on a plane or a remote beach), the installed app still opens and shows your trips, expenses, balances, **who owes who** and the settle-up plan as they were last loaded. A banner says **“Offline · view only · Last updated 3:42 pm”**.
+- Trips listed on *My trips* are downloaded in the background while you're online, so they're ready offline.
+- Adding or changing anything needs a connection; those buttons say “needs a connection”.
+- Logging out removes the offline copy from the phone.
 
 ## 9. Updates
 When a new version is out, you'll see **"New version ready · Refresh"** at the bottom. Tap **Refresh**. It won't interrupt you while you're typing.

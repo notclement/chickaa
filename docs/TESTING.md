@@ -1,12 +1,14 @@
 # Testing
 
+As of v1.0.0-rc.1: 146 core + 61 API + 13 web unit/integration tests, 36 end-to-end runs (18 tests × Android phone + desktop Chrome), plus a live exchange-rate check in CI.
+
 ## Automated
 
 | Suite | Command | Covers |
 |---|---|---|
 | Financial core (Vitest + fast-check) | `pnpm --filter @ncc/core test` | money parsing/formatting (no float traps), exact FX conversion with banker’s rounding, largest-remainder allocation, all split methods, multi-payer expenses, cross-currency reconciliation, ledger balances (only confirmed transfers count), **property tests: thousands of random expenses always reconcile to the cent and balances always sum to zero**; a guard test fails if float helpers appear; coverage gate 100% lines |
 | Unit + integration (Vitest) | `pnpm test` (integration tests need `DATABASE_URL`) | currencies, platform detection, link parsing, API health/ping, CSRF guard, static serving, cache + security headers; **auth** (register, Argon2id storage, login/logout, session revocation, rate limiting, recovery codes, password change), **trips** (create, validation, privacy, owner-only edits, base-currency lock), **invites** (hashed tokens, preview, join, no duplicate members, max uses under concurrency, expiry, revoke, closed trips) |
-| E2E (Playwright) | `pnpm build && pnpm test:e2e` | **register → trip → invite link + QR → friend joins**, logout/login, password reset with recovery code, redirect-after-login, bad invite links; manifest validity + icon sizes, iOS tags + launch screens, **Chrome installability (zero errors)**, SW registration, **offline launch on any route**, no API data in Cache Storage, **update prompt → Refresh activates new version**, brand hierarchy, no horizontal scroll, no CSP violations |
+| E2E (Playwright) | `pnpm build && pnpm test:e2e` | **register → trip → invite link + QR → friend joins**, expenses (multi-payer, THB/manual rates, all splits, edit/delete, no `/trips/undefined` requests), who owes who, **settle up → sent → confirmed → all settled**, trip deletion rules, profile photo compression, **offline viewing + disabled writes + logout wipe + prefetch**, logout/login, password reset with recovery code, redirect-after-login, bad invite links; manifest validity + icon sizes, iOS tags + launch screens, **Chrome installability (zero errors)**, SW registration, **offline launch on any route**, no API data in Cache Storage, **update prompt → Refresh activates new version**, brand hierarchy, no horizontal scroll, no CSP violations |
 
 E2E runs as an Android phone (Pixel 7) and desktop Chrome. Set `CHROME_PATH` to use an installed Chrome
 instead of Playwright's bundled Chromium. CI runs everything on each push (`.github/workflows/ci.yml`).
@@ -50,6 +52,13 @@ Run on the staging URL after each phase. ✅ = pass.
 - [ ] Recipient: “Got it ✓” (and try “Not received” with a note on another transfer)
 - [ ] Progress updates on both phones; last confirmation shows “🎉 All settled!”
 - [ ] Owner: Reopen trip with an unpaid transfer → it’s recalculated after finishing again
+
+### Offline (Phase 7)
+- [ ] Open a trip, then turn on Airplane mode and force-quit the installed app
+- [ ] Reopen: trips, the trip page, who owes who and settle up show with “Offline · view only · Last updated …”
+- [ ] Add expense / Finish / I’ve sent it are greyed out (“needs a connection”)
+- [ ] Turn Airplane mode off: banner disappears, buttons come back
+- [ ] Log out and turn Airplane mode on again: nothing from the trip is shown
 
 ### Android, Chrome
 - [ ] Install card shows **Install app** button → native install dialog → icon on home screen (round mask looks right)

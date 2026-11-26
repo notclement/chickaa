@@ -1,6 +1,7 @@
 import type { HealthResponse } from '@ncc/contracts';
 import type { Db } from '@ncc/db';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { loadSession } from './auth/session.ts';
 import type { Config } from './config.ts';
 import { errorResponse, HttpError } from './lib/http.ts';
@@ -40,6 +41,14 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
     if (!c.res.headers.has('Cache-Control')) c.res.headers.set('Cache-Control', 'no-store');
   });
   api.use('*', csrfGuard(config.publicOrigin));
+  // No legitimate request is bigger than this (photos are ≤ 24 KB, checked again in their route).
+  api.use(
+    '*',
+    bodyLimit({
+      maxSize: 64 * 1024,
+      onError: (c) => c.json({ error: { code: 'TOO_LARGE', message: 'Request too large' } }, 413),
+    }),
+  );
 
   /** Keep-alive target for uptime pingers: never touches the database, so Neon can still sleep. */
   api.get('/ping', (c) => c.text('pong'));

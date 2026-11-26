@@ -90,6 +90,9 @@ export function greedySettlement(balances: NetBalance[]): Transfer[] {
   return settleGroup(validate(balances));
 }
 
+/** Sums live in a BigInt64Array; far beyond any real trip, but never let them wrap silently. */
+const SAFE_TOTAL = 2n ** 62n;
+
 function exactGroups(people: Person[]): Person[][] {
   const n = people.length;
   const size = 1 << n;
@@ -147,7 +150,8 @@ export function planSettlement(balances: NetBalance[], opts: { exactLimit?: numb
   const limit = opts.exactLimit ?? EXACT_LIMIT;
   if (people.length === 0) return { transfers: [], algorithm: 'exact_dp', provenOptimal: true, nonZeroCount: 0 };
 
-  if (people.length <= limit) {
+  const owed = people.reduce((s, p) => (p.net > 0n ? s + p.net : s), 0n);
+  if (people.length <= limit && owed < SAFE_TOTAL) {
     const transfers = exactGroups(people).flatMap(settleGroup).sort(order(people));
     return { transfers, algorithm: 'exact_dp', provenOptimal: true, nonZeroCount: people.length };
   }
@@ -165,4 +169,21 @@ export function planSettlement(balances: NetBalance[], opts: { exactLimit?: numb
   }
   transfers.push(...settleGroup(people.filter((p) => !used.has(p.idx))));
   return { transfers: transfers.sort(order(people)), algorithm: 'heuristic', provenOptimal: false, nonZeroCount: people.length };
+}
+
+/**
+ * Independent check that a list of transfers settles the given balances exactly: every debtor pays
+ * precisely what they owe, every creditor receives precisely what they're owed, nobody pays
+ * themselves, every amount is positive. Used by the server before storing a plan.
+ */
+export function verifySettlement(balances: NetBalance[], transfers: Transfer[]): boolean {
+  const left = new Map<string, bigint>();
+  for (const b of balances) left.set(b.userId, b.net);
+  for (const t of transfers) {
+    if (t.amount <= 0n || t.from === t.to || !left.has(t.from) || !left.has(t.to)) return false;
+    left.set(t.from, left.get(t.from)! + t.amount);
+    left.set(t.to, left.get(t.to)! - t.amount);
+  }
+  for (const v of left.values()) if (v !== 0n) return false;
+  return true;
 }

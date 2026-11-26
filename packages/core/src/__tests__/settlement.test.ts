@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { EXACT_LIMIT, FinanceError, greedySettlement, planSettlement, type NetBalance, type Transfer } from '../index.ts';
+import { EXACT_LIMIT, FinanceError, greedySettlement, planSettlement, verifySettlement, type NetBalance, type Transfer } from '../index.ts';
 
 const B = (pairs: [string, number][]): NetBalance[] => pairs.map(([userId, n]) => ({ userId, net: BigInt(n) }));
 
@@ -153,5 +153,26 @@ describe('planSettlement', () => {
       ...B([['a', 5], ['b', -5]]),
     ];
     expect(planSettlement(balances)).toMatchObject({ algorithm: 'exact_dp', provenOptimal: true, nonZeroCount: 2 });
+  });
+});
+
+describe('verifySettlement', () => {
+  const balances = B([['a', 30], ['b', -10], ['c', -20]]);
+  it('accepts an exact settlement', () => {
+    expect(verifySettlement(balances, planSettlement(balances).transfers)).toBe(true);
+  });
+  it('rejects anything that leaves a cent behind or is malformed', () => {
+    expect(verifySettlement(balances, [{ from: 'b', to: 'a', amount: 10n }])).toBe(false);
+    expect(verifySettlement(balances, [{ from: 'b', to: 'a', amount: 10n }, { from: 'c', to: 'a', amount: 21n }])).toBe(false);
+    expect(verifySettlement(balances, [{ from: 'a', to: 'a', amount: 1n }])).toBe(false);
+    expect(verifySettlement(balances, [{ from: 'b', to: 'a', amount: 0n }])).toBe(false);
+    expect(verifySettlement(balances, [{ from: 'x', to: 'a', amount: 1n }])).toBe(false);
+  });
+  it('huge balances never overflow: they skip the 64-bit DP and use the heuristic', () => {
+    const big = 2n ** 63n;
+    const bs = [{ userId: 'a', net: big }, { userId: 'b', net: -big }];
+    const plan = planSettlement(bs);
+    expect(plan.algorithm).toBe('heuristic');
+    expect(verifySettlement(bs, plan.transfers)).toBe(true);
   });
 });

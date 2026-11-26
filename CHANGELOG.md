@@ -2,6 +2,10 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [0.6.1] - 2026-11-26
+### Added
+- **Who owes who** on the trip page: a live, Splitwise-style list (e.g. "Bob owes Alice S$40.00") using the fewest transfers, always up to date while the trip is active. Once the trip is finished it shows each payment's status.
+
 ## [0.6.0] - 2026-11-26 · MVP
 ### Added
 - Transfer tracking: **I've sent it** (payer), **Got it ✓** and **Not received** with a note (recipient), **Cancel** (owner).

@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
-import { BalanceList } from '../components/BalanceList.tsx';
 import { ExpenseRow } from '../components/ExpenseRow.tsx';
+import { WhoOwesWho } from '../components/WhoOwesWho.tsx';
 import { currencyLabel, formatDateRange } from '../lib/format.ts';
 import { money } from '../lib/money.ts';
 import { useTrip } from '../lib/useTrip.ts';
@@ -17,7 +17,7 @@ export function TripScreen() {
   const { trip, error, loading, reload, nameOf } = useTrip(id);
   const balances = useApi(() => api<BalancesResponse>(`/trips/${id}/balances`), [id]);
   const expenses = useApi(() => api<ExpenseListResponse>(`/trips/${id}/expenses`), [id]);
-  const settle = useApi(() => api<SettlementResponse>(`/trips/${id}/settlement`), [id, trip?.status]);
+  const settle = useApi(() => api<SettlementResponse>(`/trips/${id}/settlement`), [id, trip?.status, balances.data?.totalSpent]);
 
   if (loading && !trip) return <Loading />;
   if (error) {
@@ -97,6 +97,8 @@ export function TripScreen() {
         </Link>
       )}
 
+      {settle.data && (balances.data?.expenseCount ?? 0) > 0 && <WhoOwesWho tripId={trip.id} data={settle.data} me={me.id} nameOf={nameOf} />}
+
       <Card>
         <div className="flex items-center justify-between">
           <h2 className="font-bold">Recent expenses</h2>
@@ -120,18 +122,6 @@ export function TripScreen() {
           </ul>
         )}
       </Card>
-
-      {balances.data && balances.data.expenseCount > 0 && (
-        <Card>
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold">Balances</h2>
-            <Link to={`/trips/${trip.id}/balances`} className="text-sm font-semibold text-tangerine-600">
-              Details
-            </Link>
-          </div>
-          <BalanceList data={balances.data} me={me.id} nameOf={nameOf} />
-        </Card>
-      )}
 
       <Card>
         <h2 className="font-bold">

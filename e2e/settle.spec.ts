@@ -12,6 +12,14 @@ test('settle up: preview → finish trip → payer marks sent → recipient conf
   await alice.getByRole('button', { name: /^Save/ }).click();
   await expect(alice.getByTestId('my-balance')).toHaveText('S$40.00');
 
+  // Splitwise-style summary right on the trip page, live while the trip is active.
+  await expect(alice.getByTestId('owes-row')).toHaveCount(1);
+  await expect(alice.getByTestId('owes-row')).toContainText('Bob owes you');
+  await expect(alice.getByTestId('owes-row')).toContainText('S$40.00');
+  await bob.goto(tripPath);
+  await expect(bob.getByTestId('owes-row')).toContainText('You owe Alice');
+  await alice.reload();
+
   // Preview.
   await alice.getByTestId('settle-entry').click();
   await expect(alice.getByTestId('transfer-count')).toHaveText('1 transfer settles everyone');
@@ -54,5 +62,6 @@ test('settle up: preview → finish trip → payer marks sent → recipient conf
   await bob.goto(tripPath);
   await expect(bob.getByTestId('settle-entry')).toContainText('All settled');
   await expect(bob.getByTestId('my-balance')).toHaveText('settled up');
+  await expect(bob.getByTestId('owes-row')).toContainText('paid ✓');
   await bobCtx.close();
 });

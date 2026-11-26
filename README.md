@@ -13,7 +13,7 @@ It's a Progressive Web App: open it in your phone's browser and add it to your h
 
 - 🧾 Expenses in 17 currencies, converted at that day's rate (or your own)
 - ➗ Split equally, by amounts, by percentage, or by shares, with one or several payers
-- ⚖️ Live balances that always add up to the cent
+- ⚖️ Live **who owes who**, with balances that always add up to the cent
 - 💸 Settle up with the proven minimum number of transfers
 - ✅ "I've sent it" / "Got it" tracking until everyone is settled
 - 🔗 Invite friends with a link or QR code, no email or phone number needed

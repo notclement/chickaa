@@ -77,7 +77,7 @@ test('add expenses (multi-payer, foreign currency, shares), see balances, edit a
   await expect(alice.getByTestId('expense-row').filter({ hasText: 'massage' })).toHaveCount(0);
 
   // 5. Balances screen.
-  await alice.getByRole('link', { name: 'Details' }).click();
+  await alice.getByTestId('who-owes-who').getByRole('link', { name: 'Balances' }).click();
   await expect(alice.getByRole('heading', { name: 'Balances' })).toBeVisible();
   const rows = alice.getByTestId('balance-row');
   await expect(rows.filter({ hasText: 'You' })).toContainText('S$20.00');

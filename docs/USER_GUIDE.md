@@ -52,7 +52,8 @@ If the signal drops while saving, you'll see **"Not sure it saved"**. Just tap S
 
 ## 5. Check balances
 - The trip page shows the **trip total** and **you get back / you owe**.
-- **Balances → Details** lists everyone's paid amount, share and net position:
+- **Who owes who**, also on the trip page, shows right now who should pay whom and how much (e.g. *Bob owes Alice S$40.00*). It updates live as expenses are added, so you can check it any time during the trip.
+- **Who owes who → Balances** lists everyone's paid amount, share and net position:
   green = gets money back, red = owes, grey = settled up.
 
 ## 6. Settle up

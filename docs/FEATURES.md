@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v0.6.0** (the MVP). See [PHASES.md](PHASES.md) for what's next.
+What NoChickenCall does as of **v0.6.1** (the MVP). See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **name, username and password**. No email or phone number.
@@ -26,6 +26,7 @@ What NoChickenCall does as of **v0.6.0** (the MVP). See [PHASES.md](PHASES.md) f
 
 ## Balances
 - Trip total, **your balance** ("you get back" / "you owe"), and everyone's position.
+- **Who owes who** on the trip page at any time: a live list like "Bob owes Alice S$40.00", using the fewest transfers. It updates with every expense, before the trip is finished.
 - Calculated in whole cents, never with floating-point decimals, so balances always add up to exactly zero.
 
 ## Settling up

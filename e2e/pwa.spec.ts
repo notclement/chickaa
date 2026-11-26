@@ -27,8 +27,8 @@ test.describe('PWA manifest', () => {
     const m = await res.json();
     expect(m).toMatchObject({
       id: '/',
-      name: 'NoChickenCall (别计较)',
-      short_name: 'NoChickenCall',
+      name: 'ChickAA (别鸡较)',
+      short_name: 'ChickAA',
       scope: '/',
       display: 'standalone',
       orientation: 'portrait',
@@ -107,7 +107,7 @@ test.describe('service worker & offline', () => {
     await page.reload();
     // The shell loads from the phone; signing in needs a connection.
     await expect(page.getByText('Offline · view only')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Can’t reach NoChickenCall' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Can’t reach ChickAA' })).toBeVisible();
     await expect(page.getByText('You’re offline. Connect to the internet and try again.')).toBeVisible();
 
     // Deep link that was never visited: still served by the precached shell.
@@ -138,10 +138,10 @@ test.describe('service worker & offline', () => {
 });
 
 test.describe('mobile layout & brand', () => {
-  test('brand lockup: English name primary, 别计较 smaller underneath', async ({ page }) => {
+  test('brand lockup: English name primary, 别鸡较 smaller underneath', async ({ page }) => {
     await page.goto('/');
-    const en = page.getByText('NoChickenCall', { exact: false }).first();
-    const zh = page.getByText('别计较').first();
+    const en = page.getByText('ChickAA', { exact: false }).first();
+    const zh = page.getByText('别鸡较').first();
     await expect(en).toBeVisible();
     await expect(zh).toBeVisible();
     const enSize = await en.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));

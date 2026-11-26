@@ -139,7 +139,7 @@ export function InviteScreen() {
 function ShareCard({ trip, created, onAnother }: { trip: TripDetail; created: CreatedInvitation; onAnother: () => void }) {
   const [svg, setSvg] = useState('');
   const [copied, setCopied] = useState(false);
-  const text = `Join “${trip.name}” on NoChickenCall 🐣 so we can split trip costs:`;
+  const text = `Join “${trip.name}” on ChickAA 🐣 so we can split trip costs:`;
 
   useEffect(() => {
     void QRCode.toString(created.url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#2B2118', light: '#FFFFFF' } }).then(setSvg);

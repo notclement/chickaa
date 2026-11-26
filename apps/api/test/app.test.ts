@@ -8,7 +8,7 @@ import { loadConfig } from '../src/config.ts';
 function setup(pingDb = async () => true) {
   const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
   mkdirSync(join(dist, 'assets'));
-  writeFileSync(join(dist, 'index.html'), '<!doctype html><title>NoChickenCall</title>');
+  writeFileSync(join(dist, 'index.html'), '<!doctype html><title>ChickAA</title>');
   writeFileSync(join(dist, 'sw.js'), 'self.x=1');
   writeFileSync(join(dist, 'manifest.webmanifest'), '{}');
   writeFileSync(join(dist, 'assets', 'app-abc123.js'), 'console.log(1)');
@@ -54,7 +54,7 @@ describe('static PWA serving', () => {
   it('falls back to index.html for app routes so deep links work', async () => {
     const res = await setup().request('/trips/123');
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain('NoChickenCall');
+    expect(await res.text()).toContain('ChickAA');
     expect(res.headers.get('cache-control')).toBe('no-cache');
   });
 

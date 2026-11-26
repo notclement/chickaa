@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# NoChickenCall: one container serves the API (/api/v1) and the PWA (everything else).
+# ChickAA: one container serves the API (/api/v1) and the PWA (everything else).
 
 FROM node:22-slim AS build
 WORKDIR /app

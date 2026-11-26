@@ -1,5 +1,5 @@
-/** The NoChickenCall chick mark (same drawing as the app icon, see scripts/brand.mjs). */
-export function Logo({ className = 'size-12', title = 'NoChickenCall' }: { className?: string; title?: string }) {
+/** The ChickAA chick mark (same drawing as the app icon, see scripts/brand.mjs). */
+export function Logo({ className = 'size-12', title = 'ChickAA' }: { className?: string; title?: string }) {
   return (
     <svg viewBox="0 0 512 512" className={className} role="img" aria-label={title}>
       <rect width="512" height="512" rx="112" fill="#FF7A3D" />

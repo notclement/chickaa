@@ -32,7 +32,7 @@ export function SupporterScreen() {
 
   const amount = data?.amount ? `S$${data.amount.replace(/\.00$/, '')}` : 'S$5';
   const message = data
-    ? `Hi,\nJust transferred you ${amount} to show my support for NoChickenCall\nHere is my reference code: ${data.reference}\nThank you!`
+    ? `Hi,\nJust transferred you ${amount} to show my support for ChickAA\nHere is my reference code: ${data.reference}\nThank you!`
     : '';
   const telegram = `https://t.me/${DEVELOPER.telegram}?text=${encodeURIComponent(message)}`;
   const copy = async (what: 'ref' | 'msg', text: string) => {
@@ -55,7 +55,7 @@ export function SupporterScreen() {
             💛
           </div>
           <h2 className="mt-2 text-lg font-extrabold">Thank you for supporting!</h2>
-          <p className="mt-1 text-sm text-ink-700">You’re a lifetime Supporter. It genuinely helps keep NoChickenCall running.</p>
+          <p className="mt-1 text-sm text-ink-700">You’re a lifetime Supporter. It genuinely helps keep ChickAA running.</p>
         </Card>
       ) : (
         me.supporter?.active && (
@@ -67,7 +67,7 @@ export function SupporterScreen() {
 
       <Card>
         <p className="text-sm text-ink-700">
-          NoChickenCall is a small side project by one person, so this part is a bit manual for now. Sorry it’s a little janky! If you’d like to chip in{' '}
+          ChickAA is a small side project by one person, so this part is a bit manual for now. Sorry it’s a little janky! If you’d like to chip in{' '}
           <b>{amount}</b> towards development and hosting, you’ll be a <b>💛 lifetime Supporter</b>. Thank you!
         </p>
       </Card>
@@ -103,7 +103,7 @@ export function SupporterScreen() {
               {png && (
                 <a
                   href={png}
-                  download="nochickencall-paynow.png"
+                  download="chickaa-paynow.png"
                   className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-4 font-bold ring-1 ring-ink-900/10"
                 >
                   Save QR

@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 /**
- * NoChickenCall service worker (ARCHITECTURE.md §3.3).
+ * ChickAA service worker (ARCHITECTURE.md §3.3).
  *
  *  - Precaches the app shell + hashed static assets (revisioned by Workbox → cache versioning).
  *  - Every navigation is answered with the precached index.html, so any screen opens offline.

@@ -54,7 +54,7 @@ const app = createApp({
 });
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`NoChickenCall API listening on :${info.port} (${config.nodeEnv})`);
+  console.log(`ChickAA API listening on :${info.port} (${config.nodeEnv})`);
 });
 
 if (database) {

@@ -1,6 +1,6 @@
-// NoChickenCall brand: one source of truth for colours + the logo mark.
+// ChickAA brand: one source of truth for colours + the logo mark.
 // The mark is an original illustration: a round, content little chick keeping its beak shut.
-// "No chicken call" ≈ "不计较 (bù jì jiào)": no squabbling over every cent.
+// "ChickAA": AA制 is Chinese slang for going dutch; 别鸡较 (bié jī jiào) puns 别计较 "don't squabble over every cent" with 鸡 (chicken).
 export const COLORS = {
   tangerine: '#FF7A3D',
   sun: '#FFC93C',

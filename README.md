@@ -1,13 +1,13 @@
-# NoChickenCall
-<sub>别计较</sub>
+# ChickAA
+<sub>别鸡较 · split bills with friends (formerly NoChickenCall)</sub>
 
 **Travel together. Don't sweat the split.**
 
-NoChickenCall is a group-trip expense app. Log what everyone pays during the trip, in any currency. At the end it works out the **fewest bank transfers** that settle everyone up, and tracks those payments until the trip is fully settled.
+ChickAA is a group-trip expense app. Log what everyone pays during the trip, in any currency. At the end it works out the **fewest bank transfers** that settle everyone up, and tracks those payments until the trip is fully settled.
 
 It's a Progressive Web App: open it in your phone's browser and add it to your home screen. There's nothing to download from an app store.
 
-**Live app:** https://nochickencall.onrender.com · **Version:** 1.6.0
+**Live app:** https://nochickencall.onrender.com · **Version:** 1.7.0
 
 ## Highlights
 

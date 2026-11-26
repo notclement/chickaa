@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v1.6.0**. See [PHASES.md](PHASES.md) for what's next.
+What ChickAA does as of **v1.7.0**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **display name, user ID and password**. No email or phone number.

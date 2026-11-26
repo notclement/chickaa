@@ -1,13 +1,13 @@
 # User guide
 
-A step-by-step guide to using NoChickenCall on a trip.
+A step-by-step guide to using ChickAA on a trip.
 
 ## 1. Get the app
 1. Open **https://nochickencall.onrender.com** on your phone.
 2. Add it to your home screen:
    - **iPhone:** in Safari, tap **Share** → **Add to Home Screen** → **Add**.
    - **Android:** tap **Install app** on the home page (or Chrome menu → *Install app*).
-3. Open NoChickenCall from the home screen icon from now on.
+3. Open ChickAA from the home screen icon from now on.
 
 > On iPhone, the home-screen app and Safari keep separate logins, so log in once inside the installed app.
 

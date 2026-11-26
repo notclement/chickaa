@@ -20,7 +20,7 @@ export function AppShell() {
       <header className="sticky top-0 z-20 bg-cream/90 backdrop-blur supports-[backdrop-filter]:bg-cream/75">
         <div className="pt-safe px-safe pb-3">
           <div className="mx-auto flex max-w-xl items-center justify-between">
-            <Link to="/" aria-label="NoChickenCall home" className="rounded-xl">
+            <Link to="/" aria-label="ChickAA home" className="rounded-xl">
               <BrandLockup size="sm" />
             </Link>
             {user && (

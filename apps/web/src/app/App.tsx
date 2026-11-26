@@ -93,7 +93,7 @@ function Unreachable() {
       <div className="text-5xl" aria-hidden>
         📡
       </div>
-      <h1 className="mt-3 text-xl font-extrabold">Can’t reach NoChickenCall</h1>
+      <h1 className="mt-3 text-xl font-extrabold">Can’t reach ChickAA</h1>
       <p className="mt-1 text-ink-700">
         {navigator.onLine ? 'The server didn’t answer. It may be waking up; give it a moment.' : 'You’re offline. Connect to the internet and try again.'}
       </p>

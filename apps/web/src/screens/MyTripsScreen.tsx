@@ -98,7 +98,7 @@ function JoinByLinkButton() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const token = extractInviteToken(value);
-    if (!token) return setError('That doesn’t look like a NoChickenCall invite link');
+    if (!token) return setError('That doesn’t look like a ChickAA invite link');
     navigate(`/join/${token}`);
   };
 

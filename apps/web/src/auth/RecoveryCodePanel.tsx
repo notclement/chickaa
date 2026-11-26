@@ -21,7 +21,7 @@ export function RecoveryCodePanel({ code, onDone, doneLabel = 'Continue' }: { co
 
   const share = async () => {
     try {
-      await navigator.share({ title: 'NoChickenCall recovery code', text: `NoChickenCall recovery code: ${code}` });
+      await navigator.share({ title: 'ChickAA recovery code', text: `ChickAA recovery code: ${code}` });
     } catch {
       /* cancelled */
     }

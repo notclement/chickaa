@@ -16,7 +16,7 @@ export function InviteFriendScreen() {
   if (error) return <ErrorState message={errorMessage(error)} onRetry={reload} />;
   if (loading && !data) return <Loading />;
   const url = `${location.origin}/r/${data!.code}`;
-  const text = 'Split trip costs with me on NoChickenCall 🐣 Sign up with my link and we both get a month as Supporter:';
+  const text = 'Split trip costs with me on ChickAA 🐣 Sign up with my link and we both get a month as Supporter:';
   const enc = encodeURIComponent;
   const canShare = typeof navigator.share === 'function';
 
@@ -31,7 +31,7 @@ export function InviteFriendScreen() {
   };
   const share = async () => {
     try {
-      await navigator.share({ title: 'NoChickenCall', text, url });
+      await navigator.share({ title: 'ChickAA', text, url });
     } catch {
       /* cancelled */
     }
@@ -90,7 +90,7 @@ export function InviteFriendScreen() {
         <SupporterPerks />
       </Card>
       <p className="px-2 text-center text-xs text-ink-500">
-        Supporters help keep NoChickenCall free for everyone.
+        Supporters help keep ChickAA free for everyone.
       </p>
       <ButtonLink to="/supporter" variant="ghost" block>
         💛 Or become a lifetime Supporter

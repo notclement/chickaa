@@ -20,7 +20,7 @@ Run on the staging URL after each phase. ✅ = pass.
 ### iPhone, Safari (iOS 17+)
 - [ ] Home page loads, no horizontal scroll, text readable, nothing under the notch
 - [ ] Install card shows the 3 **Share → Add to Home Screen** steps
-- [ ] Add to Home Screen: icon is the chick on orange, name "NoChickenCall"
+- [ ] Add to Home Screen: icon is the chick on orange, name "ChickAA"
 - [ ] Launch from home screen: orange/cream **launch screen**, then app opens **full-screen** (no Safari bars)
 - [ ] App status says **Opened as: Home-screen app** and **Works without internet: Ready**
 - [ ] Airplane mode → force-quit → reopen: app opens, **"Offline · view only"** banner shows

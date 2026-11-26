@@ -53,7 +53,7 @@ export function JoinScreen() {
             🎉
           </div>
           <h1 className="mt-2 text-xl font-extrabold">You’re in {p.trip?.name}!</h1>
-          <p className="mt-1 text-ink-700">If you use NoChickenCall from your home screen, open it there. The trip will be waiting.</p>
+          <p className="mt-1 text-ink-700">If you use ChickAA from your home screen, open it there. The trip will be waiting.</p>
           <ButtonLink to={`/trips/${joinedTripId}`} block>
             Go to the trip
           </ButtonLink>

@@ -2,6 +2,13 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.7.0] - 2026-11-26 · New name: ChickAA
+### Changed
+- **NoChickenCall is now ChickAA** (AA制 is Chinese slang for going dutch), with the Chinese name **别鸡较** (bié jī jiào: 别计较 "don't squabble over every cent", with 鸡 for chicken). Same chick, same colours, same link (nochickencall.onrender.com); accounts and trips are unchanged.
+- Installed apps pick up the new name on Android/desktop automatically; on iPhone the home-screen label updates if you remove and re-add the app.
+- Under the name: **别鸡较 · split bills with friends**.
+- `chickaa` look-alike IDs are reserved.
+
 ## [1.6.0] - 2026-11-26 · Disable accounts
 ### Added
 - **Admin: disable an account** (Users → tap a person → Disable account…, optional private note). Only possible once they're settled in every trip. Disabled accounts move to a **🚫 Disabled** folder and can be enabled again.

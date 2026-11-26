@@ -38,8 +38,8 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
         id: '/',
-        name: 'NoChickenCall (别计较)',
-        short_name: 'NoChickenCall',
+        name: 'ChickAA (别鸡较)',
+        short_name: 'ChickAA',
         description: "Travel together. Don't sweat the split.",
         lang: 'en',
         start_url: '/?source=pwa',

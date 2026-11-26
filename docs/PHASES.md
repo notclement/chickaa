@@ -16,10 +16,11 @@
 | — | Supporter status, Invite a friend, admin supporter controls | ✅ Done | 1.4.0 |
 | — | Become a Supporter page (PayNow QR + reference, Telegram) | ✅ Done | 1.5.0 |
 | — | Admin: disable accounts (read-only), Disabled folder | ✅ Done | 1.6.0 |
+| — | Renamed to ChickAA · 别鸡较 | ✅ Done | 1.7.0 |
 | — | Supporter extras (exports, trip recap, receipt photos) + PayNow | ⏳ Later | — |
 
 ## 1 · Foundation + PWA shell
-Project setup, brand (NoChickenCall / 别计较 and the chick icon), installable app with icons and iPhone launch screens, offline app shell, update prompt, install instructions, security headers, Docker, automated tests and CI.
+Project setup, brand (ChickAA / 别鸡较 and the chick icon), installable app with icons and iPhone launch screens, offline app shell, update prompt, install instructions, security headers, Docker, automated tests and CI.
 
 ## 2 · Accounts and trips
 Sign-up without email or phone, recovery codes, log in/out, password reset, trips with base currency, members, invite links with QR codes, expiry and usage limits, and the join flow. The server is woken in the background when the app opens.

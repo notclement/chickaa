@@ -41,7 +41,7 @@ export function InstallCard({ force = false }: { force?: boolean }) {
         </div>
         <div className="flex-1">
           <h2 id="install-title" className="font-bold">
-            Put NoChickenCall on your home screen
+            Put ChickAA on your home screen
           </h2>
           <p className="mt-1 text-sm text-ink-700">Opens full-screen like a normal app, and works with no signal.</p>
         </div>
@@ -71,7 +71,7 @@ export function InstallCard({ force = false }: { force?: boolean }) {
             Choose <b>Add to Home Screen</b> <span aria-hidden>➕</span>
           </Step>
           <Step n={3}>
-            Tap <b>Add</b>, then open NoChickenCall from your home screen
+            Tap <b>Add</b>, then open ChickAA from your home screen
           </Step>
         </ol>
       )}

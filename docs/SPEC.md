@@ -1,3 +1,5 @@
+> Note (v1.7.0): the app was renamed **ChickAA · 别鸡较**. This spec keeps the original name NoChickenCall.
+
 NoChickenCall (别计较)
 
 Complete Product Requirements & Development Specification

@@ -1,4 +1,4 @@
-# Deploying NoChickenCall
+# Deploying ChickAA
 
 Production is **one Docker container** (API + PWA, same origin) plus **Postgres**.
 Current setup: **Render free web service** (Singapore) + **Neon free Postgres**. Neither needs a credit card.

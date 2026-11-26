@@ -1,5 +1,5 @@
 /**
- * NoChickenCall database schema. See docs/ARCHITECTURE.md §5.
+ * ChickAA database schema. See docs/ARCHITECTURE.md §5.
  *
  * Money rules:
  *  - every amount is BIGINT minor units (mode: 'bigint' → JS bigint, never float)

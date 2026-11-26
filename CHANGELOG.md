@@ -6,7 +6,7 @@ All notable changes to NoChickenCall. Dates are Singapore time.
 ### Added
 - **Become a Supporter** (Account → 💛 Support): a one-off S$5 by PayNow for lifetime Supporter.
   - Shows the PayNow QR with **your own reference** (`NCC-XXXXXXXX`) built in, plus Copy reference and Save QR (for paying on the same phone).
-  - Then one tap opens **Telegram to @mashpotatas** with the reference and your User ID filled in; the admin switches on Lifetime.
+  - Then one tap opens **Telegram to @mashpotatas** with a ready-made thank-you message and the reference; the admin switches on Lifetime.
   - The QR's PayNow details come from the server setting `PAYNOW_QR_PAYLOAD`, not the code.
 - **Admin → Users:** each person's PayNow reference; search by reference.
 

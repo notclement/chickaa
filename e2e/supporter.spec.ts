@@ -15,5 +15,5 @@ test('Supporter page: PayNow QR with my reference, Telegram message', async ({ p
   const href = (await page.getByTestId('telegram-link').getAttribute('href'))!;
   expect(href.startsWith('https://t.me/mashpotatas?text=')).toBe(true);
   expect(decodeURIComponent(href)).toContain(ref);
-  expect(decodeURIComponent(href)).toContain(`@${id}`);
+  expect(decodeURIComponent(href)).toContain(`Just transferred you S$5 to show my support for NoChickenCall\nHere is my reference code: ${ref}\nThank you!`);
 });

@@ -31,7 +31,7 @@ export function SupporterScreen() {
 
   const amount = data?.amount ? `S$${data.amount}` : 'S$5';
   const message = data
-    ? `Hi Clement! I’ve PayNow-ed ${amount} to support NoChickenCall 💛\nReference: ${data.reference}\nUser ID: @${me.username}`
+    ? `Hi,\nJust transferred you ${amount.replace(/\.00$/, '')} to show my support for NoChickenCall\nHere is my reference code: ${data.reference}\nThank you!`
     : '';
   const telegram = `https://t.me/${DEVELOPER.telegram}?text=${encodeURIComponent(message)}`;
   const copy = async (what: 'ref' | 'msg', text: string) => {
@@ -66,8 +66,8 @@ export function SupporterScreen() {
 
       <Card>
         <p className="text-sm text-ink-700">
-          NoChickenCall is a small side project by one person, so this part is a bit manual for now. Sorry it’s a little janky! A one-off <b>{amount}</b> supports
-          the development and hosting and makes you a <b>💛 lifetime Supporter</b>.
+          NoChickenCall is a small side project by one person, so this part is a bit manual for now. Sorry it’s a little janky! If you’d like to chip in <b>{amount}</b>
+          towards development and hosting, you’ll be a <b>💛 lifetime Supporter</b>. Thank you!
         </p>
         <p className="mt-2 text-xs text-ink-500">Everything you use today stays free. Supporter extras (exports, trip recap, receipt photos) are on the way.</p>
       </Card>
@@ -77,7 +77,7 @@ export function SupporterScreen() {
       ) : (
         <>
           <Card>
-            <h2 className="font-bold">1. Pay {amount} with PayNow</h2>
+            <h2 className="font-bold">1. Chip in {amount} by PayNow</h2>
             <div
               className="mx-auto mt-4 w-60 overflow-hidden rounded-2xl bg-white p-2 ring-1 ring-ink-900/10 [&_svg]:h-auto [&_svg]:w-full"
               role="img"
@@ -107,7 +107,7 @@ export function SupporterScreen() {
               )}
             </div>
             <p className="mt-3 text-xs text-ink-500">
-              Paying on this phone? Save the QR (or screenshot it), then in your bank app choose <b>Scan QR → upload from photos</b>. The reference is filled in
+              On this phone? Save the QR (or screenshot it), then in your bank app choose <b>Scan QR → upload from photos</b>. The reference is filled in
               for you; if your bank asks, use <b>{data.reference}</b>.
             </p>
           </Card>
@@ -115,7 +115,7 @@ export function SupporterScreen() {
           <Card>
             <h2 className="font-bold">2. Tell me on Telegram</h2>
             <p className="mt-1 text-sm text-ink-700">
-              Send your reference to <b>@{DEVELOPER.telegram}</b>. Once I see the payment, I’ll switch on your lifetime Supporter status (usually within a day).
+              Send your reference to <b>@{DEVELOPER.telegram}</b>. Once I see your transfer, I’ll switch on your lifetime Supporter status (usually within a day).
             </p>
             <a
               href={telegram}

@@ -7,10 +7,11 @@ import {
   UpdateProfileRequest,
   type AuthWithRecoveryResponse,
   type MeResponse,
+  type ReferralResponse,
   type SessionResponse,
 } from '@ncc/contracts';
 import { schema } from '@ncc/db';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { timingSafeEqual } from 'node:crypto';
 import { ADMIN_USERNAME } from '@ncc/contracts';
@@ -19,15 +20,9 @@ import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession
 import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';
 import { rateLimit, rateLimitHit, rateLimitPeek, resetRateLimit } from '../lib/rateLimit.ts';
 import type { Env } from '../lib/types.ts';
+import { newReferralCode, publicUser, REFERRAL_CAP_MONTHS } from '../lib/users.ts';
 
 const MIN = 60;
-const publicUser = (u: { id: string; username: string; displayName: string; avatarVersion: number | null; isAdmin: boolean }) => ({
-  id: u.id,
-  username: u.username,
-  displayName: u.displayName,
-  avatarVersion: u.avatarVersion,
-  isAdmin: u.isAdmin,
-});
 
 /** Constant-time comparison of the one-time admin setup code. */
 function adminCodeMatches(expected: string | undefined, given: string | undefined): boolean {
@@ -59,12 +54,37 @@ authRoutes.post('/register', async (c) => {
     hashSecret(recovery.normalized),
   ]);
 
+  // "Invite a friend": a valid code gives both people a month as Supporter.
+  const code = input.referralCode?.toUpperCase();
+  const [referrer] = code
+    ? await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.referralCode, code)).limit(1)
+    : [];
+
   let user;
   try {
-    [user] = await db
-      .insert(schema.users)
-      .values({ username: input.username, displayName: input.displayName, passwordHash, recoveryCodeHash, isAdmin })
-      .returning();
+    user = await db.transaction(async (tx) => {
+      const [u] = await tx
+        .insert(schema.users)
+        .values({
+          username: input.username,
+          displayName: input.displayName,
+          passwordHash,
+          recoveryCodeHash,
+          isAdmin,
+          ...(referrer && { referredBy: referrer.id, supporterUntil: sql`now() + interval '1 month'` }),
+        })
+        .returning();
+      if (referrer) {
+        // +1 month from whichever is later, now or their current end; capped, and lifetime is untouched.
+        await tx
+          .update(schema.users)
+          .set({
+            supporterUntil: sql`least(greatest(coalesce(${schema.users.supporterUntil}, now()), now()) + interval '1 month', now() + ${sql.raw(`interval '${REFERRAL_CAP_MONTHS} months'`)})`,
+          })
+          .where(and(eq(schema.users.id, referrer.id), eq(schema.users.supporterLifetime, false)));
+      }
+      return u!;
+    });
   } catch (err) {
     if (isUniqueViolation(err)) throw new HttpError(409, 'USERNAME_TAKEN', 'That username is taken');
     throw err;
@@ -109,6 +129,31 @@ authRoutes.post('/logout', async (c) => {
 /** The app calls this on start. Signed out is a normal answer, not an error. */
 authRoutes.get('/session', (c) => {
   const res: SessionResponse = { user: c.var.user };
+  return c.json(res);
+});
+
+/** My "Invite a friend" code (made on first use), and how many people joined with it. */
+authRoutes.get('/me/referral', requireAuth, async (c) => {
+  const db = c.var.db;
+  const me = currentUser(c);
+  let [row] = await db.select({ code: schema.users.referralCode }).from(schema.users).where(eq(schema.users.id, me.id));
+  for (let i = 0; !row?.code && i < 5; i++) {
+    try {
+      [row] = await db
+        .update(schema.users)
+        .set({ referralCode: newReferralCode() })
+        .where(and(eq(schema.users.id, me.id), isNull(schema.users.referralCode)))
+        .returning({ code: schema.users.referralCode });
+      if (!row) [row] = await db.select({ code: schema.users.referralCode }).from(schema.users).where(eq(schema.users.id, me.id));
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err; // code clash: try another
+    }
+  }
+  const [{ invited }] = (await db
+    .select({ invited: sql<number>`count(*)::int` })
+    .from(schema.users)
+    .where(eq(schema.users.referredBy, me.id))) as [{ invited: number }];
+  const res: ReferralResponse = { code: row!.code!, invited, months: invited };
   return c.json(res);
 });
 

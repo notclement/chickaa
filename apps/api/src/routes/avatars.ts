@@ -1,3 +1,4 @@
+import { publicUser } from '../lib/users.ts';
 import { AVATAR_MAX_BYTES, AVATAR_TYPES, type MeResponse } from '@ncc/contracts';
 import { schema } from '@ncc/db';
 import { and, eq, isNull, sql } from 'drizzle-orm';
@@ -39,8 +40,8 @@ myAvatarRoutes.put('/', async (c) => {
     .update(users)
     .set({ avatar: Buffer.from(buf), avatarType: type, avatarVersion: sql`coalesce(${users.avatarVersion}, 0) + 1`, updatedAt: new Date() })
     .where(eq(users.id, me.id))
-    .returning({ id: users.id, username: users.username, displayName: users.displayName, avatarVersion: users.avatarVersion, isAdmin: users.isAdmin });
-  const res: MeResponse = { user: u! };
+    .returning();
+  const res: MeResponse = { user: publicUser(u!) };
   return c.json(res);
 });
 
@@ -50,8 +51,8 @@ myAvatarRoutes.delete('/', async (c) => {
     .update(users)
     .set({ avatar: null, avatarType: null, avatarVersion: null, updatedAt: new Date() })
     .where(eq(users.id, me.id))
-    .returning({ id: users.id, username: users.username, displayName: users.displayName, avatarVersion: users.avatarVersion, isAdmin: users.isAdmin });
-  const res: MeResponse = { user: u! };
+    .returning();
+  const res: MeResponse = { user: publicUser(u!) };
   return c.json(res);
 });
 

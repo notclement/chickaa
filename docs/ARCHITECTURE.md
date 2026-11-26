@@ -549,6 +549,15 @@ Each phase ends with something runnable and deployed to a staging URL.
 - `suggestCategory(description)` in core: keyword lists per category (English, Singlish, Chinese); the keyword appearing earliest wins, whole words for Latin text. The form uses it until the user picks a category.
 - Filtering is client-side on the Expenses list (`?category=`).
 
+## 12b. Supporter + referrals (v1.4.0)
+
+- `users.supporter_until`, `supporter_lifetime`, `referral_code` (unique, 8 chars without 0/O/1/I/L, made on first `GET /auth/me/referral`), `referred_by`. Migration `0008_supporter_referrals`.
+- `User.supporter = { active, lifetime, until }` on every user response; active = lifetime or `until > now`.
+- `POST /auth/register` with `referralCode`: in one transaction the new user gets `now() + 1 month` and `referred_by`; the referrer gets +1 month from `max(now, until)`, capped at now + 12 months (lifetime untouched). Unknown codes are ignored.
+- Web: `/r/:code` stores the code in localStorage for 30 days and opens sign-up, which sends it.
+- Admin: `POST /admin/users/:id/supporter {action: month|lifetime|remove}`; `/admin/users` includes supporter, `referredBy`, `invited`.
+- Nothing checks supporter status yet; future extras gate on `user.supporter.active`.
+
 ## 13. Known limitations
 
 - **Free hosting sleeps** after 15 idle minutes (Render free). The app wakes it on open and shows "Waking up the server…"; the cron pinger keeps it awake.

@@ -2,6 +2,12 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.4.0] - 2026-11-26 · Supporter + Invite a friend
+### Added
+- **💛 Supporter** status: a month at a time or lifetime. Shown as a badge on Account. Nothing is paywalled yet; everything stays free.
+- **Invite a friend** (Account): a personal link (`/r/<code>`). When a friend creates an account with it, **you both get 1 month as Supporter**. More friends stack more months (up to 12 months ahead).
+- **Admin → Users:** Supporter status, who invited them and how many they invited; buttons for **+1 month**, **Lifetime** and **Remove**.
+
 ## [1.3.0] - 2026-11-26 · Categories
 ### Added
 - **Expense categories:** 🍜 Food & drinks · 🚕 Transport · 🏨 Stay · 🎟️ Activities · 🛍️ Shopping · 🛒 Groceries · 🧾 Fees & bills · 💵 Cash / loan · 📦 Other. Picked automatically from the description (English, Singlish and Chinese keywords) until you choose one; shown as the expense's icon.

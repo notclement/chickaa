@@ -13,6 +13,8 @@
 | — | Fresh start + admin, test report run 2 fixes | ✅ Done | 1.1.0 |
 | — | Admin users list (users and their trips) | ✅ Done | 1.2.0 |
 | — | Expense categories + filter, admin permanent delete | ✅ Done | 1.3.0 |
+| — | Supporter status, Invite a friend, admin supporter controls | ✅ Done | 1.4.0 |
+| — | Supporter extras (exports, trip recap, receipt photos) + PayNow | ⏳ Later | — |
 
 ## 1 · Foundation + PWA shell
 Project setup, brand (NoChickenCall / 别计较 and the chick icon), installable app with icons and iPhone launch screens, offline app shell, update prompt, install instructions, security headers, Docker, automated tests and CI.

@@ -70,6 +70,8 @@ export const RegisterRequest = z.object({
   displayName: DisplayName,
   /** Only for the reserved "admin" ID: must match ADMIN_SETUP_CODE on the server. */
   adminSetupCode: z.string().max(200).optional(),
+  /** From an "Invite a friend" link. Unknown codes are ignored. */
+  referralCode: z.string().trim().max(32).optional(),
 });
 export type RegisterRequest = z.input<typeof RegisterRequest>;
 
@@ -93,8 +95,18 @@ export const User = z.object({
   /** null = no photo. Otherwise part of the photo URL: /api/v1/users/:id/avatar?v=N */
   avatarVersion: z.number().nullable(),
   isAdmin: z.boolean(),
+  supporter: z.object({
+    active: z.boolean(),
+    lifetime: z.boolean(),
+    /** End of a time-limited supporter period (may be in the past). */
+    until: z.string().nullable(),
+  }),
 });
 export type User = z.infer<typeof User>;
+
+/** GET /me/referral: this user's "Invite a friend" link details. */
+export const ReferralResponse = z.object({ code: z.string(), invited: z.number(), months: z.number() });
+export type ReferralResponse = z.infer<typeof ReferralResponse>;
 
 export const MeResponse = z.object({ user: User });
 export type MeResponse = z.infer<typeof MeResponse>;
@@ -457,8 +469,17 @@ export const AdminUser = z.object({
   createdAt: z.string(),
   /** Last time any of their sessions was used, if ever. */
   lastSeenAt: z.string().nullable(),
+  supporter: User.shape.supporter,
+  /** @id of whoever invited them, if anyone. */
+  referredBy: z.string().nullable(),
+  /** How many people signed up with their invite link. */
+  invited: z.number(),
   trips: z.array(AdminUserTrip),
 });
 export type AdminUser = z.infer<typeof AdminUser>;
+/** POST /admin/users/:id/supporter */
+export const SetSupporterRequest = z.object({ action: z.enum(['month', 'lifetime', 'remove']) });
+export type SetSupporterRequest = z.infer<typeof SetSupporterRequest>;
+
 export const AdminUsersResponse = z.object({ users: z.array(AdminUser) });
 export type AdminUsersResponse = z.infer<typeof AdminUsersResponse>;

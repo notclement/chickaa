@@ -10,6 +10,8 @@ import { ExpenseListScreen } from '../screens/ExpenseListScreen.tsx';
 import { SettleUpScreen } from '../screens/SettleUpScreen.tsx';
 import { LoginScreen, RecoverScreen, RegisterScreen } from '../screens/AuthScreens.tsx';
 import { InviteScreen } from '../screens/InviteScreen.tsx';
+import { InviteFriendScreen } from '../screens/InviteFriendScreen.tsx';
+import { ReferralLanding } from '../screens/ReferralLanding.tsx';
 import { JoinScreen } from '../screens/JoinScreen.tsx';
 import { MyTripsScreen } from '../screens/MyTripsScreen.tsx';
 import { NotFoundScreen } from '../screens/NotFoundScreen.tsx';
@@ -31,6 +33,7 @@ export function App() {
               <Route path="recover" element={<RecoverScreen />} />
             </Route>
             <Route path="join/:token" element={<JoinScreen />} />
+            <Route path="r/:code" element={<ReferralLanding />} />
             <Route element={<SignedInOnly />}>
               <Route path="trips/new" element={<CreateTripScreen />} />
               <Route path="trips/:id" element={<TripScreen />} />
@@ -43,6 +46,7 @@ export function App() {
               <Route path="expenses/:eid" element={<ExpenseDetailScreen />} />
               <Route path="expenses/:eid/edit" element={<EditExpenseScreen />} />
               <Route path="account" element={<AccountScreen />} />
+              <Route path="invite-friend" element={<InviteFriendScreen />} />
               <Route path="admin" element={<AdminScreen />} />
             </Route>
             <Route path="*" element={<NotFoundScreen />} />

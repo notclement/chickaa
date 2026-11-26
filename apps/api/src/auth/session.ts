@@ -1,3 +1,4 @@
+import { publicUser } from '../lib/users.ts';
 import { schema, type Db } from '@ncc/db';
 import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -85,6 +86,8 @@ export const loadSession: MiddlewareHandler<Env> = async (c, next) => {
         displayName: schema.users.displayName,
         avatarVersion: schema.users.avatarVersion,
         isAdmin: schema.users.isAdmin,
+        supporterUntil: schema.users.supporterUntil,
+        supporterLifetime: schema.users.supporterLifetime,
       })
       .from(schema.sessions)
       .innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
@@ -98,7 +101,7 @@ export const loadSession: MiddlewareHandler<Env> = async (c, next) => {
       .limit(1);
 
     if (row) {
-      c.set('user', { id: row.id, username: row.username, displayName: row.displayName, avatarVersion: row.avatarVersion, isAdmin: row.isAdmin });
+      c.set('user', publicUser(row));
       c.set('sessionId', row.sessionId);
       if (Date.now() - row.lastSeenAt.getTime() > DAY_MS) {
         await c.var.db

@@ -6,6 +6,7 @@ import { useAuth, useMe } from '../auth/AuthContext.tsx';
 import { RecoveryCodePanel } from '../auth/RecoveryCodePanel.tsx';
 import { AppStatusCard } from '../components/AppStatusCard.tsx';
 import { MadeBy } from '../components/MadeBy.tsx';
+import { SupporterBadge } from '../components/SupporterBadge.tsx';
 import { InstallCard } from '../components/InstallCard.tsx';
 import { ProfilePhotoCard } from '../components/ProfilePhotoCard.tsx';
 import { Avatar, Button, ButtonLink, Card, FormError, ScreenTitle, TextField } from '../ui/index.tsx';
@@ -22,13 +23,18 @@ export function AccountScreen() {
       <Card className="flex items-center gap-3 !p-4">
         <Avatar name={me.displayName} id={me.id} />
         <div>
-          <div className="font-bold">{me.displayName}</div>
+          <div className="flex flex-wrap items-center gap-2 font-bold">
+            {me.displayName} <SupporterBadge supporter={me.supporter} />
+          </div>
           <div className="text-sm text-ink-500">
             User ID <b>@{me.username}</b> · can’t be changed
           </div>
           <div className="text-xs text-ink-500">Your display name (below) is what friends see; change it any time.</div>
         </div>
       </Card>
+      <ButtonLink to="/invite-friend" variant="secondary" block>
+        🎁 Invite a friend
+      </ButtonLink>
       {me.isAdmin && (
         <ButtonLink to="/admin" variant="secondary" block>
           🛡️ Admin: trips &amp; users

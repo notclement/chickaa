@@ -75,6 +75,16 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   const row = page.getByTestId('admin-user').filter({ hasText: `@${aliceId}` });
   await expect(row.getByTestId('user-trip-count')).toHaveText('2 trips');
   await row.locator('summary').click();
+  // Supporter controls.
+  const status = row.getByTestId('supporter-status');
+  await expect(status).toHaveText('No');
+  await row.getByRole('button', { name: '+1 month' }).click();
+  await expect(status).toHaveText(/^Yes, until /);
+  await row.getByRole('button', { name: 'Lifetime' }).click();
+  await expect(status).toHaveText('Lifetime');
+  await expect(row.getByTestId('supporter-badge')).toContainText('lifetime');
+  await row.getByRole('button', { name: 'Remove' }).click();
+  await expect(status).toHaveText('No');
   await expect(row.getByTestId('admin-user-trip').filter({ hasText: busy }).getByTestId('trip-tag')).toHaveText('On-going');
   await row.getByTestId('admin-user-trip').filter({ hasText: empty }).click();
   await expect(page.getByTestId('admin-view')).toBeVisible();

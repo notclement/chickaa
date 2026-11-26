@@ -1,10 +1,11 @@
-import { DeleteTripRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@ncc/contracts';
+import { DeleteTripRequest, SetSupporterRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@ncc/contracts';
 import { schema } from '@ncc/db';
 import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
 import { body, HttpError, notFound, uuidParam } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
+import { supporterOf } from '../lib/users.ts';
 
 const {
   trips,
@@ -110,6 +111,10 @@ adminRoutes.get('/users', async (c) => {
       displayName: users.displayName,
       isAdmin: users.isAdmin,
       createdAt: users.createdAt,
+      supporterUntil: users.supporterUntil,
+      supporterLifetime: users.supporterLifetime,
+      referredBy: sql<string | null>`(select r.username::text from users r where r.id = "users"."referred_by")`,
+      invited: sql<number>`(select count(*)::int from users r where r.referred_by = "users"."id")`,
       lastSeenMs: sql<number | null>`(select (extract(epoch from max(s.last_seen_at)) * 1000)::float8 from sessions s where s.user_id = "users"."id")`,
     })
     .from(users)
@@ -137,6 +142,9 @@ adminRoutes.get('/users', async (c) => {
       displayName: p.displayName,
       isAdmin: p.isAdmin,
       createdAt: p.createdAt.toISOString(),
+      supporter: supporterOf(p),
+      referredBy: p.referredBy,
+      invited: p.invited,
       lastSeenAt: p.lastSeenMs == null ? null : new Date(Number(p.lastSeenMs)).toISOString(),
       trips: (perUser.get(p.id) ?? []).sort((a, b) => a.order - b.order).map((x) => x.trip),
     })),
@@ -173,4 +181,27 @@ adminRoutes.delete('/trips/:id', async (c) => {
   });
   if (c.var.config.nodeEnv !== 'test') console.log(`admin hard-deleted trip ${tripId} (${trip.name})`);
   return c.json({ deleted: true });
+});
+
+/**
+ * Set someone's Supporter status: +1 month (from now or their current end, whichever is later),
+ * lifetime, or remove both.
+ */
+adminRoutes.post('/users/:id/supporter', async (c) => {
+  const db = c.var.db;
+  const id = uuidParam(c, 'id');
+  const { action } = await body(c, SetSupporterRequest);
+  const set =
+    action === 'lifetime'
+      ? { supporterLifetime: true }
+      : action === 'remove'
+        ? { supporterLifetime: false, supporterUntil: null }
+        : { supporterUntil: sql`greatest(coalesce(${users.supporterUntil}, now()), now()) + interval '1 month'` };
+  const [u] = await db
+    .update(users)
+    .set(set)
+    .where(eq(users.id, id))
+    .returning({ supporterUntil: users.supporterUntil, supporterLifetime: users.supporterLifetime });
+  if (!u) throw notFound();
+  return c.json({ supporter: supporterOf(u) });
 });

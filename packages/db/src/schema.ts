@@ -61,6 +61,14 @@ export const users = pgTable('users', {
   recoveryCodeHash: text('recovery_code_hash').notNull(),
   /** Only the reserved ID "admin" (created with the one-time ADMIN_SETUP_CODE) has this. */
   isAdmin: boolean('is_admin').notNull().default(false),
+  /** Supporter until this time (referral months, or given by the admin). */
+  supporterUntil: ts('supporter_until'),
+  /** Supporter forever (paid supporters, set by the admin). */
+  supporterLifetime: boolean('supporter_lifetime').notNull().default(false),
+  /** Code in this user's "Invite a friend" link. */
+  referralCode: text('referral_code').unique(),
+  /** Who invited this user (set at sign-up from an invite-a-friend link). */
+  referredBy: uuid('referred_by'),
   /** Profile photo: tiny (≤ 24 KB) square WebP/JPEG, compressed in the browser before upload. */
   avatar: bytea('avatar'),
   avatarType: text('avatar_type'),

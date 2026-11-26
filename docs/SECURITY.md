@@ -52,6 +52,7 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 - Usernames can be checked for availability at sign-up (inherent to username accounts).
 - Anyone holding a **valid** invite link sees the trip name, owner name and member count before joining (by design).
 - The admin ID (`admin`) is public in the repo; it's protected by the private one-time code, which is useless once the account exists.
+- **Referral farming:** someone could make fake accounts with their own invite link to collect Supporter months. Sign-ups are rate-limited (50/h per network) and referral months stop at 12 months ahead. Nothing valuable is behind Supporter yet; revisit (e.g. reward only after the friend's first expense) before paid extras ship.
 - No email/phone means a lost password **and** lost recovery code can't be recovered.
 
 ## Reporting

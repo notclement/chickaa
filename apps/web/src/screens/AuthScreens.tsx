@@ -8,6 +8,7 @@ import { RecoveryCodePanel } from '../auth/RecoveryCodePanel.tsx';
 import { safeNext } from '../auth/safeNext.ts';
 import { BrandLockup } from '../components/BrandLockup.tsx';
 import { MadeBy } from '../components/MadeBy.tsx';
+import { clearReferral, readReferral } from '../lib/referral.ts';
 import { useUnsavedChanges } from '../pwa/unsavedChanges.ts';
 import { Button, Card, FormError, TextField } from '../ui/index.tsx';
 
@@ -108,6 +109,7 @@ export function RegisterScreen() {
   const [error, setError] = useState<string>();
   const [fields, setFields] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<AuthWithRecoveryResponse | null>(null);
+  const [referralCode] = useState(readReferral);
   useUnsavedChanges(!created && Object.values(form).some(Boolean));
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
@@ -122,7 +124,12 @@ export function RegisterScreen() {
     setFields({});
     try {
       const { adminSetupCode, ...rest } = form;
-      const res = await post<AuthWithRecoveryResponse>('/auth/register', isAdminId ? { ...rest, adminSetupCode } : rest);
+      const res = await post<AuthWithRecoveryResponse>('/auth/register', {
+        ...rest,
+        ...(isAdminId && { adminSetupCode }),
+        ...(referralCode && { referralCode }),
+      });
+      clearReferral();
       setCreated(res); // show the recovery code before entering the app
     } catch (err) {
       setFields(fieldErrors(err));
@@ -152,6 +159,11 @@ export function RegisterScreen() {
       <Card>
         <h1 className="text-xl font-extrabold">Create your account</h1>
         <p className="mt-1 text-sm text-ink-700">No email or phone number needed.</p>
+        {referralCode && (
+          <p className="mt-3 rounded-2xl bg-sun-300/40 px-3 py-2 text-sm font-medium" data-testid="referral-banner">
+            🎁 A friend invited you. You’ll both get <b>1 month as 💛 Supporter</b> when you sign up.
+          </p>
+        )}
         <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
           <TextField
             label="Display name"

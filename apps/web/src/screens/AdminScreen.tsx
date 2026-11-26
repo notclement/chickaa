@@ -1,9 +1,10 @@
-import type { AdminTrip, AdminTripsResponse, AdminUsersResponse, TripTag } from '@ncc/contracts';
+import type { AdminTrip, AdminTripsResponse, AdminUser, AdminUsersResponse, SetSupporterRequest, TripTag } from '@ncc/contracts';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
+import { SupporterBadge, supporterUntilText } from '../components/SupporterBadge.tsx';
 import { TAGS, TripTagChip } from '../components/TripTagChip.tsx';
 import { formatDateRange } from '../lib/format.ts';
 import { money } from '../lib/money.ts';
@@ -111,6 +112,48 @@ function TripsTab() {
   );
 }
 
+/** Supporter status for one user: +1 month, lifetime, or remove. */
+function SupporterControls({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
+  const [busy, setBusy] = useState<SetSupporterRequest['action'] | null>(null);
+  const [error, setError] = useState<string>();
+  const act = async (action: SetSupporterRequest['action']) => {
+    setBusy(action);
+    setError(undefined);
+    try {
+      await api(`/admin/users/${user.id}/supporter`, { method: 'POST', json: { action } });
+      onChanged();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const s = user.supporter;
+  return (
+    <div className="mb-2 space-y-2 rounded-2xl bg-cream p-3" data-testid="supporter-controls">
+      <div className="text-sm">
+        <b>Supporter:</b>{' '}
+        <span data-testid="supporter-status">{s.active ? (s.lifetime ? 'Lifetime' : `Yes, ${supporterUntilText(s)}`) : 'No'}</span>
+      </div>
+      <div className="text-xs text-ink-500">
+        {user.referredBy ? `Invited by @${user.referredBy}` : 'Signed up without an invite'} · invited {user.invited}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <Button variant="secondary" loading={busy === 'month'} disabled={!!busy || s.lifetime} onClick={() => void act('month')}>
+          +1 month
+        </Button>
+        <Button variant="secondary" loading={busy === 'lifetime'} disabled={!!busy || s.lifetime} onClick={() => void act('lifetime')}>
+          Lifetime
+        </Button>
+        <Button variant="ghost" loading={busy === 'remove'} disabled={!!busy || (!s.active && !s.until)} onClick={() => void act('remove')}>
+          Remove
+        </Button>
+      </div>
+      <FormError message={error} />
+    </div>
+  );
+}
+
 /** Permanently delete a trip (e.g. test trips). Typing the exact name confirms. */
 function HardDelete({ trip, onDeleted }: { trip: AdminTrip; onDeleted: () => void }) {
   const [open, setOpen] = useState(false);
@@ -190,6 +233,7 @@ function UsersTab() {
                       <div className="truncate font-bold">
                         {u.displayName}
                         {u.isAdmin && <span className="ml-2 rounded-full bg-ink-900 px-2 py-0.5 text-xs text-cream">Admin</span>}
+                        <SupporterBadge supporter={u.supporter} className="ml-2" />
                       </div>
                       <div className="truncate text-sm text-ink-500">@{u.username}</div>
                       <div className="text-xs text-ink-500">
@@ -203,6 +247,7 @@ function UsersTab() {
                     <span aria-hidden className="text-ink-500 transition-transform group-open:rotate-90">›</span>
                   </summary>
                   <div className="border-t border-ink-900/5 px-4 pb-3 pt-2">
+                    <SupporterControls user={u} onChanged={reload} />
                     {u.trips.length === 0 ? (
                       <p className="py-1 text-sm text-ink-500">Not in any trip yet.</p>
                     ) : (

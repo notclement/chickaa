@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername } from '@ncc/core';
+import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername, EXPENSE_CATEGORIES } from '@ncc/core';
 
 export { ADMIN_USERNAME };
 
@@ -259,8 +259,12 @@ export const RateChoice = z.discriminatedUnion('source', [
 ]);
 export type RateChoice = z.infer<typeof RateChoice>;
 
+export const ExpenseCategory = z.enum(EXPENSE_CATEGORIES);
+export type ExpenseCategory = z.infer<typeof ExpenseCategory>;
+
 const ExpenseFields = {
   description: z.string().trim().min(1, 'What was it for?').max(80),
+  category: ExpenseCategory.default('other'),
   notes: z.string().trim().max(500).nullable().optional(),
   expenseDate: IsoDate,
   currency: CurrencyCode,
@@ -282,6 +286,7 @@ export const Expense = z.object({
   tripId: z.string(),
   clientId: z.string(),
   description: z.string(),
+  category: ExpenseCategory,
   notes: z.string().nullable(),
   expenseDate: z.string(),
   currency: z.string(),

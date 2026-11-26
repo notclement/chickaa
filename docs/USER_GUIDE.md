@@ -40,7 +40,7 @@ On the trip page, tap **＋ Add expense**.
 1. **Amount + currency.** Pick the currency you actually paid in. For a foreign currency, the app shows the day's rate and the converted amount:
    - **Use my own rate** if your bank gave you a different rate.
    - If the trip owner set a **fixed rate** (Settings), it's used automatically.
-2. **What was it for?** and the **date**.
+2. **What was it for?**, the **category** and the **date**. The category is picked for you from what you type ("Grab to airport" → 🚕 Transport, "晚餐" → 🍜 Food & drinks); tap another one to change it.
 3. **Paid by:** tap who paid. If several people paid, tap **Several people** and enter each amount until it says **✓ Adds up**.
 4. **Split**:
    - **Equally:** tick who shares it.
@@ -50,6 +50,8 @@ On the trip page, tap **＋ Add expense**.
 5. Tap **Save**.
 
 If the signal drops while saving, you'll see **"Not sure it saved"**. Just tap Save again; it can't be added twice.
+
+**Filter by category:** on the trip's **Expenses** list, tap a category (🍜 Food & drinks, 🚕 Transport, 🏨 Stay, 🎟️ Activities, 🛍️ Shopping, 🛒 Groceries, 🧾 Fees & bills, 💵 Cash / loan, 📦 Other) to see only those and their total.
 
 **Edit or delete:** tap an expense → **Edit** / **Delete** (you can change expenses you added; the trip owner can change any). The expense's **History** shows every change.
 
@@ -96,6 +98,7 @@ The app has one admin account (`admin`). It can only be created with a private o
   - ⚪ **Ended:** finished and fully settled.
   - 🔴 **Deleted:** deleted by the owner.
 - Switch to the **Users** tab to see every account: display name, @ID, when they joined and were last active. Search by name or ID, and tap a person to see the trips they own or are in (with each trip's tag). Tap a trip to open it.
+- **Delete permanently…** on a trip in the list removes it and everything in it for everyone, forever (for test trips). Type the trip name to confirm.
 - Opening a trip you're not in is **read-only**. In trips you've joined, you're a normal member.
 
 ## FAQ

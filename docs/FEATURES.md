@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v1.2.0**. See [PHASES.md](PHASES.md) for what's next.
+What NoChickenCall does as of **v1.3.0**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **display name, user ID and password**. No email or phone number.
@@ -19,7 +19,8 @@ What NoChickenCall does as of **v1.2.0**. See [PHASES.md](PHASES.md) for what's 
 - The owner can **delete** a trip once everyone's balance is exactly zero, by typing the trip name to confirm.
 
 ## Expenses
-- Any member can add an expense: amount, currency, description, date, notes.
+- Any member can add an expense: amount, currency, description, category, date, notes.
+- **Categories:** 🍜 Food & drinks · 🚕 Transport · 🏨 Stay · 🎟️ Activities · 🛍️ Shopping · 🛒 Groceries · 🧾 Fees & bills · 💵 Cash / loan · 📦 Other. Suggested from the description (English, Singlish and Chinese keywords); the expense list filters by category with a total.
 - **Paid by** one person or several (with a live "left to assign" counter).
 - **Split** equally, by exact amounts, by percentage (down to 0.01%), or by shares (e.g. 2 : 1 : 1). Everyone's share updates live as you type.
 - **Currencies:** each expense uses that day's official reference rate, the trip's fixed rate (set by the owner), or a rate you type in. The rate is saved with the expense and **never changes by itself**.
@@ -46,6 +47,7 @@ What NoChickenCall does as of **v1.2.0**. See [PHASES.md](PHASES.md) for what's 
 - One admin account, the reserved ID `admin`, which can only be created with a private one-time code.
 - **All trips** screen with filters and colour-coded tags: 🔵 Active · 🟢 On-going · 🟣 Needs finishing · 🟠 Pending settlement · ⚪ Ended · 🔴 Deleted.
 - **Users** tab: every account (display name, @ID, joined, last active), searchable; expand one to see the trips they own or belong to, with tags.
+- **Delete permanently** any trip (test trips), typing its name to confirm.
 - Opens any trip **read-only**. In trips the admin has joined, they're a normal member.
 
 ## App (PWA)

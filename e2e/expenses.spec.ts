@@ -15,6 +15,7 @@ test('add expenses (multi-payer, foreign currency, shares), see balances, edit a
   await alice.getByRole('link', { name: /Add expense/ }).click();
   await alice.getByLabel('Amount').fill('300');
   await alice.getByLabel('What was it for?').fill('Seafood dinner');
+  await expect(alice.getByRole('radio', { name: /Food & drinks/ })).toHaveAttribute('aria-checked', 'true'); // suggested
   await alice.getByRole('button', { name: 'Several people' }).click();
   await alice.getByLabel('Alice amount').fill('200');
   await alice.getByLabel('Bob amount').fill('90');
@@ -136,4 +137,29 @@ test('owner can delete a trip only once everyone is settled', async ({ page, bro
   await bob.goto('/');
   await expect(bob.getByText(name)).toHaveCount(0);
   await bobCtx.close();
+});
+
+test('categories: suggested from the description, picked by hand, filterable', async ({ page, browser }) => {
+  const { alice, tripUrl } = await tripWithTwo(page, browser);
+  const add = async (what: string, amount: string, pick?: string) => {
+    await alice.getByRole('link', { name: /Add expense/ }).first().click();
+    await alice.getByLabel('Amount').fill(amount);
+    await alice.getByLabel('What was it for?').fill(what);
+    if (pick) await alice.getByRole('radio', { name: new RegExp(pick) }).click();
+    await alice.getByRole('button', { name: /^Save/ }).click();
+    await expect(alice.getByTestId('trip-total')).toBeVisible();
+  };
+  await add('Grab to airport', '20');
+  await add('Grab back', '15');
+  await add('Fridge magnets', '8', 'Shopping');
+
+  await alice.goto(`${new URL(tripUrl).pathname}/expenses`);
+  await expect(alice.getByTestId('expense-row')).toHaveCount(3);
+  await alice.getByRole('button', { name: /Transport · 2/ }).click();
+  await expect(alice.getByTestId('expense-row')).toHaveCount(2);
+  await expect(alice.getByTestId('category-total')).toContainText('S$35.00');
+  await alice.getByRole('button', { name: /Shopping · 1/ }).click();
+  await expect(alice.getByTestId('expense-row')).toHaveCount(1);
+  await alice.getByTestId('expense-row').click();
+  await expect(alice.getByTestId('expense-category')).toHaveText(/Shopping/);
 });

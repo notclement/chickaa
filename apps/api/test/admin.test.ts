@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { schema } from '@ncc/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tripTag } from '../src/routes/admin.ts';
@@ -128,6 +129,21 @@ describe.skipIf(!TEST_DB_URL)('admin', () => {
       ['Empty trip', 'active', 'owner'],
     ]);
     expect(find('admin')).toMatchObject({ isAdmin: true, trips: [{ name: 'Empty trip', role: 'member', left: false }] });
-    const _ = db;
+
+    // Permanent delete (test trips): any state, exact name, everything gone.
+    await alice.c.post(`/trips/${t2.id}/complete`);
+    expect((await bob.c.call('DELETE', `/admin/trips/${t2.id}`, { confirmName: 'Busy trip' })).status).toBe(404);
+    expect((await admin.call('DELETE', `/admin/trips/${t2.id}`, { confirmName: 'busy' })).status).toBe(400);
+    expect((await admin.call('DELETE', `/admin/trips/${t2.id}`, { confirmName: 'Busy trip' })).status).toBe(200);
+    expect((await admin.call('DELETE', `/admin/trips/${t2.id}`, { confirmName: 'Busy trip' })).status).toBe(404);
+    expect((await admin.get('/admin/trips')).body.trips.map((t: { id: string }) => t.id)).not.toContain(t2.id);
+    expect((await alice.c.get(`/trips/${t2.id}`)).status).toBe(404);
+    expect((await alice.c.get('/trips')).body.trips.map((t: { id: string }) => t.id)).not.toContain(t2.id);
+    const left = await db.execute(sql`select
+      (select count(*)::int from expenses where trip_id = ${t2.id}) as e,
+      (select count(*)::int from settlements where trip_id = ${t2.id}) as s,
+      (select count(*)::int from trip_members where trip_id = ${t2.id}) as m`);
+    expect(left[0]).toEqual({ e: 0, s: 0, m: 0 });
+    expect((await admin.call('DELETE', `/admin/trips/${t3.id}`, { confirmName: 'Gone' })).status).toBe(200); // soft-deleted ones too
   });
 });

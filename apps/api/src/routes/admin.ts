@@ -1,12 +1,25 @@
-import type { AdminTrip, AdminTripsResponse, AdminUser, AdminUsersResponse, TripTag } from '@ncc/contracts';
+import { DeleteTripRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@ncc/contracts';
 import { schema } from '@ncc/db';
-import { asc, desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
-import { notFound } from '../lib/http.ts';
+import { body, HttpError, notFound, uuidParam } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
 
-const { trips, users, tripMembers } = schema;
+const {
+  trips,
+  users,
+  tripMembers,
+  invitations,
+  tripFxRates,
+  expenses,
+  expensePayers,
+  expenseSplits,
+  expenseRevisions,
+  settlementPlans,
+  settlements,
+  settlementEvents,
+} = schema;
 
 /** "YYYY-MM-DD" for today in the given time zone. */
 export function todayIn(timeZone: string, now = new Date()): string {
@@ -129,4 +142,35 @@ adminRoutes.get('/users', async (c) => {
     })),
   };
   return c.json(res);
+});
+
+/**
+ * Permanently delete a trip and everything in it (for test trips). Unlike the owner's soft delete,
+ * this works in any state and can't be undone, so the exact trip name must be typed.
+ */
+adminRoutes.delete('/trips/:id', async (c) => {
+  const db = c.var.db;
+  const tripId = uuidParam(c, 'id');
+  const { confirmName } = await body(c, DeleteTripRequest);
+  const [trip] = await db.select({ id: trips.id, name: trips.name }).from(trips).where(eq(trips.id, tripId));
+  if (!trip) throw notFound();
+  if (confirmName.trim() !== trip.name) throw new HttpError(400, 'VALIDATION', 'Type the trip name exactly to delete it');
+
+  await db.transaction(async (tx) => {
+    const sIds = tx.select({ id: settlements.id }).from(settlements).where(eq(settlements.tripId, tripId));
+    await tx.delete(settlementEvents).where(inArray(settlementEvents.settlementId, sIds));
+    await tx.delete(settlements).where(eq(settlements.tripId, tripId));
+    await tx.delete(settlementPlans).where(eq(settlementPlans.tripId, tripId));
+    const eIds = tx.select({ id: expenses.id }).from(expenses).where(eq(expenses.tripId, tripId));
+    await tx.delete(expenseRevisions).where(inArray(expenseRevisions.expenseId, eIds));
+    await tx.delete(expensePayers).where(inArray(expensePayers.expenseId, eIds));
+    await tx.delete(expenseSplits).where(inArray(expenseSplits.expenseId, eIds));
+    await tx.delete(expenses).where(eq(expenses.tripId, tripId));
+    await tx.delete(tripFxRates).where(eq(tripFxRates.tripId, tripId));
+    await tx.delete(invitations).where(eq(invitations.tripId, tripId));
+    await tx.delete(tripMembers).where(eq(tripMembers.tripId, tripId));
+    await tx.delete(trips).where(eq(trips.id, tripId));
+  });
+  if (c.var.config.nodeEnv !== 'test') console.log(`admin hard-deleted trip ${tripId} (${trip.name})`);
+  return c.json({ deleted: true });
 });

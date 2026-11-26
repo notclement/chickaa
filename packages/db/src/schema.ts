@@ -178,6 +178,8 @@ export const expenses = pgTable(
     tripId: uuid('trip_id').notNull().references(() => trips.id),
     clientId: uuid('client_id').notNull(),
     description: text('description').notNull(),
+    /** One of EXPENSE_CATEGORIES in @ncc/core (validated by the API). */
+    category: text('category').notNull().default('other'),
     notes: text('notes'),
     originalAmount: money('original_amount').notNull(),
     originalCurrency: currency('original_currency').notNull(),

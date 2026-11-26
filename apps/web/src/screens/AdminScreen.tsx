@@ -1,4 +1,4 @@
-import type { AdminTripsResponse, AdminUsersResponse, TripTag } from '@ncc/contracts';
+import type { AdminTrip, AdminTripsResponse, AdminUsersResponse, TripTag } from '@ncc/contracts';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';
@@ -7,7 +7,7 @@ import { useMe } from '../auth/AuthContext.tsx';
 import { TAGS, TripTagChip } from '../components/TripTagChip.tsx';
 import { formatDateRange } from '../lib/format.ts';
 import { money } from '../lib/money.ts';
-import { Avatar, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
+import { Avatar, Button, Card, ErrorState, FormError, Loading, ScreenTitle, TextField } from '../ui/index.tsx';
 
 const ORDER: TripTag[] = ['ongoing', 'active', 'needs_finishing', 'pending_settlement', 'ended', 'deleted'];
 
@@ -69,8 +69,8 @@ function TripsTab() {
       ) : (
         <ul className="space-y-2">
           {trips.map((t) => (
-            <li key={t.id}>
-              <Link to={`/trips/${t.id}`} className="block rounded-3xl bg-white p-4 shadow-sm ring-1 ring-ink-900/5 active:bg-ink-900/[0.02]" data-testid="admin-trip">
+            <li key={t.id} className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-ink-900/5" data-testid="admin-trip">
+              <Link to={`/trips/${t.id}`} className="block p-4 active:bg-ink-900/[0.02]">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate font-bold">{t.name}</div>
@@ -91,6 +91,7 @@ function TripsTab() {
                   <span>created {new Date(t.createdAt).toLocaleDateString()}</span>
                 </div>
               </Link>
+              <HardDelete trip={t} onDeleted={reload} />
             </li>
           ))}
         </ul>
@@ -106,6 +107,50 @@ function TripsTab() {
           ))}
         </ul>
       </Card>
+    </div>
+  );
+}
+
+/** Permanently delete a trip (e.g. test trips). Typing the exact name confirms. */
+function HardDelete({ trip, onDeleted }: { trip: AdminTrip; onDeleted: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  if (!open)
+    return (
+      <div className="flex justify-end border-t border-ink-900/5 px-4 py-1.5">
+        <button type="button" onClick={() => setOpen(true)} className="min-h-9 text-sm font-semibold text-owes">
+          Delete permanently…
+        </button>
+      </div>
+    );
+  const remove = async () => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      await api(`/admin/trips/${trip.id}`, { method: 'DELETE', json: { confirmName: name } });
+      onDeleted();
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-3 border-t border-ink-900/5 bg-owes/5 p-4">
+      <p className="text-sm text-ink-700">
+        Removes the trip, its expenses and settlements <b>for everyone, forever</b>. Members’ balances in it disappear too.
+      </p>
+      <TextField label={`Type “${trip.name}” to confirm`} value={name} onChange={(e) => setName(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+      <FormError message={error} />
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="ghost" onClick={() => (setOpen(false), setName(''), setError(undefined))}>
+          Cancel
+        </Button>
+        <Button variant="danger" loading={busy} disabled={name.trim() !== trip.name.trim()} onClick={remove}>
+          Delete forever
+        </Button>
+      </div>
     </div>
   );
 }

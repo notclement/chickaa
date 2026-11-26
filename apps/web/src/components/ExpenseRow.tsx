@@ -1,5 +1,6 @@
 import type { Expense } from '@ncc/contracts';
 import { Link } from 'react-router';
+import { CATEGORY } from '../lib/categories.ts';
 import { money } from '../lib/money.ts';
 
 /** One line in an expense list: what, who paid, total, and what it means for me. */
@@ -12,8 +13,9 @@ export function ExpenseRow({ e, me, nameOf }: { e: Expense; me: string; nameOf: 
 
   return (
     <Link to={`/expenses/${e.id}`} className="flex items-center gap-3 py-3 active:bg-ink-900/[0.02]" data-testid="expense-row">
-      <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-sun-300/40 text-lg" aria-hidden>
-        🧾
+      <div className={`grid size-11 shrink-0 place-items-center rounded-2xl text-lg ${CATEGORY[e.category].tint}`} title={CATEGORY[e.category].label} data-category={e.category}>
+        <span aria-hidden>{CATEGORY[e.category].emoji}</span>
+        <span className="sr-only">{CATEGORY[e.category].label}</span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold">{e.description}</div>

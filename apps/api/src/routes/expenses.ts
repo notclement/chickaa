@@ -17,6 +17,7 @@ import {
   computeBalances,
   FinanceError,
   isCurrencyCode,
+  isExpenseCategory,
   parseAmount,
   parsePercent,
   parseRate,
@@ -274,6 +275,7 @@ function serialize(
     tripId: e.tripId,
     clientId: e.clientId,
     description: e.description,
+    category: isExpenseCategory(e.category) ? e.category : 'other',
     notes: e.notes,
     expenseDate: e.expenseDate,
     currency: e.originalCurrency,
@@ -359,6 +361,7 @@ tripExpenseRoutes.post('/:id/expenses', async (c) => {
           tripId,
           clientId,
           description: fields.description,
+          category: fields.category,
           notes: fields.notes || null,
           originalAmount: computed.built.total,
           originalCurrency: fields.currency,
@@ -591,6 +594,7 @@ expenseRoutes.put('/:id', async (c) => {
       .update(expenses)
       .set({
         description: fields.description,
+          category: fields.category,
         notes: fields.notes || null,
         originalAmount: computed.built.total,
         originalCurrency: fields.currency,

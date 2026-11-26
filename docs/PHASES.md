@@ -12,6 +12,7 @@
 | 8 | Release: polish, security + money review, real-device testing, final docs | ✅ Done (real-phone checklist pending) | 1.0.0-rc.1 |
 | — | Fresh start + admin, test report run 2 fixes | ✅ Done | 1.1.0 |
 | — | Admin users list (users and their trips) | ✅ Done | 1.2.0 |
+| — | Expense categories + filter, admin permanent delete | ✅ Done | 1.3.0 |
 
 ## 1 · Foundation + PWA shell
 Project setup, brand (NoChickenCall / 别计较 and the chick icon), installable app with icons and iPhone launch screens, offline app shell, update prompt, install instructions, security headers, Docker, automated tests and CI.

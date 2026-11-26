@@ -2,6 +2,15 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.3.0] - 2026-11-26 · Categories
+### Added
+- **Expense categories:** 🍜 Food & drinks · 🚕 Transport · 🏨 Stay · 🎟️ Activities · 🛍️ Shopping · 🛒 Groceries · 🧾 Fees & bills · 💵 Cash / loan · 📦 Other. Picked automatically from the description (English, Singlish and Chinese keywords) until you choose one; shown as the expense's icon.
+- **Filter by category** on the Expenses list, with the category total.
+- **Admin: delete permanently** any trip (e.g. test trips) after typing its name. Removes everything in it for everyone.
+
+### Note
+- Expenses added before this version are in **Other**; edit one to change it.
+
 ## [1.2.0] - 2026-11-26 · Admin users list
 ### Added
 - **Admin → Users tab:** every account (display name, @ID, joined date, last active, Admin badge), searchable, each expanding to the trips they own or belong to with the trip's status tag, owner/member role and whether they left. Tap a trip to open it (read-only unless you're a member).

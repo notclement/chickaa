@@ -59,7 +59,7 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   await expect(page.getByTestId('admin-trip').filter({ hasText: empty }).getByTestId('trip-tag')).toHaveText('Active');
 
   // Open it: read-only.
-  await page.getByTestId('admin-trip').filter({ hasText: busy }).click();
+  await page.getByTestId('admin-trip').filter({ hasText: busy }).getByRole('link').click();
   await expect(page.getByTestId('admin-view')).toBeVisible();
   await expect(page.getByTestId('trip-total')).toHaveText('S$25.00');
   await expect(page.getByRole('link', { name: /Add expense/ })).toHaveCount(0);
@@ -78,4 +78,15 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   await expect(row.getByTestId('admin-user-trip').filter({ hasText: busy }).getByTestId('trip-tag')).toHaveText('On-going');
   await row.getByTestId('admin-user-trip').filter({ hasText: empty }).click();
   await expect(page.getByTestId('admin-view')).toBeVisible();
+
+  // Permanently delete a test trip from the list.
+  await page.goto('/admin');
+  const card = page.getByTestId('admin-trip').filter({ hasText: empty });
+  await card.getByRole('button', { name: 'Delete permanently…' }).click();
+  const forever = card.getByRole('button', { name: 'Delete forever' });
+  await expect(forever).toBeDisabled();
+  await card.getByLabel(`Type “${empty}” to confirm`).fill(empty);
+  await forever.click();
+  await expect(page.getByTestId('admin-trip').filter({ hasText: empty })).toHaveCount(0);
+  await expect(page.getByTestId('admin-trip').filter({ hasText: busy })).toHaveCount(1);
 });

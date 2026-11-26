@@ -8,3 +8,4 @@ export * from './rate.ts';
 export * from './splits.ts';
 export * from './settlement.ts';
 export * from './usernames.ts';
+export * from './categories.ts';

@@ -50,6 +50,13 @@
       "when": 1795658804616,
       "tag": "0006_admin_and_settlement_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795666721491,
+      "tag": "0007_expense_category",
+      "breakpoints": true
     }
   ]
 }

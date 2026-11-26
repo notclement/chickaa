@@ -51,6 +51,29 @@ describe.skipIf(!TEST_DB_URL)('expenses', () => {
     expect(net(b.balances, ids.david)).toBe('-7500');
   });
 
+  it('categories: default "other", saved and editable, unknown ones refused', async () => {
+    const { trip, alice, ids } = await fourFriends();
+    const base = {
+      expenseDate: '2027-03-02',
+      currency: 'SGD',
+      amount: '12',
+      payers: [{ userId: ids.alice, amount: '12' }],
+      split: { type: 'equal', participants: [ids.alice, ids.bob] },
+    };
+    const plain = await alice.c.post(`/trips/${trip.id}/expenses`, { clientId: uuid(), description: 'Misc', ...base });
+    expect(plain.status).toBe(201);
+    expect(plain.body.category).toBe('other');
+    const food = await alice.c.post(`/trips/${trip.id}/expenses`, { clientId: uuid(), description: 'Kopi', category: 'food', ...base });
+    expect(food.body.category).toBe('food');
+    const bad = await alice.c.post(`/trips/${trip.id}/expenses`, { clientId: uuid(), description: 'X', category: 'crypto', ...base });
+    expect(bad.status).toBe(400);
+    const edited = await alice.c.put(`/expenses/${food.body.id}`, { version: 1, description: 'Kopi', category: 'groceries', ...base });
+    expect(edited.status).toBe(200);
+    expect(edited.body.category).toBe('groceries');
+    const list = (await alice.c.get(`/trips/${trip.id}/expenses`)).body.expenses;
+    expect(list.map((e: { category: string }) => e.category).sort()).toEqual(['groceries', 'other']);
+  });
+
   it('multi-currency: THB hotel with the daily API rate, rate is kept on the expense', async () => {
     const { trip, alice, ids } = await fourFriends();
     const res = await alice.c.post(`/trips/${trip.id}/expenses`, {

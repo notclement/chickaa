@@ -8,6 +8,7 @@ import { useMe } from '../auth/AuthContext.tsx';
 import { prettyDate } from '../components/ExpenseRow.tsx';
 import { relativeTime } from '../lib/format.ts';
 import { money } from '../lib/money.ts';
+import { CATEGORY } from '../lib/categories.ts';
 import { useTrip } from '../lib/useTrip.ts';
 import { Avatar, Badge, Button, ButtonLink, Card, ErrorState, FormError, Loading, ScreenTitle } from '../ui/index.tsx';
 
@@ -49,6 +50,9 @@ export function ExpenseDetailScreen() {
       {e.deleted && <Badge>Deleted</Badge>}
 
       <Card>
+        <span className={`mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold text-ink-700 ${CATEGORY[e.category].tint}`} data-testid="expense-category">
+          <span aria-hidden>{CATEGORY[e.category].emoji}</span> {CATEGORY[e.category].label}
+        </span>
         <div className="text-3xl font-extrabold tabular-nums">{money(e.amount, e.currency)}</div>
         {foreign && (
           <p className="mt-1 text-ink-700">

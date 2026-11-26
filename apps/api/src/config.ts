@@ -27,7 +27,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl: env.DATABASE_URL,
     publicOrigin: (env.PUBLIC_ORIGIN ?? env.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
     webDist: env.WEB_DIST ?? new URL('../../web/dist', import.meta.url).pathname,
-    appVersion: `1.2.0+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
+    appVersion: `1.3.0+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
     runMigrationsOnStart: env.RUN_MIGRATIONS_ON_START === 'true',
     rateLimitScale: Number(env.RATE_LIMIT_SCALE ?? 1) || 1,
     adminSetupCode: env.ADMIN_SETUP_CODE?.trim() || undefined,

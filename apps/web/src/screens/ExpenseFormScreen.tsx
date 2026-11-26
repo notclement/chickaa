@@ -1,13 +1,15 @@
-import type { CreateExpenseRequest, Expense, FxRateResponse, Member, RateChoice, SplitRequest, TripDetail } from '@ncc/contracts';
+import type { CreateExpenseRequest, Expense, ExpenseCategory, FxRateResponse, Member, RateChoice, SplitRequest, TripDetail } from '@ncc/contracts';
 import {
   buildExpense,
   CURRENCIES,
   CURRENCY_CODES,
+  EXPENSE_CATEGORIES,
   formatAmount,
   formatPercent,
   isCurrencyCode,
   parsePercent,
   parseRate,
+  suggestCategory,
   type CurrencyCode,
   type SplitInput,
 } from '@ncc/core';
@@ -15,6 +17,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage, post } from '../api/client.ts';
 import { useMe } from '../auth/AuthContext.tsx';
+import { CATEGORY } from '../lib/categories.ts';
 import { money, normalizeAmountInput, todayLocal, tryParseAmount } from '../lib/money.ts';
 import { useTrip } from '../lib/useTrip.ts';
 import { useUnsavedChanges } from '../pwa/unsavedChanges.ts';
@@ -25,6 +28,9 @@ type RateMode = 'auto' | 'manual';
 
 interface FormState {
   description: string;
+  category: ExpenseCategory;
+  /** The user picked a category themselves: stop suggesting one from the description. */
+  categoryPicked: boolean;
   amount: string;
   currency: CurrencyCode;
   date: string;
@@ -56,6 +62,8 @@ function initialState(trip: TripDetail, me: string, existing?: Expense): FormSta
     }
     return {
       description: '',
+      category: 'other',
+      categoryPicked: false,
       amount: '',
       currency,
       date: todayLocal(),
@@ -77,6 +85,8 @@ function initialState(trip: TripDetail, me: string, existing?: Expense): FormSta
   const inSplit = new Map(existing.splits.map((s) => [s.userId, s]));
   return {
     description: existing.description,
+    category: existing.category,
+    categoryPicked: true,
     amount: fmt(existing.amount),
     currency: cur,
     date: existing.expenseDate,
@@ -125,7 +135,7 @@ function toRequest(f: FormState, members: Member[], suggestion: FxRateResponse |
     else rate = { source: 'api' };
   }
 
-  return { description: f.description.trim(), notes: f.notes.trim() || null, expenseDate: f.date, currency: f.currency, amount, rate, payers, split };
+  return { description: f.description.trim(), category: f.category, notes: f.notes.trim() || null, expenseDate: f.date, currency: f.currency, amount, rate, payers, split };
 }
 
 /** Client-side preview with the same engine the server uses. */
@@ -304,7 +314,27 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
               ))}
             </SelectField>
           </div>
-          <TextField className="mt-3" label="What was it for?" placeholder="Dinner at Jimbaran" value={f.description} onChange={(e) => set('description', e.target.value)} maxLength={80} />
+          <TextField className="mt-3" label="What was it for?" placeholder="Dinner at Jimbaran" value={f.description} onChange={(e) => {
+              const description = e.target.value;
+              setF((s) => ({ ...s, description, category: s.categoryPicked ? s.category : (suggestCategory(description) ?? 'other') }));
+            }} maxLength={80} />
+          <fieldset className="mt-3">
+            <legend className="mb-1.5 text-sm font-semibold text-ink-700">Category</legend>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Category">
+              {EXPENSE_CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={f.category === c}
+                  onClick={() => setF((s) => ({ ...s, category: c, categoryPicked: true }))}
+                  className={`min-h-9 rounded-full px-3 text-sm font-semibold ring-1 ${f.category === c ? 'bg-ink-900 text-cream ring-ink-900' : 'bg-white ring-ink-900/10'}`}
+                >
+                  <span aria-hidden>{CATEGORY[c].emoji}</span> {CATEGORY[c].label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
           <TextField className="mt-3" label="Date" type="date" value={f.date} onChange={(e) => set('date', e.target.value || todayLocal())} />
           {dateWarning && (
             <p className="mt-1.5 text-sm font-medium text-tangerine-700" data-testid="date-warning">

@@ -539,8 +539,15 @@ Each phase ends with something runnable and deployed to a staging URL.
 - **Read access** (`viewAccess`): members as usual; the admin gets role `viewer` on any trip (including deleted ones) for every GET. Every write still goes through `membership()`, so the admin can't change trips they're not in.
 - `GET /api/v1/admin/trips` (404 for non-admins): all trips with owner, member/expense counts, total and a **tag**, by precedence: `deleted` → `ended` (finished, no open transfers) → `pending_settlement` → `needs_finishing` (end date < today in `TZ_TRIPS`, default Asia/Singapore) → `ongoing` (within dates or ≥ 1 expense) → `active`.
 - `GET /api/v1/admin/users` (v1.2.0, 404 for non-admins): every user (oldest first) with `lastSeenAt` (latest session use) and their trips from `trip_members` (role owner/member, `left`), each with the same tag, newest trip first. No password, recovery or avatar data is returned.
+- `DELETE /api/v1/admin/trips/:id` (v1.3.0) with `{confirmName}`: hard-deletes the trip and every row under it in one transaction (settlement events → settlements → plans → expense revisions/payers/splits → expenses → trip FX rates → invitations → members → trip). Works in any state; logged.
 - Settlement: owner action `POST /settlements/:id/settle-outside` (from pending/sent/disputed, optional note) sets `confirmed` + `settled_outside`; it replaces "cancel". The recipient may confirm from `disputed`. `GET /trips/:id/settlement` also returns `earlier`: confirmed transfers from superseded plans. Transfers keep a `position` for stable order.
 - **One-time data reset:** migration `0005_wipe_all_data` truncates every table except the FX cache. Drizzle records it, so it runs once.
+
+## 12a. Expense categories (v1.3.0)
+
+- `expenses.category` text, default `other`, values `EXPENSE_CATEGORIES` in `@ncc/core` (validated by zod; unknown stored values read as `other`). Migration `0007_expense_category`.
+- `suggestCategory(description)` in core: keyword lists per category (English, Singlish, Chinese); the keyword appearing earliest wins, whole words for Latin text. The form uses it until the user picks a category.
+- Filtering is client-side on the Expenses list (`?category=`).
 
 ## 13. Known limitations
 

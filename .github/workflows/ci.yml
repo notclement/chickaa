@@ -12,14 +12,14 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: ncc
-          POSTGRES_PASSWORD: ncc
-          POSTGRES_DB: ncc
+          POSTGRES_USER: chickaa
+          POSTGRES_PASSWORD: chickaa
+          POSTGRES_DB: chickaa
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U ncc" --health-interval 5s --health-timeout 5s --health-retries 10
+          --health-cmd "pg_isready -U chickaa" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgres://ncc:ncc@localhost:5432/ncc
+      DATABASE_URL: postgres://chickaa:chickaa@localhost:5432/chickaa
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -32,7 +32,7 @@ jobs:
       - run: pnpm test
       - name: Live exchange-rate API check (warning only)
         continue-on-error: true
-        run: pnpm --filter @ncc/api exec vitest run test/fx-live.test.ts
+        run: pnpm --filter @chickaa/api exec vitest run test/fx-live.test.ts
         env:
           FX_LIVE: '1'
       - run: pnpm build
@@ -53,4 +53,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build production image
-        run: docker build --build-arg APP_VERSION=${{ github.sha }} -t nochickencall:ci .
+        run: docker build --build-arg APP_VERSION=${{ github.sha }} -t chickaa:ci .

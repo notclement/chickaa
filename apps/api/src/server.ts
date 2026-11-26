@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
-import { createDb } from '@ncc/db';
-import { runMigrations } from '@ncc/db/migrate';
+import { createDb } from '@chickaa/db';
+import { runMigrations } from '@chickaa/db/migrate';
 import { sql } from 'drizzle-orm';
 import { createApp } from './app.ts';
 import { cleanup } from './maintenance.ts';

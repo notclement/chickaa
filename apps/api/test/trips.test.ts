@@ -1,4 +1,4 @@
-import { schema } from '@ncc/db';
+import { schema } from '@chickaa/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { client, ORIGIN, registered, resetDb, TEST_DB_URL, testApp } from './helpers.ts';
 

@@ -1,10 +1,11 @@
 # Changelog
 
-All notable changes to NoChickenCall. Dates are Singapore time.
+All notable changes to ChickAA. Dates are Singapore time.
 
 ## [1.7.0] - 2026-11-26 · New name: ChickAA
 ### Changed
-- **NoChickenCall is now ChickAA** (AA制 is Chinese slang for going dutch), with the Chinese name **别鸡较** (bié jī jiào: 别计较 "don't squabble over every cent", with 鸡 for chicken). Same chick, same colours, same link (nochickencall.onrender.com); accounts and trips are unchanged.
+- **New name: ChickAA** (AA制 is Chinese slang for going dutch), with the Chinese name **别鸡较** (bié jī jiào: 别计较 "don't squabble over every cent", with 鸡 for chicken). Same chick, same colours, same link; accounts and trips are unchanged.
+- Internal names (package scope, storage keys, session cookie, PayNow reference prefix `CHICKAA-`) follow the new name; everyone signs in once more after this update.
 - Installed apps pick up the new name on Android/desktop automatically; on iPhone the home-screen label updates if you remove and re-add the app.
 - Under the name: **别鸡较 · split bills with friends**.
 - `chickaa` look-alike IDs are reserved.
@@ -18,7 +19,7 @@ All notable changes to NoChickenCall. Dates are Singapore time.
 ## [1.5.0] - 2026-11-26 · Become a Supporter (PayNow)
 ### Added
 - **Become a Supporter** (Account → 💛 Support): a one-off S$5 by PayNow for lifetime Supporter.
-  - Shows the PayNow QR with **your own reference** (`NCC-XXXXXXXX`) built in, plus Copy reference and Save QR (for paying on the same phone).
+  - Shows the PayNow QR with **your own reference** (`CHICKAA-XXXXXXXX`) built in, plus Copy reference and Save QR (for paying on the same phone).
   - Then one tap opens **Telegram to @mashpotatas** with a ready-made thank-you message and the reference; the admin switches on Lifetime.
   - The QR's PayNow details come from the server setting `PAYNOW_QR_PAYLOAD`, not the code.
 - **Admin → Users:** each person's PayNow reference; search by reference.
@@ -51,7 +52,7 @@ All notable changes to NoChickenCall. Dates are Singapore time.
 ### Added
 - **Admin:** the reserved ID `admin` can only be created with a one-time code stored privately on the server (`ADMIN_SETUP_CODE`). The admin sees **all trips** with colour-coded status tags and can open any trip **read-only** (normal rights in trips they're a member of).
 - **Trip status tags:** 🔵 Active (created, no transactions yet) · 🟢 On-going (within the trip dates or has transactions) · 🟣 Needs finishing (end date passed, not finished) · 🟠 Pending settlement (finished, payments open) · ⚪ Ended (fully settled) · 🔴 Deleted.
-- **Reserved user IDs:** look-alike admin/staff IDs are refused (adm1n, 4dmin, a_d_m_i_n, admn, amdin, administrator, root, sysadmin, moderator, support, official, nochickencall… including number-for-letter swaps and one-letter typos).
+- **Reserved user IDs:** look-alike admin/staff IDs are refused (adm1n, 4dmin, a_d_m_i_n, admn, amdin, administrator, root, sysadmin, moderator, support, official, chickaa… including number-for-letter swaps and one-letter typos).
 - Sign-up and Account explain that the **User ID is for logging in and can't be changed**, while the **display name** is what friends see and can change any time.
 - **Settled another way** (owner): mark a transfer as paid outside the app (cash, swapped debts) with a note. It counts as paid.
 - **Paid earlier:** payments confirmed before a trip was reopened stay listed on Settle up and in the trip summary.
@@ -150,4 +151,4 @@ Fixes from the 7-day, 4-person Okinawa test run (money logic verified: balances 
 ## [0.1.0] - 2026-11-26
 ### Added
 - Installable PWA shell: icons, iPhone launch screens, offline launch, update prompt, install instructions.
-- Brand: NoChickenCall with 别计较 underneath, chick icon.
+- Brand: app name with its Chinese name underneath, chick icon.

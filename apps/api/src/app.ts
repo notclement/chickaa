@@ -1,6 +1,6 @@
-import { ACCOUNT_DISABLED_MESSAGE } from '@ncc/contracts';
-import type { HealthResponse } from '@ncc/contracts';
-import type { Db } from '@ncc/db';
+import { ACCOUNT_DISABLED_MESSAGE } from '@chickaa/contracts';
+import type { HealthResponse } from '@chickaa/contracts';
+import type { Db } from '@chickaa/db';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';

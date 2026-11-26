@@ -1,4 +1,4 @@
-import type { TripDetail } from '@ncc/contracts';
+import type { TripDetail } from '@chickaa/contracts';
 import { useEffect, useMemo } from 'react';
 import { api } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';

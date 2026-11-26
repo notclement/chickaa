@@ -1,6 +1,4 @@
-> Note (v1.7.0): the app was renamed **ChickAA · 别鸡较**. This spec keeps the original name NoChickenCall.
-
-NoChickenCall (别计较)
+ChickAA (别鸡较)
 
 Complete Product Requirements & Development Specification
 
@@ -12,7 +10,7 @@ Primary tagline: Travel together. Don’t sweat the split.
 
 1. Project Overview
 
-Build a modern, lightweight, mobile-first Progressive Web App (PWA) called NoChickenCall, with the Chinese name 别计较 displayed in small print underneath the English name.
+Build a modern, lightweight, mobile-first Progressive Web App (PWA) called ChickAA, with the Chinese name 别鸡较 displayed in small print underneath the English name.
 
 The application is inspired by Splitwise, but focuses specifically on managing shared expenses during group trips.
 
@@ -22,11 +20,11 @@ Friends travel together, record expenses as they go, and let the application cal
 
 Instead of making numerous individual payments throughout the trip, the application consolidates all outstanding debts and calculates the mathematically smallest number of bank transfers required to settle everyone.
 
-The application does not need to initiate bank transfers. Participants will make transfers using their existing banking applications and record confirmations in NoChickenCall.
+The application does not need to initiate bank transfers. Participants will make transfers using their existing banking applications and record confirmations in ChickAA.
 
 Product philosophy
 
-别计较 — Don’t sweat the small stuff.
+别鸡较 — Don’t sweat the small stuff.
 
 * Enjoy the trip instead of worrying about money.
 * Make recording expenses effortless.
@@ -71,7 +69,7 @@ The application must be installable and usable through modern mobile browsers, p
 
 3.1 PWA installation
 
-Users should be able to access NoChickenCall through:
+Users should be able to access ChickAA through:
 
 * A normal browser.
 * An installed home-screen application.
@@ -96,8 +94,8 @@ Implement a valid manifest.webmanifest.
 
 Include:
 
-* name: NoChickenCall (别计较)
-* short_name: NoChickenCall
+* name: ChickAA (别鸡较)
+* short_name: ChickAA
 * start_url
 * scope
 * display: standalone
@@ -212,11 +210,11 @@ When a new version is deployed:
 
 Official application name
 
-NoChickenCall
+ChickAA
 
 Chinese name
 
-别计较
+别鸡较
 
 Tagline
 
@@ -230,8 +228,8 @@ The Chinese name should appear in small print directly underneath.
 
 Example:
 
-NoChickenCall
-别计较
+ChickAA
+别鸡较
 
 Requirements:
 
@@ -561,7 +559,7 @@ All authoritative calculations must be performed on the server.
 
 12. Settlement Optimisation — Core Differentiating Feature
 
-This is the most important financial feature of NoChickenCall.
+This is the most important financial feature of ChickAA.
 
 At the end of the trip, calculate the mathematically minimum number of actual transfers needed to settle everyone’s outstanding balances.
 
@@ -678,8 +676,8 @@ Keep navigation simple.
 
 A. Login / Registration
 
-* NoChickenCall logo.
-* 别计较 in small print.
+* ChickAA logo.
+* 别鸡较 in small print.
 * Username and password.
 * Registration.
 * Login.
@@ -1276,9 +1274,9 @@ Provide:
 
 The application must support the following complete workflow:
 
-1. Alice opens NoChickenCall on her iPhone.
+1. Alice opens ChickAA on her iPhone.
 2. Alice registers without an email address or phone number.
-3. Alice installs NoChickenCall on her home screen.
+3. Alice installs ChickAA on her home screen.
 4. Alice creates a trip called “Bali 2027”.
 5. Alice selects SGD as the trip’s base currency.
 6. Alice generates an invitation link and QR code.
@@ -1291,7 +1289,7 @@ The application must support the following complete workflow:
 13. A participant can record an expense while offline.
 14. The expense is stored locally and synchronised when connectivity returns.
 15. Alice completes the trip.
-16. NoChickenCall calculates the mathematically minimum number of bank transfers needed.
+16. ChickAA calculates the mathematically minimum number of bank transfers needed.
 17. Every participant sees exactly who they need to pay and how much.
 18. Participants make transfers using their normal banking applications.
 19. Senders mark transfers as sent.
@@ -1307,7 +1305,7 @@ The application must support the following complete workflow:
 
 Act as a senior full-stack engineer and software architect.
 
-Your task is to design and build NoChickenCall according to this specification.
+Your task is to design and build ChickAA according to this specification.
 
 Follow these instructions:
 
@@ -1344,6 +1342,6 @@ Once the architecture is established, proceed with implementation phase by phase
 
 Do not stop at a plan or prototype. The final objective is a fully working, deployable PWA.
 
-The defining requirement of NoChickenCall is simple: record trip expenses in any supported currency, calculate everyone’s accurate net balance, and settle the entire trip using the fewest possible bank transfers.
+The defining requirement of ChickAA is simple: record trip expenses in any supported currency, calculate everyone’s accurate net balance, and settle the entire trip using the fewest possible bank transfers.
 
 Everything else should support this objective without making the application unnecessarily complicated.

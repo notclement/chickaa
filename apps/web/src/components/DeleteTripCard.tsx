@@ -1,4 +1,4 @@
-import type { BalancesResponse, TripDetail } from '@ncc/contracts';
+import type { BalancesResponse, TripDetail } from '@chickaa/contracts';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';

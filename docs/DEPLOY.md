@@ -12,8 +12,8 @@ Current setup: **Render free web service** (Singapore) + **Neon free Postgres**.
    `postgresql://neondb_owner:…@ep-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
 
 ### 2. App: Render
-1. Open https://render.com/deploy?repo=https://github.com/notclement/nochickencall
-2. Sign up / sign in **with GitHub** and allow Render access to the `nochickencall` repo.
+1. Open https://render.com/deploy?repo=https://github.com/notclement/chickaa
+2. Sign up / sign in **with GitHub** and allow Render access to the `chickaa` repo.
 3. Render reads `render.yaml` and asks for **DATABASE_URL**: paste the Neon string, then click **Apply / Deploy Blueprint**.
 4. The first build takes ~3–5 min. The app is then live at `https://nochickencall.onrender.com`
    (Render adds a suffix if that name is taken; the dashboard shows the real URL).

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername, EXPENSE_CATEGORIES } from '@ncc/core';
+import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername, EXPENSE_CATEGORIES } from '@chickaa/core';
 
 export { ADMIN_USERNAME };
 
@@ -490,7 +490,7 @@ export const AdminUser = z.object({
   referredBy: z.string().nullable(),
   /** How many people signed up with their invite link. */
   invited: z.number(),
-  /** Their PayNow reference (NCC-<code>), once they've opened Invite a friend or the Supporter page. */
+  /** Their PayNow reference (CHICKAA-<code>), once they've opened Invite a friend or the Supporter page. */
   reference: z.string().nullable(),
   disabledAt: z.string().nullable(),
   disabledNote: z.string().nullable(),

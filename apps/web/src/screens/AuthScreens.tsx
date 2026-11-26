@@ -1,5 +1,5 @@
-import { ADMIN_USERNAME, type AuthWithRecoveryResponse, type MeResponse } from '@ncc/contracts';
-import { isReservedUsername } from '@ncc/core';
+import { ADMIN_USERNAME, type AuthWithRecoveryResponse, type MeResponse } from '@chickaa/contracts';
+import { isReservedUsername } from '@chickaa/core';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ApiRequestError, errorMessage, post } from '../api/client.ts';

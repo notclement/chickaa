@@ -1,7 +1,7 @@
 /**
  * Read-only offline copy of what the app has loaded (Phase 7, ARCHITECTURE.md §4).
  *
- * - One IndexedDB database per user (`ncc-<userId>`), deleted on logout or when someone
+ * - One IndexedDB database per user (`chickaa-<userId>`), deleted on logout or when someone
  *   else logs in on the device. Nothing here is a source of truth; the server always wins.
  * - Only GET responses for trip data are kept (trips, members, expenses, balances, settle-up).
  * - The service worker never caches API responses, so this is the only offline data store.
@@ -17,7 +17,7 @@ const CACHEABLE = [
 let userId: string | null = null;
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 
-export const dbName = (uid: string) => `ncc-${uid}`;
+export const dbName = (uid: string) => `chickaa-${uid}`;
 
 export function isCacheable(path: string): boolean {
   const p = path.split('?')[0]!;

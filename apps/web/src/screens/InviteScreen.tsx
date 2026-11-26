@@ -1,4 +1,4 @@
-import type { CreatedInvitation, Invitation, InvitationListResponse, TripDetail } from '@ncc/contracts';
+import type { CreatedInvitation, Invitation, InvitationListResponse, TripDetail } from '@chickaa/contracts';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';

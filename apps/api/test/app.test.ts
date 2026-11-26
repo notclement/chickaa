@@ -6,13 +6,13 @@ import { createApp } from '../src/app.ts';
 import { loadConfig } from '../src/config.ts';
 
 function setup(pingDb = async () => true) {
-  const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
+  const dist = mkdtempSync(join(tmpdir(), 'chickaa-web-'));
   mkdirSync(join(dist, 'assets'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html><title>ChickAA</title>');
   writeFileSync(join(dist, 'sw.js'), 'self.x=1');
   writeFileSync(join(dist, 'manifest.webmanifest'), '{}');
   writeFileSync(join(dist, 'assets', 'app-abc123.js'), 'console.log(1)');
-  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: 'https://ncc.test' }), webDist: dist };
+  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: 'https://chickaa.test' }), webDist: dist };
   return createApp({ config, db: null, pingDb });
 }
 
@@ -44,7 +44,7 @@ describe('api', () => {
     expect(evil.status).toBe(403);
     const ok = await app.request('/api/v1/health', {
       method: 'POST',
-      headers: { origin: 'https://ncc.test', 'x-requested-with': 'ncc' },
+      headers: { origin: 'https://chickaa.test', 'x-requested-with': 'chickaa' },
     });
     expect(ok.status).not.toBe(403); // passes CSRF
   });
@@ -92,9 +92,9 @@ describe('static PWA serving', () => {
 
 describe('config', () => {
   it('uses Render\'s external URL when PUBLIC_ORIGIN is not set', () => {
-    expect(loadConfig({ RENDER_EXTERNAL_URL: 'https://ncc.onrender.com/' }).publicOrigin).toBe('https://ncc.onrender.com');
+    expect(loadConfig({ RENDER_EXTERNAL_URL: 'https://chickaa.onrender.com/' }).publicOrigin).toBe('https://chickaa.onrender.com');
     expect(
-      loadConfig({ RENDER_EXTERNAL_URL: 'https://ncc.onrender.com', PUBLIC_ORIGIN: 'https://split.example.com' }).publicOrigin,
+      loadConfig({ RENDER_EXTERNAL_URL: 'https://chickaa.onrender.com', PUBLIC_ORIGIN: 'https://split.example.com' }).publicOrigin,
     ).toBe('https://split.example.com');
   });
 });
@@ -116,7 +116,7 @@ describe('hardening', () => {
   it('rejects oversized request bodies', async () => {
     const res = await setup().request('/api/v1/health', {
       method: 'POST',
-      headers: { origin: 'https://ncc.test', 'x-requested-with': 'ncc', 'content-type': 'application/json' },
+      headers: { origin: 'https://chickaa.test', 'x-requested-with': 'chickaa', 'content-type': 'application/json' },
       body: JSON.stringify({ x: 'a'.repeat(70 * 1024) }),
     });
     expect(res.status).toBe(413);

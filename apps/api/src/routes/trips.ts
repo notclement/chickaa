@@ -9,8 +9,8 @@ import {
   type TripDetail,
   type TripListResponse,
   type TripSummary,
-} from '@ncc/contracts';
-import { schema, type Db } from '@ncc/db';
+} from '@chickaa/contracts';
+import { schema, type Db } from '@chickaa/db';
 import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { randomToken, sha256 } from '../auth/crypto.ts';

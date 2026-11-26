@@ -1,4 +1,4 @@
-import { rateFromLiteral } from '@ncc/core';
+import { rateFromLiteral } from '@chickaa/core';
 import { describe, expect, it } from 'vitest';
 import { frankfurter } from '../src/fx/provider.ts';
 

@@ -1,4 +1,4 @@
-import type { AuthWithRecoveryResponse, MeResponse } from '@ncc/contracts';
+import type { AuthWithRecoveryResponse, MeResponse } from '@chickaa/contracts';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiRequestError, errorMessage, patch, post } from '../api/client.ts';

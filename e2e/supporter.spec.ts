@@ -11,7 +11,7 @@ test('Supporter page: PayNow QR with my reference, Telegram message', async ({ p
   await expect(page.getByText(/chip in S\$5 towards development/)).toBeVisible(); // spacing around the amount
   await expect(page.getByTestId('supporter-perks')).toContainText('Export trips');
   const ref = (await page.getByTestId('paynow-reference').textContent())!;
-  expect(ref).toMatch(/^NCC-[A-Z2-9]{8}$/);
+  expect(ref).toMatch(/^CHICKAA-[A-Z2-9]{8}$/);
   await expect(page.getByTestId('paynow-qr').locator('svg')).toBeVisible();
   const href = (await page.getByTestId('telegram-link').getAttribute('href'))!;
   expect(href.startsWith('https://t.me/mashpotatas?text=')).toBe(true);

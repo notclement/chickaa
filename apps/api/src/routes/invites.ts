@@ -1,5 +1,5 @@
-import type { InvitePreview, JoinResponse } from '@ncc/contracts';
-import { schema, type Db } from '@ncc/db';
+import type { InvitePreview, JoinResponse } from '@chickaa/contracts';
+import { schema, type Db } from '@chickaa/db';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { sha256 } from '../auth/crypto.ts';

@@ -1,11 +1,11 @@
-import { isValidPayNowPayload } from '@ncc/core';
+import { isValidPayNowPayload } from '@chickaa/core';
 
 /** Runtime configuration, read once from environment variables. */
 export interface Config {
   port: number;
   nodeEnv: 'development' | 'production' | 'test';
   databaseUrl: string | undefined;
-  /** Public origin, e.g. https://nochickencall.onrender.com. Used for CSRF origin checks and invite URLs.
+  /** Public origin, e.g. https://<service>.onrender.com. Used for CSRF origin checks and invite URLs.
    *  Falls back to Render's RENDER_EXTERNAL_URL, then localhost. */
   publicOrigin: string;
   /** Folder containing the built PWA (apps/web/dist). */

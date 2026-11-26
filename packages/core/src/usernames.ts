@@ -2,17 +2,17 @@
  * Reserved user IDs. "admin" is the one real admin account (created with a one-time code), and
  * nobody may pick an ID that looks like an admin/staff account: leetspeak (adm1n, 4dmin), separators
  * (a_d.m-i_n), doubled letters (aadmmin), one-letter typos and swaps (admn, amdin, admim), and
- * words like administrator, root, sysadmin, moderator, support, official, nochickencall, chickaa.
+ * words like administrator, root, sysadmin, moderator, support, official, chickaa.
  */
 export const ADMIN_USERNAME = 'admin';
 
 /** Words that may not appear anywhere in an ID. */
 const BLOCKED_ANYWHERE = [
   'admin', 'administrator', 'sysadmin', 'superuser', 'superadmin', 'webmaster', 'hostmaster', 'postmaster',
-  'moderator', 'helpdesk', 'nochickencall', 'nochicken', 'chickencall', 'chickaa', 'official', 'customerservice',
+  'moderator', 'helpdesk', 'chickaa', 'official', 'customerservice',
 ];
 /** Words that may not be the whole ID or start/end it (too short to ban everywhere). */
-const BLOCKED_EDGES = ['adm', 'admn', 'root', 'sudo', 'sysop', 'system', 'mod', 'mods', 'staff', 'support', 'owner', 'ncc', 'team', 'security', 'operator', 'sys'];
+const BLOCKED_EDGES = ['adm', 'admn', 'root', 'sudo', 'sysop', 'system', 'mod', 'mods', 'staff', 'support', 'owner', 'chickaa', 'team', 'security', 'operator', 'sys'];
 /** Real words that happen to contain "admin". */
 const ALLOWED_WORDS = ['badminton'];
 

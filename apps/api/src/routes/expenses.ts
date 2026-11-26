@@ -11,7 +11,7 @@ import {
   type RateChoice,
   type SplitRequest,
   type TripFxRatesResponse,
-} from '@ncc/contracts';
+} from '@chickaa/contracts';
 import {
   buildExpense,
   computeBalances,
@@ -25,8 +25,8 @@ import {
   rateToString,
   type CurrencyCode,
   type SplitInput,
-} from '@ncc/core';
-import { schema, type Db } from '@ncc/db';
+} from '@chickaa/core';
+import { schema, type Db } from '@chickaa/db';
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { z } from 'zod';
@@ -35,7 +35,7 @@ import { currentUser, requireAuth } from '../auth/session.ts';
 import { apiRate } from '../fx/rates.ts';
 import { body, forbidden, HttpError, isUniqueViolation, notFound, uuidParam } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
-import { isRealDate } from '@ncc/contracts';
+import { isRealDate } from '@chickaa/contracts';
 import { membership, viewAccess } from './trips.ts';
 
 const { trips, tripMembers, users, expenses, expensePayers, expenseSplits, expenseRevisions, tripFxRates, settlements } = schema;

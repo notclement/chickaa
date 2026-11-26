@@ -1,5 +1,5 @@
-import type { Expense, ExpenseRevisionsResponse } from '@ncc/contracts';
-import { formatPercent } from '@ncc/core';
+import type { Expense, ExpenseRevisionsResponse } from '@chickaa/contracts';
+import { formatPercent } from '@chickaa/core';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';

@@ -1,4 +1,4 @@
-import type { InvitePreview, JoinResponse } from '@ncc/contracts';
+import type { InvitePreview, JoinResponse } from '@chickaa/contracts';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api, errorMessage, post } from '../api/client.ts';

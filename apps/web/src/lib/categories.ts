@@ -1,4 +1,4 @@
-import type { ExpenseCategory } from '@ncc/contracts';
+import type { ExpenseCategory } from '@chickaa/contracts';
 
 /** How each category looks. Order follows EXPENSE_CATEGORIES. */
 export const CATEGORY: Record<ExpenseCategory, { label: string; emoji: string; tint: string }> = {

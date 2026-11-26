@@ -22,7 +22,7 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 |---|---|
 | HTTPS only (Render), **HSTS** in production | ✅ |
 | Strict **CSP** (`default-src 'self'`, no inline scripts/styles), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP | ✅ |
-| **CSRF**: writes need same-origin `Origin` + `X-Requested-With: ncc`, on top of SameSite cookies | ✅ |
+| **CSRF**: writes need same-origin `Origin` + `X-Requested-With: chickaa`, on top of SameSite cookies | ✅ |
 | Request bodies capped at 64 KB (photos at 24 KB, checked by magic bytes, JPEG/WebP only, no SVG); oversized requests close the connection | ✅ |
 | Real calendar dates enforced everywhere (no DB errors from 2026-02-30) | ✅ |
 | Typed exchange rates > 100× off the official rate refused (fat-finger guard) | ✅ |

@@ -1,4 +1,4 @@
-import type { BalancesResponse } from '@ncc/contracts';
+import type { BalancesResponse } from '@chickaa/contracts';
 import { money } from '../lib/money.ts';
 import { Avatar } from '../ui/index.tsx';
 

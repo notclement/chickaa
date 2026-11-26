@@ -1,4 +1,4 @@
-import type { SupporterPayNowResponse } from '@ncc/contracts';
+import type { SupporterPayNowResponse } from '@chickaa/contracts';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { api, ApiRequestError, errorMessage } from '../api/client.ts';

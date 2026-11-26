@@ -1,5 +1,5 @@
 # ChickAA
-<sub>别鸡较 · split bills with friends (formerly NoChickenCall)</sub>
+<sub>别鸡较 · split bills with friends</sub>
 
 **Travel together. Don't sweat the split.**
 

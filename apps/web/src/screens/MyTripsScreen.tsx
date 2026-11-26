@@ -1,4 +1,4 @@
-import type { TripListResponse, TripSummary } from '@ncc/contracts';
+import type { TripListResponse, TripSummary } from '@chickaa/contracts';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';

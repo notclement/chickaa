@@ -1,4 +1,4 @@
-import type { ApiError } from '@ncc/contracts';
+import type { ApiError } from '@chickaa/contracts';
 import { cacheGet, cachePut, isCacheable } from '../offline/cache.ts';
 import { staleness } from '../offline/staleness.ts';
 import { serverStatus } from './serverStatus.ts';
@@ -28,7 +28,7 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
   const headers = new Headers(rest.headers);
   headers.set('Accept', 'application/json');
   const method = (rest.method ?? 'GET').toUpperCase();
-  if (method !== 'GET') headers.set('X-Requested-With', 'ncc');
+  if (method !== 'GET') headers.set('X-Requested-With', 'chickaa');
   if (json !== undefined) headers.set('Content-Type', 'application/json');
 
   // Changes always need the server (decision D2): fail fast and clearly when offline.

@@ -1,5 +1,5 @@
-import type { ExpenseCategory, ExpenseListResponse } from '@ncc/contracts';
-import { EXPENSE_CATEGORIES } from '@ncc/core';
+import type { ExpenseCategory, ExpenseListResponse } from '@chickaa/contracts';
+import { EXPENSE_CATEGORIES } from '@chickaa/core';
 import { useParams, useSearchParams } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';

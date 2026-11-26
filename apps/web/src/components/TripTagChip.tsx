@@ -1,4 +1,4 @@
-import type { TripTag } from '@ncc/contracts';
+import type { TripTag } from '@chickaa/contracts';
 
 /** Colour-coded trip status (admin view). */
 export const TAGS: Record<TripTag, { label: string; className: string; help: string }> = {

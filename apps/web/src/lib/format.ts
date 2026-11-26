@@ -1,4 +1,4 @@
-import { CURRENCIES, isCurrencyCode } from '@ncc/core';
+import { CURRENCIES, isCurrencyCode } from '@chickaa/core';
 
 const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
 const dayYearFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' });

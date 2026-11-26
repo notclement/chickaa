@@ -1,5 +1,5 @@
 /** The "Invite a friend" code from a /r/<code> link, kept until sign-up (30 days). */
-const KEY = 'ncc.ref';
+const KEY = 'chickaa.ref';
 const TTL_MS = 30 * 24 * 3600 * 1000;
 
 export function saveReferral(code: string): void {

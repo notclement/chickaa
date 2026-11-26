@@ -1,4 +1,4 @@
-import type { Db } from '@ncc/db';
+import type { Db } from '@chickaa/db';
 import type { Config } from '../config.ts';
 import type { FxProvider } from '../fx/provider.ts';
 

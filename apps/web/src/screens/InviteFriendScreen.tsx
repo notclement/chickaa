@@ -1,4 +1,4 @@
-import type { ReferralResponse } from '@ncc/contracts';
+import type { ReferralResponse } from '@chickaa/contracts';
 import { useState } from 'react';
 import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';

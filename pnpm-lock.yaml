@@ -26,13 +26,13 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.11
         version: 2.1.11(hono@4.13.22)
-      '@ncc/contracts':
+      '@chickaa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@ncc/core':
+      '@chickaa/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@ncc/db':
+      '@chickaa/db':
         specifier: workspace:*
         version: link:../../packages/db
       drizzle-orm:
@@ -63,10 +63,10 @@ importers:
       '@fontsource-variable/nunito':
         specifier: ^5.3.0
         version: 5.3.0
-      '@ncc/contracts':
+      '@chickaa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@ncc/core':
+      '@chickaa/core':
         specifier: workspace:*
         version: link:../../packages/core
       qrcode:
@@ -127,7 +127,7 @@ importers:
 
   packages/contracts:
     dependencies:
-      '@ncc/core':
+      '@chickaa/core':
         specifier: workspace:*
         version: link:../core
       zod:

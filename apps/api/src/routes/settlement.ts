@@ -1,6 +1,6 @@
-import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementResponse } from '@ncc/contracts';
-import { planSettlement, verifySettlement } from '@ncc/core';
-import { schema, type Db } from '@ncc/db';
+import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementResponse } from '@chickaa/contracts';
+import { planSettlement, verifySettlement } from '@chickaa/core';
+import { schema, type Db } from '@chickaa/db';
 import { and, asc, eq, inArray, isNotNull, isNull, max } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';

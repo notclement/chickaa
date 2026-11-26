@@ -1,7 +1,7 @@
-import { DeleteTripRequest, DisableUserRequest, SetSupporterRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@ncc/contracts';
-import { schema } from '@ncc/db';
+import { DeleteTripRequest, DisableUserRequest, SetSupporterRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@chickaa/contracts';
+import { schema } from '@chickaa/db';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { formatAmount, isCurrencyCode } from '@ncc/core';
+import { formatAmount, isCurrencyCode } from '@chickaa/core';
 import { tripBalances } from './expenses.ts';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
@@ -150,7 +150,7 @@ adminRoutes.get('/users', async (c) => {
       supporter: supporterOf(p),
       referredBy: p.referredBy,
       invited: p.invited,
-      reference: p.referralCode ? `NCC-${p.referralCode}` : null,
+      reference: p.referralCode ? `CHICKAA-${p.referralCode}` : null,
       disabledAt: p.disabledAt?.toISOString() ?? null,
       disabledNote: p.disabledNote,
       lastSeenAt: p.lastSeenMs == null ? null : new Date(Number(p.lastSeenMs)).toISOString(),

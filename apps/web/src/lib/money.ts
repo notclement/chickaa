@@ -1,4 +1,4 @@
-import { CURRENCIES, formatAmount, isCurrencyCode, parseAmount, type CurrencyCode } from '@ncc/core';
+import { CURRENCIES, formatAmount, isCurrencyCode, parseAmount, type CurrencyCode } from '@chickaa/core';
 
 /** "S$1,234.50" from minor units (bigint or the string the API sends). */
 export function money(minor: bigint | string, currency: string, opts: { signed?: boolean } = {}): string {

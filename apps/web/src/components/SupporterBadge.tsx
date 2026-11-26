@@ -1,4 +1,4 @@
-import type { User } from '@ncc/contracts';
+import type { User } from '@chickaa/contracts';
 
 /** "💛 Supporter" chip, shown only while someone is a supporter. */
 export function SupporterBadge({ supporter, className = '' }: { supporter: User['supporter'] | undefined; className?: string }) {

@@ -1,5 +1,5 @@
 {
-  "name": "@ncc/api",
+  "name": "@chickaa/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.11",
-    "@ncc/contracts": "workspace:*",
-    "@ncc/core": "workspace:*",
-    "@ncc/db": "workspace:*",
+    "@chickaa/contracts": "workspace:*",
+    "@chickaa/core": "workspace:*",
+    "@chickaa/db": "workspace:*",
     "hono": "^4.13.22",
     "drizzle-orm": "^0.45.4",
     "hash-wasm": "^4.13.0",

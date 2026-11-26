@@ -1,5 +1,5 @@
-import type { User } from '@ncc/contracts';
-import { schema, type Db } from '@ncc/db';
+import type { User } from '@chickaa/contracts';
+import { schema, type Db } from '@chickaa/db';
 import { and, eq, isNull } from 'drizzle-orm';
 import { isUniqueViolation } from './http.ts';
 import { randomInt } from 'node:crypto';

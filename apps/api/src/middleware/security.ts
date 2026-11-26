@@ -44,7 +44,7 @@ export function csrfGuard(allowedOrigin: string): MiddlewareHandler {
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next();
     const origin = c.req.header('origin');
     const xrw = c.req.header('x-requested-with');
-    if (origin !== allowedOrigin || xrw !== 'ncc') {
+    if (origin !== allowedOrigin || xrw !== 'chickaa') {
       return c.json({ error: { code: 'CSRF', message: 'Cross-site request blocked' } }, 403);
     }
     return next();

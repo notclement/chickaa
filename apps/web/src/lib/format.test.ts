@@ -4,7 +4,7 @@ import { extractInviteToken, formatDateRange } from './format.ts';
 describe('extractInviteToken', () => {
   const token = 'Ab3_-xYz0123456789abcdEFGH';
   it('reads a full link, with or without extra text around it', () => {
-    expect(extractInviteToken(`https://nochickencall.onrender.com/join/${token}`)).toBe(token);
+    expect(extractInviteToken(`https://chickaa.example/join/${token}`)).toBe(token);
     expect(extractInviteToken(`Join our trip! https://x.app/join/${token} 🐣`)).toBe(token);
   });
   it('accepts a bare token and rejects junk', () => {

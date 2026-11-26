@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { schema } from '@ncc/db';
+import { schema } from '@chickaa/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { tripTag } from '../src/routes/admin.ts';
 import { client, registered, resetDb, TEST_DB_URL, testApp } from './helpers.ts';
@@ -50,7 +50,7 @@ describe.skipIf(!TEST_DB_URL)('admin', () => {
 
   it('look-alike admin IDs are refused for everyone', async () => {
     const { app } = await testApp();
-    for (const username of ['adm1n', 'Administrator', 'a_d_m_i_n', 'amdin', 'r00t', 'sys4dmin', 'support', 'nochickencall']) {
+    for (const username of ['adm1n', 'Administrator', 'a_d_m_i_n', 'amdin', 'r00t', 'sys4dmin', 'support', 'chickaa']) {
       const r = await client(app).post('/auth/register', { username, password: 'correct horse battery', displayName: 'X', adminSetupCode: CODE });
       expect(r.status, username).toBe(400);
       expect(r.body.error.details.fields.username).toMatch(/reserved/);

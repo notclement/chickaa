@@ -1,5 +1,5 @@
-import type { TripDetail } from '@ncc/contracts';
-import { CURRENCIES, CURRENCY_CODES } from '@ncc/core';
+import type { TripDetail } from '@chickaa/contracts';
+import { CURRENCIES, CURRENCY_CODES } from '@chickaa/core';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage, patch, post } from '../api/client.ts';

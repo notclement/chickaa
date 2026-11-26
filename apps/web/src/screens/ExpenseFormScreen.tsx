@@ -1,4 +1,4 @@
-import type { CreateExpenseRequest, Expense, ExpenseCategory, FxRateResponse, Member, RateChoice, SplitRequest, TripDetail } from '@ncc/contracts';
+import type { CreateExpenseRequest, Expense, ExpenseCategory, FxRateResponse, Member, RateChoice, SplitRequest, TripDetail } from '@chickaa/contracts';
 import {
   buildExpense,
   CURRENCIES,
@@ -12,7 +12,7 @@ import {
   suggestCategory,
   type CurrencyCode,
   type SplitInput,
-} from '@ncc/core';
+} from '@chickaa/core';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage, post } from '../api/client.ts';
@@ -47,7 +47,7 @@ interface FormState {
   manualRate: string;
 }
 
-const lastCurrencyKey = (tripId: string) => `ncc.user.lastCurrency.${tripId}`;
+const lastCurrencyKey = (tripId: string) => `chickaa.user.lastCurrency.${tripId}`;
 
 function initialState(trip: TripDetail, me: string, existing?: Expense): FormState {
   const ids = trip.members.map((m) => m.userId);

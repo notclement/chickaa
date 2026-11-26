@@ -1,6 +1,6 @@
 import { publicUser } from '../lib/users.ts';
-import { AVATAR_MAX_BYTES, AVATAR_TYPES, type MeResponse } from '@ncc/contracts';
-import { schema } from '@ncc/db';
+import { AVATAR_MAX_BYTES, AVATAR_TYPES, type MeResponse } from '@chickaa/contracts';
+import { schema } from '@chickaa/db';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';

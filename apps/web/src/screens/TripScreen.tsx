@@ -1,4 +1,4 @@
-import type { BalancesResponse, ExpenseListResponse, SettlementResponse } from '@ncc/contracts';
+import type { BalancesResponse, ExpenseListResponse, SettlementResponse } from '@chickaa/contracts';
 import { Link, useParams } from 'react-router';
 import { api, ApiRequestError, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';

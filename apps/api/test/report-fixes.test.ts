@@ -95,7 +95,7 @@ describe.skipIf(!TEST_DB_URL)('test report run 2 fixes', () => {
     const big = new Uint8Array(70 * 1024);
     const res = await app.request('/api/v1/auth/me/avatar', {
       method: 'PUT',
-      headers: { origin: ORIGIN, 'x-requested-with': 'ncc', 'content-type': 'image/webp', 'content-length': String(big.length), cookie: alice.c.cookie },
+      headers: { origin: ORIGIN, 'x-requested-with': 'chickaa', 'content-type': 'image/webp', 'content-length': String(big.length), cookie: alice.c.cookie },
       body: big as unknown as BodyInit,
     });
     expect(res.status).toBe(413);

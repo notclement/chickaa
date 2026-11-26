@@ -1,4 +1,4 @@
-import type { AdminTrip, AdminTripsResponse, AdminUser, AdminUsersResponse, SetSupporterRequest, TripTag } from '@ncc/contracts';
+import type { AdminTrip, AdminTripsResponse, AdminUser, AdminUsersResponse, SetSupporterRequest, TripTag } from '@chickaa/contracts';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';
@@ -296,7 +296,7 @@ function UsersTab() {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'} by name, ID or NCC- ref`}
+        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'} by name, ID or CHICKAA- ref`}
         aria-label="Search users"
         className="min-h-11 w-full rounded-2xl bg-white px-4 ring-1 ring-ink-900/10 focus:outline-none focus:ring-2 focus:ring-ink-900"
       />

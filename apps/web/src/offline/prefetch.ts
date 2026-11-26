@@ -1,7 +1,7 @@
-import type { TripSummary } from '@ncc/contracts';
+import type { TripSummary } from '@chickaa/contracts';
 import { api } from '../api/client.ts';
 
-const KEY = 'ncc.user.prefetchedAt';
+const KEY = 'chickaa.user.prefetchedAt';
 const EVERY_MS = 10 * 60 * 1000;
 
 /**

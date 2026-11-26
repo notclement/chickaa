@@ -21,12 +21,12 @@ describe('PayNow QR', () => {
   });
 
   it('adds a reference (tag 62.01) with a fresh checksum, replacing an old one', () => {
-    const a = withPayNowReference(FAKE, 'NCC-ABCD2345');
+    const a = withPayNowReference(FAKE, 'CHICKAA-ABCD2345');
     expect(isValidPayNowPayload(a)).toBe(true);
     const f = parseEmv(a);
-    expect(f.find((x) => x.tag === '62')?.value).toBe('0112NCC-ABCD2345');
+    expect(f.find((x) => x.tag === '62')?.value).toBe('0116CHICKAA-ABCD2345');
     expect(f.at(-2)?.tag).toBe('62');
-    const b = withPayNowReference(a, 'NCC-ZZZZ9999');
+    const b = withPayNowReference(a, 'CHICKAA-ZZZZ9999');
     expect(parseEmv(b).filter((x) => x.tag === '62')).toHaveLength(1);
     expect(isValidPayNowPayload(b)).toBe(true);
     expect(() => withPayNowReference(FAKE, 'has space')).toThrow();

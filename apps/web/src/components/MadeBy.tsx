@@ -1,4 +1,4 @@
-import { SUPPORT_TELEGRAM } from '@ncc/contracts';
+import { SUPPORT_TELEGRAM } from '@chickaa/contracts';
 
 export const DEVELOPER = { name: 'Clement', linkedin: 'https://www.linkedin.com/in/clementsg/', telegram: SUPPORT_TELEGRAM } as const;
 

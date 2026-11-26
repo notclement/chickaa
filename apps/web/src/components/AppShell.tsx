@@ -1,4 +1,4 @@
-import { SUPPORT_TELEGRAM } from '@ncc/contracts';
+import { SUPPORT_TELEGRAM } from '@chickaa/contracts';
 import { useMemo } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useServerWaking } from '../api/serverStatus.ts';

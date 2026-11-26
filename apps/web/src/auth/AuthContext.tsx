@@ -1,4 +1,4 @@
-import type { SessionResponse, User } from '@ncc/contracts';
+import type { SessionResponse, User } from '@chickaa/contracts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, post } from '../api/client.ts';
 import { registerAvatars } from '../lib/avatars.ts';
@@ -23,7 +23,7 @@ interface AuthState {
 const Ctx = createContext<AuthState | null>(null);
 
 /** Profile of whoever was last signed in here (no secrets; the session itself is an httpOnly cookie). */
-const LAST_USER = 'ncc.user.last';
+const LAST_USER = 'chickaa.user.last';
 function readLastUser(): User | null {
   try {
     const raw = localStorage.getItem(LAST_USER);
@@ -45,7 +45,7 @@ function writeLastUser(u: User | null) {
 export async function clearLocalUserData(): Promise<void> {
   const last = readLastUser();
   try {
-    for (const k of Object.keys(localStorage)) if (k.startsWith('ncc.user.')) localStorage.removeItem(k);
+    for (const k of Object.keys(localStorage)) if (k.startsWith('chickaa.user.')) localStorage.removeItem(k);
   } catch {
     /* storage unavailable */
   }

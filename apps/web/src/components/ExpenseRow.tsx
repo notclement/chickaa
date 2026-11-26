@@ -1,4 +1,4 @@
-import type { Expense } from '@ncc/contracts';
+import type { Expense } from '@chickaa/contracts';
 import { Link } from 'react-router';
 import { CATEGORY } from '../lib/categories.ts';
 import { money } from '../lib/money.ts';

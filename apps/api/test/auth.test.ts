@@ -1,4 +1,4 @@
-import { schema } from '@ncc/db';
+import { schema } from '@chickaa/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { client, registered, resetDb, TEST_DB_URL, testApp } from './helpers.ts';
 
@@ -12,7 +12,7 @@ describe.skipIf(!TEST_DB_URL)('auth', () => {
     expect(res.status).toBe(201);
     expect(res.body.user).toMatchObject({ username: 'alice', displayName: 'Alice' });
     expect(res.body.recoveryCode).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
-    expect(res.setCookie).toMatch(/^__Host-ncc_session=.+HttpOnly/i);
+    expect(res.setCookie).toMatch(/^__Host-chickaa_session=.+HttpOnly/i);
     expect(res.setCookie).toMatch(/Secure/);
     expect(res.setCookie).toMatch(/SameSite=Lax/);
 

@@ -9,12 +9,12 @@ import {
   type MeResponse,
   type ReferralResponse,
   type SessionResponse,
-} from '@ncc/contracts';
-import { schema } from '@ncc/db';
+} from '@chickaa/contracts';
+import { schema } from '@chickaa/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { timingSafeEqual } from 'node:crypto';
-import { ACCOUNT_DISABLED_MESSAGE, ADMIN_USERNAME } from '@ncc/contracts';
+import { ACCOUNT_DISABLED_MESSAGE, ADMIN_USERNAME } from '@chickaa/contracts';
 import { burnVerifyTime, hashSecret, newRecoveryCode, sha256, verifySecret } from '../auth/crypto.ts';
 import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession } from '../auth/session.ts';
 import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';

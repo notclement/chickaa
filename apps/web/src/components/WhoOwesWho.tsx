@@ -1,4 +1,4 @@
-import type { SettlementResponse } from '@ncc/contracts';
+import type { SettlementResponse } from '@chickaa/contracts';
 import { Link } from 'react-router';
 import { money } from '../lib/money.ts';
 import { Avatar } from '../ui/index.tsx';

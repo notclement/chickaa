@@ -1,4 +1,4 @@
-import { isValidPayNowPayload } from '@ncc/core';
+import { isValidPayNowPayload } from '@chickaa/core';
 import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { client, registered, resetDb, TEST_DB_URL, testApp } from './helpers.ts';
@@ -78,9 +78,9 @@ describe.skipIf(!TEST_DB_URL)('supporter + invite a friend', () => {
     const res = await alice.c.get('/supporter/paynow');
     expect(res.status).toBe(200);
     const { code } = (await alice.c.get('/auth/me/referral')).body;
-    expect(res.body.reference).toBe(`NCC-${code}`);
+    expect(res.body.reference).toBe(`CHICKAA-${code}`);
     expect(res.body.amount).toBe('5.00');
-    expect(res.body.payload).toContain(`62160112NCC-${code}`);
+    expect(res.body.payload).toContain(`62200116CHICKAA-${code}`);
     expect(isValidPayNowPayload(res.body.payload)).toBe(true);
   });
 });

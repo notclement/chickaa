@@ -69,7 +69,7 @@ test.describe('installability', () => {
   // Use a real (persistent) profile so Chrome runs its full installability checks.
   test('Chrome reports no installability errors', async ({ browserName, baseURL }, testInfo) => {
     test.skip(browserName !== 'chromium', 'CDP is Chromium-only');
-    const dir = await mkdtemp(join(tmpdir(), 'ncc-profile-'));
+    const dir = await mkdtemp(join(tmpdir(), 'chickaa-profile-'));
     const ctx = await chromium.launchPersistentContext(dir, {
       ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
       viewport: testInfo.project.use.viewport ?? null,

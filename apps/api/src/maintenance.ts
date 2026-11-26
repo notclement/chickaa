@@ -1,4 +1,4 @@
-import { schema, type Db } from '@ncc/db';
+import { schema, type Db } from '@chickaa/db';
 import { and, isNotNull, lt, or, sql } from 'drizzle-orm';
 
 /** Housekeeping: drop sessions that ended over a week ago and stale rate-limit windows. */

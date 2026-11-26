@@ -1,14 +1,14 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDb } from '@ncc/db';
-import { runMigrations } from '@ncc/db/migrate';
+import { createDb } from '@chickaa/db';
+import { runMigrations } from '@chickaa/db/migrate';
 import { sql } from 'drizzle-orm';
 import { createApp } from '../src/app.ts';
 import { FxUnavailableError, type FxProvider } from '../src/fx/provider.ts';
 import { loadConfig } from '../src/config.ts';
 
-export const ORIGIN = 'https://ncc.test';
+export const ORIGIN = 'https://chickaa.test';
 export const TEST_DB_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 
 let shared: ReturnType<typeof createDb> | null = null;
@@ -42,7 +42,7 @@ export async function testApp() {
     migrated = true;
   }
   shared ??= createDb(TEST_DB_URL, { max: 5 });
-  const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
+  const dist = mkdtempSync(join(tmpdir(), 'chickaa-web-'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html>');
   const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN, ADMIN_SETUP_CODE: 'correct-admin-code-123', PAYNOW_QR_PAYLOAD: '00020101021126380009SG.PAYNOW010100211+65900000000301152040000530370254045.005802SG5902NA6009SINGAPORE630404BE' }), webDist: dist };
   const app = createApp({ config, db: shared.db, pingDb: async () => true, fx });
@@ -68,7 +68,7 @@ export function client(app: App, ip = '203.0.113.1') {
     if (cookie) headers.cookie = cookie;
     if (method !== 'GET') {
       headers.origin = ORIGIN;
-      headers['x-requested-with'] = 'ncc';
+      headers['x-requested-with'] = 'chickaa';
     }
     if (body !== undefined) headers['content-type'] = 'application/json';
     if (raw) headers['content-type'] = raw.type;

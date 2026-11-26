@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { HealthResponse } from '@ncc/contracts';
+import type { HealthResponse } from '@chickaa/contracts';
 import { api } from '../api/client.ts';
 import { useOnline } from '../offline/useOnline.ts';
 import { isStandalone, readPlatform } from '../pwa/platform.ts';

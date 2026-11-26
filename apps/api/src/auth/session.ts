@@ -1,5 +1,5 @@
 import { publicUser } from '../lib/users.ts';
-import { schema, type Db } from '@ncc/db';
+import { schema, type Db } from '@chickaa/db';
 import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
@@ -16,7 +16,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function cookieName(c: Context<Env>): string {
   // __Host- prefix: Secure, path=/, no Domain → can't be set by subdomains. HTTPS only.
-  return c.var.config.nodeEnv === 'production' ? '__Host-ncc_session' : 'ncc_session';
+  return c.var.config.nodeEnv === 'production' ? '__Host-chickaa_session' : 'chickaa_session';
 }
 
 function writeCookie(c: Context<Env>, token: string) {

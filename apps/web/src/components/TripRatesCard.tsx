@@ -1,5 +1,5 @@
-import type { TripFxRatesResponse } from '@ncc/contracts';
-import { CURRENCIES, CURRENCY_CODES } from '@ncc/core';
+import type { TripFxRatesResponse } from '@chickaa/contracts';
+import { CURRENCIES, CURRENCY_CODES } from '@chickaa/core';
 import { useState, type FormEvent } from 'react';
 import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';

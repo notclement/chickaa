@@ -1,5 +1,5 @@
 # Fly.io config. Set the app name with `fly launch --no-deploy` (it rewrites this line).
-app = "nochickencall"
+app = "chickaa"
 primary_region = "sin"
 
 [build]

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useInstallPrompt } from '../pwa/useInstallPrompt.ts';
 
-const DISMISS_KEY = 'ncc.installCard.dismissed';
+const DISMISS_KEY = 'chickaa.installCard.dismissed';
 
 function readDismissed(): boolean {
   try {

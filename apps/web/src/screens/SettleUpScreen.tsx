@@ -1,5 +1,5 @@
-import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementEventsResponse, type SettlementResponse, type SettlementTransfer, type TripDetail } from '@ncc/contracts';
-import { formatAmount, isCurrencyCode } from '@ncc/core';
+import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementEventsResponse, type SettlementResponse, type SettlementTransfer, type TripDetail } from '@chickaa/contracts';
+import { formatAmount, isCurrencyCode } from '@chickaa/core';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { api, errorMessage, post } from '../api/client.ts';

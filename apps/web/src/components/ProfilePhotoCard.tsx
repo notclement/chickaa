@@ -1,4 +1,4 @@
-import type { MeResponse } from '@ncc/contracts';
+import type { MeResponse } from '@chickaa/contracts';
 import { useRef, useState } from 'react';
 import { api, errorMessage } from '../api/client.ts';
 import { useAuth, useMe } from '../auth/AuthContext.tsx';

@@ -90,7 +90,7 @@ When a new version is out, you'll see **"New version ready · Refresh"** at the 
 
 ## Become a Supporter
 Account → **💛 Support**. It's a small one-person project, so this is a bit manual:
-1. Scan the PayNow QR (S$5) from another phone, or tap **Save QR** and upload it in your bank app's Scan QR. Your reference (`NCC-…`) is already in it.
+1. Scan the PayNow QR (S$5) from another phone, or tap **Save QR** and upload it in your bank app's Scan QR. Your reference (`CHICKAA-…`) is already in it.
 2. Tap **Message @mashpotatas on Telegram**; the message with your reference is filled in. Your 💛 lifetime Supporter badge is switched on once the payment is seen.
 
 ## Invite a friend
@@ -106,7 +106,7 @@ The app has one admin account (`admin`). It can only be created with a private o
   - ⚪ **Ended:** finished and fully settled.
   - 🔴 **Deleted:** deleted by the owner.
 - Switch to the **Users** tab to see every account: display name, @ID, when they joined and were last active. Search by name or ID, and tap a person to see the trips they own or are in (with each trip's tag). Tap a trip to open it.
-- Matching a payment: search **Users** for the `NCC-…` reference from the Telegram message or bank record, then tap **Lifetime**.
+- Matching a payment: search **Users** for the `CHICKAA-…` reference from the Telegram message or bank record, then tap **Lifetime**.
 - In **Users**, tap a person to set their **Supporter** status (**+1 month**, **Lifetime**, **Remove**) and see who invited them.
 - **Disable account…** (Users → tap a person): only once they're settled in every trip. They can still view their trips but can't change anything, and see a message to PM @mashpotatas. Find them under **🚫 Disabled**, where **Enable account** undoes it. A trip with a disabled member can't be reopened.
 - **Delete permanently…** on a trip in the list removes it and everything in it for everyone, forever (for test trips). Type the trip name to confirm.

@@ -63,13 +63,13 @@ test('offline: last-loaded trips, expenses, balances and settle-up are viewable 
   await expect(alice.getByRole('link', { name: /Add expense/ })).toBeVisible();
 
   // Logging out deletes this user's offline copy.
-  const me = await alice.evaluate(() => JSON.parse(localStorage.getItem('ncc.user.last') ?? '{}').id as string);
-  expect(await dbNames(alice)).toContain(`ncc-${me}`);
+  const me = await alice.evaluate(() => JSON.parse(localStorage.getItem('chickaa.user.last') ?? '{}').id as string);
+  expect(await dbNames(alice)).toContain(`chickaa-${me}`);
   await alice.getByRole('link', { name: 'Account' }).click();
   await alice.getByRole('button', { name: 'Log out' }).click();
   await expect(alice.getByRole('link', { name: 'Log in' })).toBeVisible();
-  await expect.poll(() => dbNames(alice)).not.toContain(`ncc-${me}`);
-  expect(await alice.evaluate(() => localStorage.getItem('ncc.user.last'))).toBeNull();
+  await expect.poll(() => dbNames(alice)).not.toContain(`chickaa-${me}`);
+  expect(await alice.evaluate(() => localStorage.getItem('chickaa.user.last'))).toBeNull();
 
   // Bob never opened the trip page on this phone after joining, but My trips prefetched it.
   await bob.goto('/');

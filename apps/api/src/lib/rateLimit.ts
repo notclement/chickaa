@@ -1,4 +1,4 @@
-import { schema, type Db } from '@ncc/db';
+import { schema, type Db } from '@chickaa/db';
 import { eq, sql } from 'drizzle-orm';
 import { HttpError } from './http.ts';
 

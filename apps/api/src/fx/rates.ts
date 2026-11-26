@@ -1,5 +1,5 @@
-import { rateFromLiteral, rateToString } from '@ncc/core';
-import { schema, type Db } from '@ncc/db';
+import { rateFromLiteral, rateToString } from '@chickaa/core';
+import { schema, type Db } from '@chickaa/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from '../lib/http.ts';
 import { FxUnavailableError, type FxProvider } from './provider.ts';

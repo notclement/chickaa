@@ -1,12 +1,12 @@
-import type { AdminTrip, AdminTripsResponse, TripTag } from '@ncc/contracts';
+import type { AdminTrip, AdminTripsResponse, AdminUser, AdminUsersResponse, TripTag } from '@ncc/contracts';
 import { schema } from '@ncc/db';
-import { desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
 import { notFound } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
 
-const { trips, users } = schema;
+const { trips, users, tripMembers } = schema;
 
 /** "YYYY-MM-DD" for today in the given time zone. */
 export function todayIn(timeZone: string, now = new Date()): string {
@@ -37,17 +37,15 @@ adminRoutes.use('*', async (c, next) => {
   await next();
 });
 
-/** Every trip on the app, with a status tag. Read-only. */
-adminRoutes.get('/trips', async (c) => {
-  const me = currentUser(c);
-  const db = c.var.db;
+/** Every trip on the app with its tag, newest first. */
+async function allTrips(db: Env['Variables']['db'], meId: string, timeZone: string): Promise<AdminTrip[]> {
   const rows = await db
     .select({
       trip: trips,
       ownerName: users.displayName,
       ownerUsername: users.username,
       memberCount: sql<number>`(select count(*)::int from trip_members m where m.trip_id = ${trips.id} and m.left_at is null)`,
-      iAmMember: sql<boolean>`exists(select 1 from trip_members m where m.trip_id = ${trips.id} and m.user_id = ${me.id} and m.left_at is null)`,
+      iAmMember: sql<boolean>`exists(select 1 from trip_members m where m.trip_id = ${trips.id} and m.user_id = ${meId} and m.left_at is null)`,
       expenseCount: sql<number>`(select count(*)::int from expenses e where e.trip_id = ${trips.id} and e.deleted_at is null)`,
       totalSpent: sql<string>`(select coalesce(sum(e.base_amount), 0)::text from expenses e where e.trip_id = ${trips.id} and e.deleted_at is null)`,
       openTransfers: sql<number>`(
@@ -60,8 +58,8 @@ adminRoutes.get('/trips', async (c) => {
     .innerJoin(users, eq(users.id, trips.createdBy))
     .orderBy(desc(trips.createdAt));
 
-  const today = todayIn(c.var.config.timeZone);
-  const list: AdminTrip[] = rows.map((r) => ({
+  const today = todayIn(timeZone);
+  return rows.map((r) => ({
     id: r.trip.id,
     name: r.trip.name,
     baseCurrency: r.trip.baseCurrency,
@@ -76,8 +74,59 @@ adminRoutes.get('/trips', async (c) => {
     tag: tripTag(r.trip, r, today),
     iAmMember: r.iAmMember,
   }));
+}
+
+/** Every trip on the app, with a status tag. Read-only. */
+adminRoutes.get('/trips', async (c) => {
+  const list = await allTrips(c.var.db, currentUser(c).id, c.var.config.timeZone);
   const counts: Record<string, number> = {};
   for (const t of list) counts[t.tag] = (counts[t.tag] ?? 0) + 1;
   const res: AdminTripsResponse = { trips: list, counts };
+  return c.json(res);
+});
+
+/** Every user, with the trips they own or belong to (newest trip first). Read-only. */
+adminRoutes.get('/users', async (c) => {
+  const db = c.var.db;
+  const tripList = await allTrips(db, currentUser(c).id, c.var.config.timeZone);
+  const byId = new Map(tripList.map((t, i) => [t.id, { t, i }]));
+  const people = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      isAdmin: users.isAdmin,
+      createdAt: users.createdAt,
+      lastSeenMs: sql<number | null>`(select (extract(epoch from max(s.last_seen_at)) * 1000)::float8 from sessions s where s.user_id = "users"."id")`,
+    })
+    .from(users)
+    .orderBy(asc(users.createdAt));
+  const memberships = await db
+    .select({ userId: tripMembers.userId, tripId: tripMembers.tripId, role: tripMembers.role, leftAt: tripMembers.leftAt, createdBy: trips.createdBy })
+    .from(tripMembers)
+    .innerJoin(trips, eq(trips.id, tripMembers.tripId));
+
+  const perUser = new Map<string, { trip: AdminUser['trips'][number]; order: number }[]>();
+  for (const m of memberships) {
+    const hit = byId.get(m.tripId);
+    if (!hit) continue;
+    const list = perUser.get(m.userId) ?? [];
+    list.push({
+      trip: { id: hit.t.id, name: hit.t.name, tag: hit.t.tag, role: m.createdBy === m.userId ? 'owner' : 'member', left: m.leftAt !== null },
+      order: hit.i,
+    });
+    perUser.set(m.userId, list);
+  }
+  const res: AdminUsersResponse = {
+    users: people.map((p) => ({
+      id: p.id,
+      username: p.username,
+      displayName: p.displayName,
+      isAdmin: p.isAdmin,
+      createdAt: p.createdAt.toISOString(),
+      lastSeenAt: p.lastSeenMs == null ? null : new Date(Number(p.lastSeenMs)).toISOString(),
+      trips: (perUser.get(p.id) ?? []).sort((a, b) => a.order - b.order).map((x) => x.trip),
+    })),
+  };
   return c.json(res);
 });

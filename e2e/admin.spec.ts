@@ -13,7 +13,8 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   const aliceCtx = await browser.newContext();
   const alice = await aliceCtx.newPage();
   await alice.goto('/register');
-  await register(alice, 'Alice', `alice_${uid()}`);
+  const aliceId = `alice_${uid()}`;
+  await register(alice, 'Alice', aliceId);
   const busy = `Busy ${uid()}`;
   const empty = `Empty ${uid()}`;
   for (const name of [empty, busy]) {
@@ -64,4 +65,16 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   await page.getByTestId('expense-row').first().click();
   await expect(page.getByRole('link', { name: 'Edit' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+
+  // Users tab: every account with the trips under it.
+  await page.goto('/admin');
+  await page.getByRole('tab', { name: 'Users' }).click();
+  await expect(page.getByRole('heading', { name: 'All users' })).toBeVisible();
+  await page.getByLabel('Search users').fill(aliceId);
+  const row = page.getByTestId('admin-user').filter({ hasText: `@${aliceId}` });
+  await expect(row.getByTestId('user-trip-count')).toHaveText('2 trips');
+  await row.locator('summary').click();
+  await expect(row.getByTestId('admin-user-trip').filter({ hasText: busy }).getByTestId('trip-tag')).toHaveText('On-going');
+  await row.getByTestId('admin-user-trip').filter({ hasText: empty }).click();
+  await expect(page.getByTestId('admin-view')).toBeVisible();
 });

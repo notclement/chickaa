@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v1.1.0**. See [PHASES.md](PHASES.md) for what's next.
+What NoChickenCall does as of **v1.2.0**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **display name, user ID and password**. No email or phone number.
@@ -45,6 +45,7 @@ What NoChickenCall does as of **v1.1.0**. See [PHASES.md](PHASES.md) for what's 
 ## Admin
 - One admin account, the reserved ID `admin`, which can only be created with a private one-time code.
 - **All trips** screen with filters and colour-coded tags: 🔵 Active · 🟢 On-going · 🟣 Needs finishing · 🟠 Pending settlement · ⚪ Ended · 🔴 Deleted.
+- **Users** tab: every account (display name, @ID, joined, last active), searchable; expand one to see the trips they own or belong to, with tags.
 - Opens any trip **read-only**. In trips the admin has joined, they're a normal member.
 
 ## App (PWA)

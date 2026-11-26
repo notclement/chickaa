@@ -433,3 +433,27 @@ export const AdminTrip = z.object({
 export type AdminTrip = z.infer<typeof AdminTrip>;
 export const AdminTripsResponse = z.object({ trips: z.array(AdminTrip), counts: z.record(z.string(), z.number()) });
 export type AdminTripsResponse = z.infer<typeof AdminTripsResponse>;
+
+/** One trip in a user's list on the admin Users tab. */
+export const AdminUserTrip = z.object({
+  id: z.string(),
+  name: z.string(),
+  tag: TripTag,
+  role: z.enum(['owner', 'member']),
+  /** They left (or were removed from) this trip. */
+  left: z.boolean(),
+});
+export type AdminUserTrip = z.infer<typeof AdminUserTrip>;
+export const AdminUser = z.object({
+  id: z.string(),
+  username: z.string(),
+  displayName: z.string(),
+  isAdmin: z.boolean(),
+  createdAt: z.string(),
+  /** Last time any of their sessions was used, if ever. */
+  lastSeenAt: z.string().nullable(),
+  trips: z.array(AdminUserTrip),
+});
+export type AdminUser = z.infer<typeof AdminUser>;
+export const AdminUsersResponse = z.object({ users: z.array(AdminUser) });
+export type AdminUsersResponse = z.infer<typeof AdminUsersResponse>;

@@ -1,31 +1,58 @@
-import type { AdminTripsResponse, TripTag } from '@ncc/contracts';
+import type { AdminTripsResponse, AdminUsersResponse, TripTag } from '@ncc/contracts';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { api, errorMessage } from '../api/client.ts';
 import { useApi } from '../api/useApi.ts';
 import { useMe } from '../auth/AuthContext.tsx';
 import { TAGS, TripTagChip } from '../components/TripTagChip.tsx';
 import { formatDateRange } from '../lib/format.ts';
 import { money } from '../lib/money.ts';
-import { Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
+import { Avatar, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
 
 const ORDER: TripTag[] = ['ongoing', 'active', 'needs_finishing', 'pending_settlement', 'ended', 'deleted'];
 
-/** Admin only: every trip on the app with its status. Opening a trip you're not in is read-only. */
+/** Admin only: every trip and every user. Opening a trip you're not in is read-only. */
 export function AdminScreen() {
   const me = useMe();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'users' ? 'users' : 'trips';
+  if (!me.isAdmin) return <ErrorState message="This page doesn’t exist." />;
+  return (
+    <div className="space-y-4">
+      <ScreenTitle
+        title={tab === 'users' ? 'All users' : 'All trips'}
+        subtitle="Admin view · read-only for trips you’re not in"
+        back="/account"
+      />
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-ink-900/5 p-1" role="tablist" aria-label="Admin sections">
+        {(['trips', 'users'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setParams(t === 'users' ? { tab: 'users' } : {}, { replace: true })}
+            className={`min-h-10 rounded-full text-sm font-semibold ${tab === t ? 'bg-white shadow-sm' : 'text-ink-500'}`}
+          >
+            {t === 'trips' ? 'Trips' : 'Users'}
+          </button>
+        ))}
+      </div>
+      {tab === 'users' ? <UsersTab /> : <TripsTab />}
+    </div>
+  );
+}
+
+function TripsTab() {
   const { data, error, loading, reload } = useApi(() => api<AdminTripsResponse>('/admin/trips'), []);
   const [filter, setFilter] = useState<TripTag | 'all'>('all');
 
-  if (!me.isAdmin) return <ErrorState message="This page doesn’t exist." />;
   if (error) return <ErrorState message={errorMessage(error)} onRetry={reload} />;
   if (loading && !data) return <Loading />;
   const trips = (data?.trips ?? []).filter((t) => filter === 'all' || t.tag === filter);
 
   return (
     <div className="space-y-4">
-      <ScreenTitle title="All trips" subtitle="Admin view · read-only for trips you’re not in" back="/account" />
-
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
         <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
           All · {data?.trips.length ?? 0}
@@ -79,6 +106,82 @@ export function AdminScreen() {
           ))}
         </ul>
       </Card>
+    </div>
+  );
+}
+
+/** Every user, newest last, with the trips they own or belong to. */
+function UsersTab() {
+  const { data, error, loading, reload } = useApi(() => api<AdminUsersResponse>('/admin/users'), []);
+  const [q, setQ] = useState('');
+  if (error) return <ErrorState message={errorMessage(error)} onRetry={reload} />;
+  if (loading && !data) return <Loading />;
+  const all = data?.users ?? [];
+  const needle = q.trim().toLowerCase();
+  const users = needle ? all.filter((u) => u.username.toLowerCase().includes(needle) || u.displayName.toLowerCase().includes(needle)) : all;
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'}`}
+        aria-label="Search users"
+        className="min-h-11 w-full rounded-2xl bg-white px-4 ring-1 ring-ink-900/10 focus:outline-none focus:ring-2 focus:ring-ink-900"
+      />
+      {users.length === 0 ? (
+        <Card className="text-center text-ink-500">No users.</Card>
+      ) : (
+        <ul className="space-y-2">
+          {users.map((u) => {
+            const current = u.trips.filter((t) => !t.left);
+            return (
+              <li key={u.id}>
+                <details className="group rounded-3xl bg-white shadow-sm ring-1 ring-ink-900/5" data-testid="admin-user">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+                    <Avatar name={u.displayName} id={u.id} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold">
+                        {u.displayName}
+                        {u.isAdmin && <span className="ml-2 rounded-full bg-ink-900 px-2 py-0.5 text-xs text-cream">Admin</span>}
+                      </div>
+                      <div className="truncate text-sm text-ink-500">@{u.username}</div>
+                      <div className="text-xs text-ink-500">
+                        joined {new Date(u.createdAt).toLocaleDateString()}
+                        {u.lastSeenAt ? ` · last active ${new Date(u.lastSeenAt).toLocaleDateString()}` : ''}
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-ink-900/5 px-2.5 py-1 text-xs font-semibold" data-testid="user-trip-count">
+                      {current.length} trip{current.length === 1 ? '' : 's'}
+                    </span>
+                    <span aria-hidden className="text-ink-500 transition-transform group-open:rotate-90">›</span>
+                  </summary>
+                  <div className="border-t border-ink-900/5 px-4 pb-3 pt-2">
+                    {u.trips.length === 0 ? (
+                      <p className="py-1 text-sm text-ink-500">Not in any trip yet.</p>
+                    ) : (
+                      <ul className="divide-y divide-ink-900/5">
+                        {u.trips.map((t) => (
+                          <li key={t.id}>
+                            <Link to={`/trips/${t.id}`} className="flex items-center justify-between gap-2 py-2" data-testid="admin-user-trip">
+                              <span className="min-w-0">
+                                <span className={`block truncate font-semibold ${t.left ? 'text-ink-500 line-through' : ''}`}>{t.name}</span>
+                                <span className="text-xs text-ink-500">{t.role === 'owner' ? 'Owner' : 'Member'}{t.left ? ' · left' : ''}</span>
+                              </span>
+                              <TripTagChip tag={t.tag} />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

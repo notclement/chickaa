@@ -115,6 +115,19 @@ describe.skipIf(!TEST_DB_URL)('admin', () => {
     const { token } = (await alice.c.post(`/trips/${t1.id}/invitations`, {})).body;
     await admin.post(`/invites/${token}/join`);
     expect((await admin.get(`/trips/${t1.id}`)).body.myRole).toBe('member');
+
+    // Users tab: everyone, with the trips they own or belong to.
+    expect((await bob.c.get('/admin/users')).status).toBe(404);
+    const { users } = (await admin.get('/admin/users')).body;
+    const find = (u: string) => users.find((x: { username: string }) => x.username === u);
+    expect(find('bob')).toMatchObject({ displayName: 'BOB', isAdmin: false, trips: [] });
+    expect(find('bob').lastSeenAt).not.toBeNull();
+    expect(find('alice').trips.map((t: { name: string; tag: string; role: string }) => [t.name, t.tag, t.role])).toEqual([
+      ['Gone', 'deleted', 'owner'],
+      ['Busy trip', 'ongoing', 'owner'],
+      ['Empty trip', 'active', 'owner'],
+    ]);
+    expect(find('admin')).toMatchObject({ isAdmin: true, trips: [{ name: 'Empty trip', role: 'member', left: false }] });
     const _ = db;
   });
 });

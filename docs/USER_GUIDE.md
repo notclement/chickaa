@@ -95,6 +95,7 @@ The app has one admin account (`admin`). It can only be created with a private o
   - 🟠 **Pending settlement:** finished; not every payment is confirmed yet.
   - ⚪ **Ended:** finished and fully settled.
   - 🔴 **Deleted:** deleted by the owner.
+- Switch to the **Users** tab to see every account: display name, @ID, when they joined and were last active. Search by name or ID, and tap a person to see the trips they own or are in (with each trip's tag). Tap a trip to open it.
 - Opening a trip you're not in is **read-only**. In trips you've joined, you're a normal member.
 
 ## FAQ

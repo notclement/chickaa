@@ -30,7 +30,7 @@ export function AccountScreen() {
       </Card>
       {me.isAdmin && (
         <ButtonLink to="/admin" variant="secondary" block>
-          🛡️ Admin: all trips
+          🛡️ Admin: trips &amp; users
         </ButtonLink>
       )}
       <ProfilePhotoCard />

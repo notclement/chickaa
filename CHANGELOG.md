@@ -2,6 +2,10 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.2.0] - 2026-11-26 · Admin users list
+### Added
+- **Admin → Users tab:** every account (display name, @ID, joined date, last active, Admin badge), searchable, each expanding to the trips they own or belong to with the trip's status tag, owner/member role and whether they left. Tap a trip to open it (read-only unless you're a member).
+
 ## [1.1.0] - 2026-11-26 · Fresh start + admin
 ### ⚠️ Data reset
 - **The database is wiped once when this version deploys.** All accounts, trips, expenses and settlements are deleted (exchange-rate cache kept). Everyone signs up again.

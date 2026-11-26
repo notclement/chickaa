@@ -1,3 +1,4 @@
+import { isValidPayNowPayload } from '@ncc/core';
 import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { client, registered, resetDb, TEST_DB_URL, testApp } from './helpers.ts';
@@ -68,5 +69,18 @@ describe.skipIf(!TEST_DB_URL)('supporter + invite a friend', () => {
     expect((await admin.post(url, { action: 'remove' })).body.supporter).toEqual({ active: false, lifetime: false, until: null });
     expect((await admin.post(url, { action: 'forever' })).status).toBe(400);
     expect((await admin.post(`/admin/users/${crypto.randomUUID()}/supporter`, { action: 'month' })).status).toBe(404);
+  });
+
+  it('PayNow QR for supporters carries the user’s reference', async () => {
+    const { app } = await testApp();
+    const alice = await registered(app, 'alice');
+    expect((await client(app, '198.51.100.90').get('/supporter/paynow')).status).toBe(401);
+    const res = await alice.c.get('/supporter/paynow');
+    expect(res.status).toBe(200);
+    const { code } = (await alice.c.get('/auth/me/referral')).body;
+    expect(res.body.reference).toBe(`NCC-${code}`);
+    expect(res.body.amount).toBe('5.00');
+    expect(res.body.payload).toContain(`62160112NCC-${code}`);
+    expect(isValidPayNowPayload(res.body.payload)).toBe(true);
   });
 });

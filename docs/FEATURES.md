@@ -1,6 +1,6 @@
 # Features
 
-What NoChickenCall does as of **v1.4.0**. See [PHASES.md](PHASES.md) for what's next.
+What NoChickenCall does as of **v1.5.0**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **display name, user ID and password**. No email or phone number.
@@ -45,13 +45,14 @@ What NoChickenCall does as of **v1.4.0**. See [PHASES.md](PHASES.md) for what's 
 
 ## Supporter
 - **💛 Supporter** badge, for a month at a time or for life. Nothing is locked behind it yet.
+- **Become a Supporter:** one-off S$5 by PayNow (QR with your own reference), then message the developer on Telegram; the admin switches on Lifetime.
 - **Invite a friend:** your own link; each friend who signs up with it gives you both 1 month as Supporter (stacks, up to 12 months ahead).
 
 ## Admin
 - One admin account, the reserved ID `admin`, which can only be created with a private one-time code.
 - **All trips** screen with filters and colour-coded tags: 🔵 Active · 🟢 On-going · 🟣 Needs finishing · 🟠 Pending settlement · ⚪ Ended · 🔴 Deleted.
 - **Users** tab: every account (display name, @ID, joined, last active), searchable; expand one to see the trips they own or belong to, with tags.
-- Set anyone's **Supporter** status: +1 month, lifetime, or remove; see who invited whom.
+- Set anyone's **Supporter** status: +1 month, lifetime, or remove; see who invited whom and their PayNow reference (searchable).
 - **Delete permanently** any trip (test trips), typing its name to confirm.
 - Opens any trip **read-only**. In trips the admin has joined, they're a normal member.
 

@@ -44,7 +44,7 @@ export async function testApp() {
   shared ??= createDb(TEST_DB_URL, { max: 5 });
   const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html>');
-  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN, ADMIN_SETUP_CODE: 'correct-admin-code-123' }), webDist: dist };
+  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN, ADMIN_SETUP_CODE: 'correct-admin-code-123', PAYNOW_QR_PAYLOAD: '00020101021126380009SG.PAYNOW010100211+65900000000301152040000530370254045.005802SG5902NA6009SINGAPORE630404BE' }), webDist: dist };
   const app = createApp({ config, db: shared.db, pingDb: async () => true, fx });
   return { app, db: shared.db };
 }

@@ -556,6 +556,7 @@ Each phase ends with something runnable and deployed to a staging URL.
 - `POST /auth/register` with `referralCode`: in one transaction the new user gets `now() + 1 month` and `referred_by`; the referrer gets +1 month from `max(now, until)`, capped at now + 12 months (lifetime untouched). Unknown codes are ignored.
 - Web: `/r/:code` stores the code in localStorage for 30 days and opens sign-up, which sends it.
 - Admin: `POST /admin/users/:id/supporter {action: month|lifetime|remove}`; `/admin/users` includes supporter, `referredBy`, `invited`.
+- **PayNow (v1.5.0):** `PAYNOW_QR_PAYLOAD` (validated: EMV fields, SG.PAYNOW, CRC-16/CCITT-FALSE) holds the owner's static QR text. `GET /supporter/paynow` adds tag 62.01 = `NCC-<referral code>` and recomputes the CRC (`withPayNowReference` in core), so the bank record carries the reference. The web draws the QR locally. Matching is manual (Telegram + admin Lifetime button); a gateway (Stripe/HitPay PayNow webhook) can automate it later.
 - Nothing checks supporter status yet; future extras gate on `user.supporter.active`.
 
 ## 13. Known limitations

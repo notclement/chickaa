@@ -11,7 +11,7 @@ import {
   type SessionResponse,
 } from '@ncc/contracts';
 import { schema } from '@ncc/db';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { timingSafeEqual } from 'node:crypto';
 import { ADMIN_USERNAME } from '@ncc/contracts';
@@ -20,7 +20,7 @@ import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession
 import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';
 import { rateLimit, rateLimitHit, rateLimitPeek, resetRateLimit } from '../lib/rateLimit.ts';
 import type { Env } from '../lib/types.ts';
-import { newReferralCode, publicUser, REFERRAL_CAP_MONTHS } from '../lib/users.ts';
+import { ensureReferralCode, publicUser, REFERRAL_CAP_MONTHS } from '../lib/users.ts';
 
 const MIN = 60;
 
@@ -136,24 +136,12 @@ authRoutes.get('/session', (c) => {
 authRoutes.get('/me/referral', requireAuth, async (c) => {
   const db = c.var.db;
   const me = currentUser(c);
-  let [row] = await db.select({ code: schema.users.referralCode }).from(schema.users).where(eq(schema.users.id, me.id));
-  for (let i = 0; !row?.code && i < 5; i++) {
-    try {
-      [row] = await db
-        .update(schema.users)
-        .set({ referralCode: newReferralCode() })
-        .where(and(eq(schema.users.id, me.id), isNull(schema.users.referralCode)))
-        .returning({ code: schema.users.referralCode });
-      if (!row) [row] = await db.select({ code: schema.users.referralCode }).from(schema.users).where(eq(schema.users.id, me.id));
-    } catch (err) {
-      if (!isUniqueViolation(err)) throw err; // code clash: try another
-    }
-  }
+  const code = await ensureReferralCode(db, me.id);
   const [{ invited }] = (await db
     .select({ invited: sql<number>`count(*)::int` })
     .from(schema.users)
     .where(eq(schema.users.referredBy, me.id))) as [{ invited: number }];
-  const res: ReferralResponse = { code: row!.code!, invited, months: invited };
+  const res: ReferralResponse = { code, invited, months: invited };
   return c.json(res);
 });
 

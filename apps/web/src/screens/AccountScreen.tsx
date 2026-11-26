@@ -32,9 +32,14 @@ export function AccountScreen() {
           <div className="text-xs text-ink-500">Your display name (below) is what friends see; change it any time.</div>
         </div>
       </Card>
-      <ButtonLink to="/invite-friend" variant="secondary" block>
-        🎁 Invite a friend
-      </ButtonLink>
+      <div className="grid grid-cols-2 gap-2">
+        <ButtonLink to="/supporter" variant="secondary" block>
+          {me.supporter?.lifetime ? '💛 Supporter' : '💛 Support'}
+        </ButtonLink>
+        <ButtonLink to="/invite-friend" variant="secondary" block>
+          🎁 Invite a friend
+        </ButtonLink>
+      </div>
       {me.isAdmin && (
         <ButtonLink to="/admin" variant="secondary" block>
           🛡️ Admin: trips &amp; users

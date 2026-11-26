@@ -104,6 +104,14 @@ export const User = z.object({
 });
 export type User = z.infer<typeof User>;
 
+/** GET /supporter/paynow: what the Supporter page shows. `payload` already contains `reference`. */
+export const SupporterPayNowResponse = z.object({
+  payload: z.string(),
+  reference: z.string(),
+  amount: z.string().nullable(),
+});
+export type SupporterPayNowResponse = z.infer<typeof SupporterPayNowResponse>;
+
 /** GET /me/referral: this user's "Invite a friend" link details. */
 export const ReferralResponse = z.object({ code: z.string(), invited: z.number(), months: z.number() });
 export type ReferralResponse = z.infer<typeof ReferralResponse>;
@@ -474,6 +482,8 @@ export const AdminUser = z.object({
   referredBy: z.string().nullable(),
   /** How many people signed up with their invite link. */
   invited: z.number(),
+  /** Their PayNow reference (NCC-<code>), once they've opened Invite a friend or the Supporter page. */
+  reference: z.string().nullable(),
   trips: z.array(AdminUserTrip),
 });
 export type AdminUser = z.infer<typeof AdminUser>;

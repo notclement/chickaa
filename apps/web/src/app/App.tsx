@@ -12,6 +12,7 @@ import { LoginScreen, RecoverScreen, RegisterScreen } from '../screens/AuthScree
 import { InviteScreen } from '../screens/InviteScreen.tsx';
 import { InviteFriendScreen } from '../screens/InviteFriendScreen.tsx';
 import { ReferralLanding } from '../screens/ReferralLanding.tsx';
+import { SupporterScreen } from '../screens/SupporterScreen.tsx';
 import { JoinScreen } from '../screens/JoinScreen.tsx';
 import { MyTripsScreen } from '../screens/MyTripsScreen.tsx';
 import { NotFoundScreen } from '../screens/NotFoundScreen.tsx';
@@ -47,6 +48,7 @@ export function App() {
               <Route path="expenses/:eid/edit" element={<EditExpenseScreen />} />
               <Route path="account" element={<AccountScreen />} />
               <Route path="invite-friend" element={<InviteFriendScreen />} />
+              <Route path="supporter" element={<SupporterScreen />} />
               <Route path="admin" element={<AdminScreen />} />
             </Route>
             <Route path="*" element={<NotFoundScreen />} />

@@ -1,4 +1,7 @@
 import type { User } from '@ncc/contracts';
+import { schema, type Db } from '@ncc/db';
+import { and, eq, isNull } from 'drizzle-orm';
+import { isUniqueViolation } from './http.ts';
 import { randomInt } from 'node:crypto';
 
 /** The user columns every "who am I" response needs. */
@@ -39,3 +42,18 @@ export function newReferralCode(): string {
 
 /** Referral months stop stacking beyond this far ahead (keeps fake-account farming pointless). */
 export const REFERRAL_CAP_MONTHS = 12;
+
+/** The user's referral code, made on first use. */
+export async function ensureReferralCode(db: Db, userId: string): Promise<string> {
+  const { users } = schema;
+  for (let i = 0; i < 5; i++) {
+    const [row] = await db.select({ code: users.referralCode }).from(users).where(eq(users.id, userId));
+    if (row?.code) return row.code;
+    try {
+      await db.update(users).set({ referralCode: newReferralCode() }).where(and(eq(users.id, userId), isNull(users.referralCode)));
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err; // code clash: try another
+    }
+  }
+  throw new Error('Could not create a referral code');
+}

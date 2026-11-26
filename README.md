@@ -7,7 +7,7 @@ NoChickenCall is a group-trip expense app. Log what everyone pays during the tri
 
 It's a Progressive Web App: open it in your phone's browser and add it to your home screen. There's nothing to download from an app store.
 
-**Live app:** https://nochickencall.onrender.com · **Version:** 1.4.0
+**Live app:** https://nochickencall.onrender.com · **Version:** 1.5.0
 
 ## Highlights
 

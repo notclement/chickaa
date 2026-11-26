@@ -1,3 +1,5 @@
+import { isValidPayNowPayload } from '@ncc/core';
+
 /** Runtime configuration, read once from environment variables. */
 export interface Config {
   port: number;
@@ -16,6 +18,8 @@ export interface Config {
   adminSetupCode: string | undefined;
   /** Time zone used for "today" when tagging trips. */
   timeZone: string;
+  /** The text inside the owner's static PayNow QR (PAYNOW_QR_PAYLOAD). Unset/invalid = no PayNow on the Supporter page. */
+  payNowPayload: string | undefined;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -27,10 +31,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl: env.DATABASE_URL,
     publicOrigin: (env.PUBLIC_ORIGIN ?? env.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
     webDist: env.WEB_DIST ?? new URL('../../web/dist', import.meta.url).pathname,
-    appVersion: `1.4.0+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
+    appVersion: `1.5.0+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
     runMigrationsOnStart: env.RUN_MIGRATIONS_ON_START === 'true',
     rateLimitScale: Number(env.RATE_LIMIT_SCALE ?? 1) || 1,
     adminSetupCode: env.ADMIN_SETUP_CODE?.trim() || undefined,
     timeZone: env.TZ_TRIPS ?? 'Asia/Singapore',
+    payNowPayload: validPayNow(env.PAYNOW_QR_PAYLOAD),
   };
+}
+
+function validPayNow(v: string | undefined): string | undefined {
+  const text = v?.trim();
+  if (!text) return undefined;
+  if (isValidPayNowPayload(text)) return text;
+  console.warn('PAYNOW_QR_PAYLOAD is set but is not a valid PayNow QR payload; ignoring it');
+  return undefined;
 }

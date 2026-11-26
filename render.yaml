@@ -21,5 +21,7 @@ services:
         value: "true"
       - key: ADMIN_SETUP_CODE
         sync: false # one-time code to create the "admin" account; set privately in the dashboard
+      - key: PAYNOW_QR_PAYLOAD
+        sync: false # text inside your static PayNow QR (has your PayNow number); set privately in the dashboard
       # PUBLIC_ORIGIN defaults to Render's RENDER_EXTERNAL_URL (https://<name>.onrender.com).
       # Set it here only if you add a custom domain.

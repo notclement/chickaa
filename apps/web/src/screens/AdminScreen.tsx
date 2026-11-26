@@ -137,6 +137,11 @@ function SupporterControls({ user, onChanged }: { user: AdminUser; onChanged: ()
       </div>
       <div className="text-xs text-ink-500">
         {user.referredBy ? `Invited by @${user.referredBy}` : 'Signed up without an invite'} · invited {user.invited}
+        {user.reference && (
+          <>
+            {' '}· PayNow ref <b className="font-mono">{user.reference}</b>
+          </>
+        )}
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         <Button variant="secondary" loading={busy === 'month'} disabled={!!busy || s.lifetime} onClick={() => void act('month')}>
@@ -206,7 +211,9 @@ function UsersTab() {
   if (loading && !data) return <Loading />;
   const all = data?.users ?? [];
   const needle = q.trim().toLowerCase();
-  const users = needle ? all.filter((u) => u.username.toLowerCase().includes(needle) || u.displayName.toLowerCase().includes(needle)) : all;
+  const users = needle
+    ? all.filter((u) => [u.username, u.displayName, u.reference ?? ''].some((s) => s.toLowerCase().includes(needle)))
+    : all;
 
   return (
     <div className="space-y-3">
@@ -214,7 +221,7 @@ function UsersTab() {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'}`}
+        placeholder={`Search ${all.length} user${all.length === 1 ? '' : 's'} by name, ID or NCC- ref`}
         aria-label="Search users"
         className="min-h-11 w-full rounded-2xl bg-white px-4 ring-1 ring-ink-900/10 focus:outline-none focus:ring-2 focus:ring-ink-900"
       />

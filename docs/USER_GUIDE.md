@@ -3,7 +3,7 @@
 A step-by-step guide to using ChickAA on a trip.
 
 ## 1. Get the app
-1. Open **https://nochickencall.onrender.com** on your phone.
+1. Open **https://chickaa-sg.onrender.com** on your phone.
 2. Add it to your home screen:
    - **iPhone:** in Safari, tap **Share** → **Add to Home Screen** → **Add**.
    - **Android:** tap **Install app** on the home page (or Chrome menu → *Install app*).

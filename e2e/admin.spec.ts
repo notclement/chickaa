@@ -5,6 +5,7 @@ test('reserved IDs, admin created with the one-time code, all-trips list with ta
   // Look-alike admin IDs are refused while typing.
   await page.goto('/register');
   await expect(page.getByText('It can’t be changed later.')).toBeVisible(); // ID vs display name explained
+  await expect(page.getByTestId('made-by').getByRole('link', { name: 'LinkedIn' })).toHaveAttribute('href', 'https://www.linkedin.com/in/clementsg/');
   await page.getByLabel('User ID').fill('adm1n');
   await expect(page.getByText('That ID is reserved. Please pick another')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Create account' })).toBeDisabled();

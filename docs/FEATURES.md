@@ -49,6 +49,7 @@ What NoChickenCall does as of **v1.2.0**. See [PHASES.md](PHASES.md) for what's 
 - Opens any trip **read-only**. In trips the admin has joined, they're a normal member.
 
 ## App (PWA)
+- Developer credit (Made by Clement · LinkedIn) on Account and the login / sign-up screens.
 - Install to the home screen on iPhone (Share → Add to Home Screen) or Android/desktop (Install button).
 - Full-screen app with icon and launch screen.
 - **Works offline (read-only):** trips, expenses, balances, who owes who and settle-up as last loaded, with a “Last updated” time. Trips are downloaded in the background. Changes need a connection and are greyed out offline. The offline copy is wiped on log out.

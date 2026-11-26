@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext.tsx';
 import { RecoveryCodePanel } from '../auth/RecoveryCodePanel.tsx';
 import { safeNext } from '../auth/safeNext.ts';
 import { BrandLockup } from '../components/BrandLockup.tsx';
+import { MadeBy } from '../components/MadeBy.tsx';
 import { useUnsavedChanges } from '../pwa/unsavedChanges.ts';
 import { Button, Card, FormError, TextField } from '../ui/index.tsx';
 
@@ -17,6 +18,7 @@ function AuthFrame({ children }: { children: React.ReactNode }) {
         <BrandLockup />
       </div>
       {children}
+      <MadeBy className="mt-8" />
     </div>
   );
 }

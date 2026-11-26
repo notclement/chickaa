@@ -5,6 +5,7 @@ All notable changes to NoChickenCall. Dates are Singapore time.
 ## [1.2.0] - 2026-11-26 · Admin users list
 ### Added
 - **Admin → Users tab:** every account (display name, @ID, joined date, last active, Admin badge), searchable, each expanding to the trips they own or belong to with the trip's status tag, owner/member role and whether they left. Tap a trip to open it (read-only unless you're a member).
+- **Developer credit:** "Made by Clement · LinkedIn" on the Account screen and the login / sign-up screens.
 
 ## [1.1.0] - 2026-11-26 · Fresh start + admin
 ### ⚠️ Data reset

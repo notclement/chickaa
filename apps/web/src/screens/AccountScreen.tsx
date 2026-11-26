@@ -5,6 +5,7 @@ import { ApiRequestError, errorMessage, patch, post } from '../api/client.ts';
 import { useAuth, useMe } from '../auth/AuthContext.tsx';
 import { RecoveryCodePanel } from '../auth/RecoveryCodePanel.tsx';
 import { AppStatusCard } from '../components/AppStatusCard.tsx';
+import { MadeBy } from '../components/MadeBy.tsx';
 import { InstallCard } from '../components/InstallCard.tsx';
 import { ProfilePhotoCard } from '../components/ProfilePhotoCard.tsx';
 import { Avatar, Button, ButtonLink, Card, FormError, ScreenTitle, TextField } from '../ui/index.tsx';
@@ -51,6 +52,7 @@ export function AccountScreen() {
       >
         Log out
       </Button>
+      <MadeBy className="pt-2" />
     </div>
   );
 }

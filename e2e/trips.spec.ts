@@ -4,8 +4,8 @@ const PASSWORD = 'correct horse battery';
 const uid = () => Math.random().toString(36).slice(2, 8);
 
 async function register(page: Page, name: string, username: string) {
-  await page.getByLabel('Your name').fill(name);
-  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Display name').fill(name);
+  await page.getByLabel('User ID').fill(username);
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
 
@@ -92,7 +92,7 @@ test('log out, log back in, and reset a forgotten password with the recovery cod
   // Wrong password.
   await page.getByRole('link', { name: 'Log in' }).click();
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
-  await page.getByLabel('Username').fill(user);
+  await page.getByLabel('User ID').fill(user);
   await page.getByLabel('Password').fill('wrong password!');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page.getByRole('alert')).toHaveText('Wrong username or password');
@@ -100,7 +100,7 @@ test('log out, log back in, and reset a forgotten password with the recovery cod
   // Forgot password → recovery code.
   await page.getByRole('link', { name: 'Forgot password?' }).click();
   await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
-  await page.getByLabel('Username').fill(user);
+  await page.getByLabel('User ID').fill(user);
   await page.getByLabel('Recovery code').fill(code.toLowerCase());
   await page.getByLabel('New password').fill('a whole new password');
   await page.getByRole('button', { name: 'Reset password' }).click();

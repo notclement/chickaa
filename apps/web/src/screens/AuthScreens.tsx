@@ -1,4 +1,5 @@
-import type { AuthWithRecoveryResponse, MeResponse } from '@ncc/contracts';
+import { ADMIN_USERNAME, type AuthWithRecoveryResponse, type MeResponse } from '@ncc/contracts';
+import { isReservedUsername } from '@ncc/core';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ApiRequestError, errorMessage, post } from '../api/client.ts';
@@ -61,7 +62,7 @@ export function LoginScreen() {
         <h1 className="text-xl font-extrabold">Welcome back</h1>
         <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
           <TextField
-            label="Username"
+            label="User ID"
             autoComplete="username"
             autoCapitalize="none"
             autoCorrect="off"
@@ -100,7 +101,7 @@ export function RegisterScreen() {
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const { next, qs } = useNextParam();
-  const [form, setForm] = useState({ displayName: '', username: '', password: '' });
+  const [form, setForm] = useState({ displayName: '', username: '', password: '', adminSetupCode: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -108,6 +109,9 @@ export function RegisterScreen() {
   useUnsavedChanges(!created && Object.values(form).some(Boolean));
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
+  const typedId = form.username.trim().toLowerCase();
+  const isAdminId = typedId === ADMIN_USERNAME;
+  const reservedHint = typedId.length >= 3 && !isAdminId && isReservedUsername(typedId) ? 'That ID is reserved. Please pick another' : undefined;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -115,7 +119,8 @@ export function RegisterScreen() {
     setError(undefined);
     setFields({});
     try {
-      const res = await post<AuthWithRecoveryResponse>('/auth/register', form);
+      const { adminSetupCode, ...rest } = form;
+      const res = await post<AuthWithRecoveryResponse>('/auth/register', isAdminId ? { ...rest, adminSetupCode } : rest);
       setCreated(res); // show the recovery code before entering the app
     } catch (err) {
       setFields(fieldErrors(err));
@@ -147,8 +152,8 @@ export function RegisterScreen() {
         <p className="mt-1 text-sm text-ink-700">No email or phone number needed.</p>
         <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
           <TextField
-            label="Your name"
-            hint="What friends see on the trip, e.g. “Clem”"
+            label="Display name"
+            hint="What friends see on trips, e.g. “Clem”. You can change it any time."
             autoComplete="nickname"
             value={form.displayName}
             onChange={set('displayName')}
@@ -156,17 +161,31 @@ export function RegisterScreen() {
             maxLength={40}
           />
           <TextField
-            label="Username"
-            hint="For logging in. Letters, numbers, _ and ."
+            label="User ID"
+            hint={
+              <>
+                For logging in; friends see it as @{typedId || 'yourid'}. <b>It can’t be changed later.</b> Letters, numbers, _ and .
+              </>
+            }
             autoComplete="username"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
             value={form.username}
             onChange={set('username')}
-            error={fields.username}
+            error={fields.username ?? reservedHint}
             maxLength={24}
           />
+          {isAdminId && (
+            <TextField
+              label="Admin setup code"
+              hint="This ID is reserved for the app’s admin. Enter the one-time code to create it."
+              type="password"
+              autoComplete="off"
+              value={form.adminSetupCode}
+              onChange={set('adminSetupCode')}
+            />
+          )}
           <TextField
             label="Password"
             type="password"
@@ -177,7 +196,12 @@ export function RegisterScreen() {
             error={fields.password}
           />
           <FormError message={error} />
-          <Button type="submit" block loading={busy} disabled={!form.displayName || !form.username || !form.password}>
+          <Button
+            type="submit"
+            block
+            loading={busy}
+            disabled={!form.displayName || !form.username || !form.password || !!reservedHint || (isAdminId && !form.adminSetupCode)}
+          >
             Create account
           </Button>
         </form>
@@ -242,7 +266,7 @@ export function RecoverScreen() {
         <h1 className="text-xl font-extrabold">Reset your password</h1>
         <p className="mt-1 text-sm text-ink-700">Use the recovery code you saved when you signed up.</p>
         <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
-          <TextField label="Username" autoComplete="username" autoCapitalize="none" autoCorrect="off" value={form.username} onChange={set('username')} error={fields.username} />
+          <TextField label="User ID" autoComplete="username" autoCapitalize="none" autoCorrect="off" value={form.username} onChange={set('username')} error={fields.username} />
           <TextField
             label="Recovery code"
             placeholder="XXXX-XXXX-XXXX-XXXX"

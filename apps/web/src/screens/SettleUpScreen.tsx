@@ -86,6 +86,22 @@ export function SettleUpScreen() {
         </>
       )}
 
+      {data.earlier.length > 0 && (
+        <section data-testid="paid-earlier">
+          <h2 className="mb-2 text-sm font-bold uppercase tracking-wider text-ink-500">Paid earlier (before the trip was reopened)</h2>
+          <ul className="space-y-2">
+            {data.earlier.map((t) => (
+              <li key={t.id} className="flex items-center justify-between rounded-3xl bg-white px-4 py-3 text-sm shadow-sm ring-1 ring-ink-900/5">
+                <span>
+                  {who(t.fromUserId)} → {who(t.toUserId)} <span className="text-owed">{t.settledOutside ? 'settled another way ✓' : 'paid ✓'}</span>
+                </span>
+                <span className="font-bold tabular-nums">{money(t.amount, t.currency)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {data.state === 'plan' && balances.data && <SummaryCard data={data} balances={balances.data} who={who} />}
 
       {data.state === 'plan' && owner && !data.progress.fullySettled && (
@@ -131,6 +147,9 @@ function PreviewCard({ data, trip, owner, busy, onFinish }: { data: SettlementRe
           <p className="mt-1 text-sm text-ink-700">
             Instead of everyone paying everyone back for each expense, these {n} bank transfer{n === 1 ? '' : 's'} square up all {data.nonZeroCount} people who
             owe or are owed.
+          </p>
+          <p className="mt-1 text-xs text-ink-500">
+            To keep transfers to a minimum, you may pay someone other than the person who paid for your share. The totals always work out exactly.
           </p>
         </>
       )}
@@ -207,7 +226,7 @@ function TransferCard(props: {
   const iPay = t.fromUserId === me;
   const iReceive = t.toUserId === me;
   const busy = (a: string) => props.busy === `${a}:${t.id}`;
-  const st = STATUS[t.status];
+  const st = t.settledOutside ? { label: 'Settled another way ✓', tone: 'bg-owed/15 text-owed' } : STATUS[t.status];
   const amountPlain = isCurrencyCode(t.currency) ? formatAmount(BigInt(t.amount), t.currency).replaceAll(',', '') : t.amount;
 
   const copy = async () => {
@@ -260,7 +279,7 @@ function TransferCard(props: {
               </Button>
             </>
           )}
-          {iReceive && (t.status === 'sent' || t.status === 'pending') && (
+          {iReceive && (t.status === 'sent' || t.status === 'pending' || t.status === 'disputed') && (
             <Button needsNetwork className="!min-h-10 flex-1 text-sm" loading={busy('confirm')} onClick={() => props.act(`confirm:${t.id}`, `/settlements/${t.id}/confirm`)}>
               Got it ✓
             </Button>
@@ -278,13 +297,18 @@ function TransferCard(props: {
               Not received
             </Button>
           )}
-          {props.owner && (t.status === 'pending' || t.status === 'disputed') && (
+          {props.owner && t.status !== 'confirmed' && t.status !== 'cancelled' && (
             <button
               type="button"
               className="ml-auto min-h-10 rounded-xl px-2 text-sm font-semibold text-ink-500"
-              onClick={() => window.confirm('Cancel this transfer? Only do this if it was settled some other way.') && props.act(`cancel:${t.id}`, `/settlements/${t.id}/cancel`)}
+              onClick={() => {
+                const note = window.prompt(
+                  `Mark “${who(t.fromUserId)} → ${who(t.toUserId)}” as settled another way (cash, swapped with another debt…)? It will count as paid.\n\nOptional note:`,
+                );
+                if (note !== null) void props.act(`settle-outside:${t.id}`, `/settlements/${t.id}/settle-outside`, { note });
+              }}
             >
-              Cancel
+              Settled another way…
             </button>
           )}
           <button type="button" className="min-h-10 rounded-xl px-2 text-sm font-semibold text-ink-500" onClick={() => setShowHistory(!showHistory)}>
@@ -301,12 +325,14 @@ function TransferHistory({ id, updatedAt, me }: { id: string; updatedAt: string 
   const { data } = useApi(() => api<SettlementEventsResponse>(`/settlements/${id}/events`), [id, updatedAt]);
   if (!data) return <p className="mt-2 text-sm text-ink-500">Loading…</p>;
   const verb = { pending: 'created the plan', sent: 'marked it as sent', confirmed: 'confirmed receipt', disputed: 'said it wasn’t received', cancelled: 'cancelled it' } as const;
+  const label = (e: (typeof data.events)[number]) => (e.note?.startsWith('Settled another way') ? 'marked it as settled another way' : verb[e.toStatus]);
   return (
     <ol className="mt-2 space-y-1 border-t border-ink-900/5 pt-2 text-sm text-ink-700">
       {data.events.map((e, i) => (
         <li key={i}>
-          {e.actor.userId === me ? 'You' : e.actor.displayName} {verb[e.toStatus]}
-          {e.note && <span className="text-ink-500"> · “{e.note}”</span>} <span className="text-ink-500">{relativeTime(e.createdAt)}</span>
+          {e.actor.userId === me ? 'You' : e.actor.displayName} {label(e)}
+          {e.note && !e.note.startsWith('Settled another way') && <span className="text-ink-500"> · “{e.note}”</span>}
+          {e.note?.startsWith('Settled another way: ') && <span className="text-ink-500"> · “{e.note.slice('Settled another way: '.length)}”</span>} <span className="text-ink-500">{relativeTime(e.createdAt)}</span>
         </li>
       ))}
     </ol>
@@ -317,7 +343,7 @@ function TransferHistory({ id, updatedAt, me }: { id: string; updatedAt: string 
 function SummaryCard({ data, balances, who }: { data: SettlementResponse; balances: BalancesResponse; who: (id: string) => string }) {
   const cur = balances.baseCurrency;
   const live = data.transfers.filter((t) => t.status !== 'cancelled');
-  const confirmedAmount = live.filter((t) => t.status === 'confirmed').reduce((s, t) => s + BigInt(t.amount), 0n);
+  const confirmedAmount = [...live.filter((t) => t.status === 'confirmed'), ...data.earlier].reduce((s, t) => s + BigInt(t.amount), 0n);
   return (
     <Card>
       <h2 className="font-bold">Trip summary</h2>
@@ -328,7 +354,7 @@ function SummaryCard({ data, balances, who }: { data: SettlementResponse; balanc
         <dd className="text-right font-semibold">{live.length}</dd>
         <dt className="text-ink-500">Confirmed</dt>
         <dd className="text-right font-semibold tabular-nums">
-          {data.progress.confirmed} · {money(confirmedAmount, cur)}
+          {data.progress.confirmed + data.earlier.length} · {money(confirmedAmount, cur)}
         </dd>
         <dt className="text-ink-500">Status</dt>
         <dd className="text-right font-semibold">{data.progress.fullySettled ? 'Fully settled ✓' : 'Settling up'}</dd>

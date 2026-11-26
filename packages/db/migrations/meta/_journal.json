@@ -36,6 +36,20 @@
       "when": 1795633737415,
       "tag": "0004_user_avatar",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795658803871,
+      "tag": "0005_wipe_all_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795658804616,
+      "tag": "0006_admin_and_settlement_fields",
+      "breakpoints": true
     }
   ]
 }

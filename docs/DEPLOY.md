@@ -60,6 +60,7 @@ Render dashboard → service → **Settings → Custom Domains**. Then add an en
 | `PUBLIC_ORIGIN` | automatic | Falls back to `RENDER_EXTERNAL_URL`; override for custom domains |
 | `NODE_ENV`, `RUN_MIGRATIONS_ON_START` | render.yaml | |
 | `PORT` | Render | Injected automatically |
+| `ADMIN_SETUP_CODE` | you (privately) | One-time code to create the `admin` account. Unset = admin can't be created. Can be removed once the admin exists |
 
 ## Caching rules (don't override with a CDN)
 `sw.js`, `index.html` and the manifest are `no-cache`; hashed `/assets/*` are cached for a year.

@@ -16,7 +16,7 @@ export const CURRENCIES = {
   NZD: { name: 'New Zealand dollar', decimals: 2, symbol: 'NZ$' },
   HKD: { name: 'Hong Kong dollar', decimals: 2, symbol: 'HK$' },
   TWD: { name: 'New Taiwan dollar', decimals: 0, symbol: 'NT$' },
-  CNY: { name: 'Chinese yuan', decimals: 2, symbol: '¥' },
+  CNY: { name: 'Chinese yuan', decimals: 2, symbol: 'CN¥' },
   THB: { name: 'Thai baht', decimals: 2, symbol: '฿' },
   PHP: { name: 'Philippine peso', decimals: 2, symbol: '₱' },
   INR: { name: 'Indian rupee', decimals: 2, symbol: '₹' },

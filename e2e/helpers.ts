@@ -6,8 +6,8 @@ export const uid = () => Math.random().toString(36).slice(2, 8);
 /** Fills the sign-up form and acknowledges the recovery code. */
 export async function register(page: Page, name: string, username: string) {
   await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
-  await page.getByLabel('Your name').fill(name);
-  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Display name').fill(name);
+  await page.getByLabel('User ID').fill(username);
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
   const code = await page.getByTestId('recovery-code').textContent();

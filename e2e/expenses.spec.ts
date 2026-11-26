@@ -56,7 +56,11 @@ test('add expenses (multi-payer, foreign currency, shares), see balances, edit a
   await alice.getByLabel('Currency').selectOption('THB');
   await alice.getByLabel('What was it for?').fill('Massage');
   await alice.getByRole('button', { name: 'Use my own rate' }).click();
-  await alice.getByLabel('1 THB = ? SGD').fill('0.04');
+  // A typo'd rate (10× too high) needs an explicit confirmation (test report U2).
+  await alice.getByLabel('1 THB = ? SGD').fill('0.4');
+  await expect(alice.getByTestId('rate-warning')).toContainText('away from today’s rate');
+  await alice.getByLabel('1 THB = ? SGD').fill('0.04'); // ~7% off: normal, no warning
+  await expect(alice.getByTestId('rate-warning')).toHaveCount(0);
   await expect(alice.getByTestId('converted')).toHaveText('≈ S$20.00');
   await alice.getByRole('tab', { name: '%' }).click();
   await alice.getByLabel('Alice percent').fill('50');

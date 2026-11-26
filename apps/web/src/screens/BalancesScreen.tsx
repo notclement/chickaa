@@ -6,7 +6,7 @@ import { useMe } from '../auth/AuthContext.tsx';
 import { BalanceList } from '../components/BalanceList.tsx';
 import { money } from '../lib/money.ts';
 import { useTrip } from '../lib/useTrip.ts';
-import { Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
+import { ButtonLink, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
 
 export function BalancesScreen() {
   const { id } = useParams();
@@ -31,8 +31,10 @@ export function BalancesScreen() {
       </Card>
       <p className="px-2 text-center text-sm text-ink-500">
         Paid = what each person paid. Share = their part of the expenses. The difference is what they get back or owe.
-        Settling up with the fewest transfers is coming in the next update.
       </p>
+      <ButtonLink to={`/trips/${id}/settle`} variant="secondary" block>
+        💸 See who pays whom (Settle up)
+      </ButtonLink>
     </div>
   );
 }

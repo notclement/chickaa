@@ -59,6 +59,8 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   displayName: text('display_name').notNull(),
   recoveryCodeHash: text('recovery_code_hash').notNull(),
+  /** Only the reserved ID "admin" (created with the one-time ADMIN_SETUP_CODE) has this. */
+  isAdmin: boolean('is_admin').notNull().default(false),
   /** Profile photo: tiny (≤ 24 KB) square WebP/JPEG, compressed in the browser before upload. */
   avatar: bytea('avatar'),
   avatarType: text('avatar_type'),
@@ -277,6 +279,10 @@ export const settlements = pgTable(
     amount: money('amount').notNull(),
     currency: currency('currency').notNull(),
     status: settlementStatus('status').notNull().default('pending'),
+    /** Owner marked it "settled another way" (cash, offset…): counts as confirmed. */
+    settledOutside: boolean('settled_outside').notNull().default(false),
+    /** Order within the plan, so transfers always list the same way. */
+    position: integer('position').notNull().default(0),
     version: integer('version').notNull().default(1),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

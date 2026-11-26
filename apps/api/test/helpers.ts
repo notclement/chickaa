@@ -44,7 +44,7 @@ export async function testApp() {
   shared ??= createDb(TEST_DB_URL, { max: 5 });
   const dist = mkdtempSync(join(tmpdir(), 'ncc-web-'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html>');
-  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN }), webDist: dist };
+  const config = { ...loadConfig({ NODE_ENV: 'production', PUBLIC_ORIGIN: ORIGIN, ADMIN_SETUP_CODE: 'correct-admin-code-123' }), webDist: dist };
   const app = createApp({ config, db: shared.db, pingDb: async () => true, fx });
   return { app, db: shared.db };
 }

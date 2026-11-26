@@ -20,7 +20,7 @@ export function ExpenseListScreen() {
   return (
     <div className="space-y-4">
       <ScreenTitle title="Expenses" subtitle={trip?.name} back={`/trips/${id}`} />
-      {trip?.status === 'active' && (
+      {trip?.status === 'active' && trip.myRole !== 'viewer' && (
         <ButtonLink to={`/trips/${id}/expenses/new`} block needsNetwork>
           ＋ Add expense
         </ButtonLink>

@@ -14,7 +14,10 @@ A step-by-step guide to using NoChickenCall on a trip.
 If the app hasn't been used for a while, the first screen can take up to a minute while the free server wakes up. You'll see **"Waking up the server…"**.
 
 ## 2. Create your account
-1. Tap **Create account**, then enter your name (what friends see), a username and a password.
+1. Tap **Create account**, then enter:
+   - **Display name:** what friends see on trips. You can change it any time.
+   - **User ID:** what you log in with; friends see it as @yourid. **It can't be changed later**, so pick carefully. IDs that look like admin or staff accounts are reserved.
+   - **Password:** at least 8 characters.
 2. **Save your recovery code.** There's no email or phone on your account, so this code is the only way to reset your password. Copy it into your password manager or Notes, tick the box, and tap **Let's go**.
 
 **Forgot your password?** On the log-in screen, tap **Forgot password?** and enter your username, recovery code and a new password. You'll get a **new** recovery code. Save that one too.
@@ -60,10 +63,13 @@ If the signal drops while saving, you'll see **"Not sure it saved"**. Just tap S
 1. Anyone can open **Settle up** on the trip page to preview **who pays whom**. It uses the fewest transfers possible, marked **Minimum possible**.
 2. When the trip's over, the **owner** taps **Finish trip & settle up**. Expenses lock.
 3. **If you owe:** pay in your banking app (PayNow, bank transfer…). Tap **Copy** to copy the exact amount, then tap **I've sent it**.
-4. **If you're owed:** when the money arrives, tap **Got it ✓**. If it hasn't arrived, tap **Not received** and add a note. The payer can mark it sent again once fixed.
+4. **If you're owed:** when the money arrives, tap **Got it ✓**. If it hasn't arrived, tap **Not received** and add a note. The payer can mark it sent again; if the money turns up anyway, you can still tap **Got it ✓**.
+   - **Owner:** if a payment was sorted out another way (cash, or swapped against another debt), tap **Settled another way…** and add a note. It counts as paid.
 5. Watch the progress (e.g. *3 of 5 transfers confirmed*). When every transfer is confirmed, you'll see **🎉 All settled!**
 
-**Forgot an expense after finishing?** The owner can **Reopen trip** on the Settle up screen. Payments already received stay counted, and the remaining transfers are recalculated when the trip is finished again.
+**Forgot an expense after finishing?** The owner can **Reopen trip** on the Settle up screen. Payments already received stay counted (listed under **Paid earlier**), and the remaining transfers are recalculated when the trip is finished again.
+
+**Why do I pay someone who didn't pay for my stuff?** To keep transfers to a minimum, debts are combined. For example, you might pay Alice even though Bob paid for your taxi. The totals always work out exactly.
 
 ## 7. Trip settings (owner)
 Open the trip → **⚙︎ Settings**:
@@ -79,6 +85,17 @@ With no signal (e.g. on a plane or a remote beach), the installed app still open
 
 ## 9. Updates
 When a new version is out, you'll see **"New version ready · Refresh"** at the bottom. Tap **Refresh**. It won't interrupt you while you're typing.
+
+## Admin
+The app has one admin account (`admin`). It can only be created with a private one-time code set on the server.
+- Tap the 🛡️ button (top right) to see **all trips** with a status tag:
+  - 🔵 **Active:** created, no transactions yet (invites / pre-trip).
+  - 🟢 **On-going:** within the trip dates, or has transactions.
+  - 🟣 **Needs finishing:** the end date has passed but the owner hasn't tapped Finish.
+  - 🟠 **Pending settlement:** finished; not every payment is confirmed yet.
+  - ⚪ **Ended:** finished and fully settled.
+  - 🔴 **Deleted:** deleted by the owner.
+- Opening a trip you're not in is **read-only**. In trips you've joined, you're a normal member.
 
 ## FAQ
 **Why is a payment marked "sent" not counted yet?**

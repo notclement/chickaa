@@ -106,7 +106,7 @@ describe.skipIf(!TEST_DB_URL)('settle up', () => {
     expect((await alice.c.call('DELETE', `/trips/${trip.id}`, { confirmName: 'Bali 2027' })).status).toBe(200);
   });
 
-  it('dispute and re-send; owner can cancel; cancelled keeps the trip from being settled', async () => {
+  it('dispute → recipient can still confirm if the money turns up (U1); owner can mark "settled another way" (B1)', async () => {
     const { trip, alice, bob, charlie, david, eve } = await fiveFriends();
     const plan = (await alice.c.post(`/trips/${trip.id}/complete`)).body;
     const people = { [alice.user.id]: alice, [bob.user.id]: bob, [charlie.user.id]: charlie, [david.user.id]: david, [eve.user.id]: eve };
@@ -119,11 +119,26 @@ describe.skipIf(!TEST_DB_URL)('settle up', () => {
     expect(disputed.body.transfers[0].status).toBe('disputed');
     const ev = (await alice.c.get(`/settlements/${t.id}/events`)).body.events;
     expect(ev.at(-1)).toMatchObject({ toStatus: 'disputed', note: 'Nothing in my account yet' });
-    expect((await payer.c.post(`/settlements/${t.id}/sent`)).body.transfers[0].status).toBe('sent');
+    // Money arrives after all: the recipient confirms straight from "disputed".
+    expect((await recipient.c.post(`/settlements/${t.id}/confirm`)).body.transfers[0].status).toBe('confirmed');
 
-    const other = plan.transfers[1];
-    expect((await bob.c.post(`/settlements/${other.id}/cancel`)).status).toBe(bob === alice ? 200 : 403);
-    expect((await alice.c.post(`/settlements/${other.id}/cancel`)).body.progress.total).toBe(3);
+    // The rest were settled in cash: the owner marks them, and the trip can finish settling.
+    const others = plan.transfers.slice(1);
+    const nonOwner = [bob, charlie, david, eve].find((p) => p.user.id !== others[0].toUserId && p.user.id !== others[0].fromUserId)!;
+    expect((await nonOwner.c.post(`/settlements/${others[0].id}/settle-outside`)).status).toBe(403);
+    for (const o of others) {
+      const r = await alice.c.call('POST', `/settlements/${o.id}/settle-outside`, { note: 'paid in cash' });
+      expect(r.status).toBe(200);
+    }
+    const final = (await alice.c.get(`/trips/${trip.id}/settlement`)).body;
+    expect(final.progress).toEqual({ confirmed: 4, total: 4, fullySettled: true });
+    expect(final.transfers.filter((x: { settledOutside: boolean }) => x.settledOutside)).toHaveLength(3);
+    const b = (await alice.c.get(`/trips/${trip.id}/balances`)).body;
+    expect(Object.values(nets(b)).every((n) => n === '0')).toBe(true);
+    const ev2 = (await bob.c.get(`/settlements/${others[0].id}/events`)).body.events;
+    expect(ev2.at(-1).note).toBe('Settled another way: paid in cash');
+    // And the trip can now be deleted.
+    expect((await alice.c.call('DELETE', `/trips/${trip.id}`, { confirmName: 'Bali 2027' })).status).toBe(200);
   });
 
   it('reopen: blocked while a transfer is in flight; pending cancelled, confirmed kept, new plan covers the rest', async () => {
@@ -148,6 +163,9 @@ describe.skipIf(!TEST_DB_URL)('settle up', () => {
     const plan2 = (await alice.c.post(`/trips/${trip.id}/complete`)).body;
     expect(plan2.planVersion).toBe(2);
     expect(plan2.transfers).toHaveLength(2);
+    // Payments made before the reopen stay visible (B3).
+    expect(plan2.earlier.map((e: { id: string }) => e.id).sort()).toEqual([t0.id, t1.id].sort());
+    expect(plan2.earlier.every((e: { status: string }) => e.status === 'confirmed')).toBe(true);
   });
 
   it('a trip where nobody owes anything is fully settled as soon as it is finished', async () => {

@@ -7,7 +7,7 @@ import { RecoveryCodePanel } from '../auth/RecoveryCodePanel.tsx';
 import { AppStatusCard } from '../components/AppStatusCard.tsx';
 import { InstallCard } from '../components/InstallCard.tsx';
 import { ProfilePhotoCard } from '../components/ProfilePhotoCard.tsx';
-import { Avatar, Button, Card, FormError, ScreenTitle, TextField } from '../ui/index.tsx';
+import { Avatar, Button, ButtonLink, Card, FormError, ScreenTitle, TextField } from '../ui/index.tsx';
 
 export function AccountScreen() {
   const me = useMe();
@@ -22,9 +22,17 @@ export function AccountScreen() {
         <Avatar name={me.displayName} id={me.id} />
         <div>
           <div className="font-bold">{me.displayName}</div>
-          <div className="text-sm text-ink-500">@{me.username}</div>
+          <div className="text-sm text-ink-500">
+            User ID <b>@{me.username}</b> · can’t be changed
+          </div>
+          <div className="text-xs text-ink-500">Your display name (below) is what friends see; change it any time.</div>
         </div>
       </Card>
+      {me.isAdmin && (
+        <ButtonLink to="/admin" variant="secondary" block>
+          🛡️ Admin: all trips
+        </ButtonLink>
+      )}
       <ProfilePhotoCard />
       <DisplayNameCard />
       <PasswordCard />
@@ -73,7 +81,7 @@ function DisplayNameCard() {
   return (
     <Card>
       <form onSubmit={submit} className="space-y-3">
-        <TextField label="Your name" hint="What friends see on trips" value={name} onChange={(e) => (setName(e.target.value), setMsg(undefined))} maxLength={40} />
+        <TextField label="Display name" hint="What friends see on trips. Your user ID stays the same." value={name} onChange={(e) => (setName(e.target.value), setMsg(undefined))} maxLength={40} />
         <FormError message={error} />
         <Button type="submit" variant="secondary" loading={busy} disabled={!name.trim() || name === me.displayName}>
           {msg ?? 'Save name'}

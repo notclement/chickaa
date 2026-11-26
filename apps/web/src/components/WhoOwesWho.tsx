@@ -39,7 +39,9 @@ export function WhoOwesWho({ tripId, data, me, nameOf }: { tripId: string; data:
                 </div>
                 <div className={`min-w-0 flex-1 text-sm ${done ? 'text-ink-500 line-through' : ''}`}>
                   <b>{who(t.fromUserId)}</b> {iPay ? 'owe' : 'owes'} <b>{iGet ? 'you' : nameOf(t.toUserId)}</b>
-                  {STATUS_NOTE[t.status] && <span className="block text-xs text-ink-500 no-underline">{STATUS_NOTE[t.status]}</span>}
+                  {(t.settledOutside || STATUS_NOTE[t.status]) && (
+                    <span className="block text-xs text-ink-500 no-underline">{t.settledOutside ? 'settled another way ✓' : STATUS_NOTE[t.status]}</span>
+                  )}
                 </div>
                 <div className={`text-right font-extrabold tabular-nums ${done ? 'text-ink-500' : iPay ? 'text-owes' : iGet ? 'text-owed' : ''}`}>
                   {money(t.amount, t.currency)}

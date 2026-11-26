@@ -1,16 +1,39 @@
 import type { BalancesResponse, SettlementResponse } from '@ncc/contracts';
 import { planSettlement, verifySettlement } from '@ncc/core';
 import { schema, type Db } from '@ncc/db';
-import { and, asc, eq, inArray, isNull, max } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, max } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
 import { forbidden, HttpError, notFound, uuidParam } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
 import { tripBalances } from './expenses.ts';
-import { membership } from './trips.ts';
+import { membership, viewAccess } from './trips.ts';
 
 const { trips, settlementPlans, settlements, settlementEvents } = schema;
 type TripRow = typeof trips.$inferSelect;
+
+type SettlementRow = typeof settlements.$inferSelect;
+const toTransfer = (r: SettlementRow) => ({
+  id: r.id,
+  fromUserId: r.fromUserId,
+  toUserId: r.toUserId,
+  amount: r.amount.toString(),
+  currency: r.currency,
+  status: r.status,
+  settledOutside: r.settledOutside,
+  updatedAt: r.updatedAt.toISOString(),
+});
+
+/** Confirmed payments from plans that were replaced by a reopen (test report B3). */
+async function earlierPayments(db: Db, tripId: string) {
+  const rows = await db
+    .select({ s: settlements })
+    .from(settlements)
+    .innerJoin(settlementPlans, eq(settlementPlans.id, settlements.planId))
+    .where(and(eq(settlements.tripId, tripId), isNotNull(settlementPlans.supersededAt), eq(settlements.status, 'confirmed')))
+    .orderBy(asc(settlementPlans.version), asc(settlements.position));
+  return rows.map((r) => toTransfer(r.s));
+}
 
 function plan(b: BalancesResponse) {
   return planSettlement(b.balances.map((r) => ({ userId: r.userId, net: BigInt(r.net) })));
@@ -20,6 +43,7 @@ function plan(b: BalancesResponse) {
 export async function settlementView(db: Db, trip: TripRow): Promise<SettlementResponse> {
   const balances = await tripBalances(db, trip);
   const allZero = balances.balances.every((b) => b.net === '0');
+  const earlier = await earlierPayments(db, trip.id);
 
   if (trip.status === 'active') {
     const p = plan(balances);
@@ -37,8 +61,10 @@ export async function settlementView(db: Db, trip: TripRow): Promise<SettlementR
         amount: t.amount.toString(),
         currency: trip.baseCurrency,
         status: 'pending',
+        settledOutside: false,
         updatedAt: null,
       })),
+      earlier,
       progress: { confirmed: 0, total: p.transfers.length, fullySettled: false },
     };
   }
@@ -49,7 +75,7 @@ export async function settlementView(db: Db, trip: TripRow): Promise<SettlementR
     .where(and(eq(settlementPlans.tripId, trip.id), isNull(settlementPlans.supersededAt)))
     .limit(1);
   if (!current) throw new HttpError(500, 'INTERNAL', 'Completed trip has no settlement plan');
-  const rows = await db.select().from(settlements).where(eq(settlements.planId, current.id)).orderBy(asc(settlements.createdAt), asc(settlements.id));
+  const rows = await db.select().from(settlements).where(eq(settlements.planId, current.id)).orderBy(asc(settlements.position), asc(settlements.id));
   const live = rows.filter((r) => r.status !== 'cancelled');
   const confirmed = live.filter((r) => r.status === 'confirmed').length;
   return {
@@ -59,15 +85,8 @@ export async function settlementView(db: Db, trip: TripRow): Promise<SettlementR
     provenOptimal: current.isProvenOptimal,
     nonZeroCount: (current.balancesSnapshot as { nonZeroCount?: number }).nonZeroCount ?? live.length,
     baseCurrency: trip.baseCurrency,
-    transfers: rows.map((r) => ({
-      id: r.id,
-      fromUserId: r.fromUserId,
-      toUserId: r.toUserId,
-      amount: r.amount.toString(),
-      currency: r.currency,
-      status: r.status,
-      updatedAt: r.updatedAt.toISOString(),
-    })),
+    transfers: rows.map(toTransfer),
+    earlier,
     // Fully settled = every transfer confirmed by its recipient AND every balance at zero.
     // Generating a plan alone never counts (SPEC §13).
     progress: { confirmed, total: live.length, fullySettled: confirmed === live.length && allZero },
@@ -79,7 +98,7 @@ settlementRoutes.use('*', requireAuth);
 
 settlementRoutes.get('/:id/settlement', async (c) => {
   const me = currentUser(c);
-  const { trip } = await membership(c.var.db, uuidParam(c, 'id'), me.id);
+  const { trip } = await viewAccess(c.var.db, uuidParam(c, 'id'), me);
   return c.json(await settlementView(c.var.db, trip));
 });
 
@@ -119,7 +138,8 @@ settlementRoutes.post('/:id/complete', async (c) => {
       const inserted = await tx
         .insert(settlements)
         .values(
-          p.transfers.map((x) => ({
+          p.transfers.map((x, position) => ({
+            position,
             planId: stored!.id,
             tripId,
             fromUserId: x.from,
@@ -191,27 +211,28 @@ settlementRoutes.post('/:id/reopen', async (c) => {
 // ---------- Phase 6: tracking transfers made in people's own banking apps ----------
 
 type Status = 'pending' | 'sent' | 'confirmed' | 'disputed' | 'cancelled';
-type Action = 'sent' | 'confirm' | 'dispute' | 'cancel';
+type Action = 'sent' | 'confirm' | 'dispute' | 'settle-outside';
 
 /**
  * Who may move a transfer from which status to which (SPEC §13):
  *   sent     — the payer, from pending or disputed (re-sent after a dispute)
- *   confirm  — ONLY the recipient, from sent (or pending, if they got cash before it was marked)
+ *   confirm  — ONLY the recipient, from sent, pending (cash) or disputed (money turned up after all)
  *   dispute  — the recipient, from sent ("I haven't received it")
- *   cancel   — the trip owner, from pending or disputed (settled some other way)
- * Confirmed and cancelled are final.
+ *   settle-outside — the trip owner: "settled another way" (cash, offset…). Counts as confirmed, so
+ *              the trip can reach All settled (test report B1). Replaces the old "cancel".
+ * Confirmed is final. ("cancelled" is only used internally when a trip is reopened.)
  */
 const RULES: Record<Action, { to: Status; from: Status[]; who: 'payer' | 'recipient' | 'owner' }> = {
   sent: { to: 'sent', from: ['pending', 'disputed'], who: 'payer' },
-  confirm: { to: 'confirmed', from: ['sent', 'pending'], who: 'recipient' },
+  confirm: { to: 'confirmed', from: ['sent', 'pending', 'disputed'], who: 'recipient' },
   dispute: { to: 'disputed', from: ['sent'], who: 'recipient' },
-  cancel: { to: 'cancelled', from: ['pending', 'disputed'], who: 'owner' },
+  'settle-outside': { to: 'confirmed', from: ['pending', 'sent', 'disputed'], who: 'owner' },
 };
 
 const WHO_MSG = {
   payer: 'Only the person paying can mark this as sent',
   recipient: 'Only the person receiving the money can do that',
-  owner: 'Only the trip creator can cancel a transfer',
+  owner: 'Only the trip creator can mark a transfer as settled another way',
 } as const;
 
 export const transferRoutes = new Hono<Env>();
@@ -224,9 +245,10 @@ for (const action of Object.keys(RULES) as Action[]) {
     const id = uuidParam(c, 'id');
     const rule = RULES[action];
     let note: string | null = null;
-    if (action === 'dispute') {
+    if (action === 'dispute' || action === 'settle-outside') {
       const raw = (await c.req.json().catch(() => ({}))) as { note?: unknown };
       note = typeof raw.note === 'string' ? raw.note.trim().slice(0, 300) || null : null;
+      if (action === 'settle-outside') note = `Settled another way${note ? `: ${note}` : ''}`;
     }
 
     const [s0] = await db.select().from(settlements).where(eq(settlements.id, id)).limit(1);
@@ -238,15 +260,16 @@ for (const action of Object.keys(RULES) as Action[]) {
       if (!s) throw notFound('Transfer not found');
       const allowed = rule.who === 'payer' ? s.fromUserId === me.id : rule.who === 'recipient' ? s.toUserId === me.id : role === 'owner';
       if (!allowed) throw forbidden(WHO_MSG[rule.who]);
-      if (s.status === rule.to) return; // already done: retrying is harmless
+      if (s.status === rule.to && (action !== 'settle-outside' || s.settledOutside)) return; // already done: retrying is harmless
       const [p] = await tx.select().from(settlementPlans).where(eq(settlementPlans.id, s.planId));
       if (p?.supersededAt || trip.status !== 'completed') throw new HttpError(409, 'CONFLICT', 'This settle-up plan is no longer current');
       if (!rule.from.includes(s.status)) {
-        throw new HttpError(409, 'CONFLICT', `Can’t ${action === 'sent' ? 'mark as sent' : action} a transfer that is ${s.status}`);
+        const verb = { sent: 'mark as sent', confirm: 'confirm', dispute: 'dispute', 'settle-outside': 'mark as settled another way' }[action];
+        throw new HttpError(409, 'CONFLICT', `Can’t ${verb} a transfer that is ${s.status}`);
       }
       await tx
         .update(settlements)
-        .set({ status: rule.to, version: s.version + 1, updatedAt: new Date() })
+        .set({ status: rule.to, settledOutside: action === 'settle-outside', version: s.version + 1, updatedAt: new Date() })
         .where(eq(settlements.id, id));
       await tx.insert(settlementEvents).values({ settlementId: id, actorUserId: me.id, fromStatus: s.status, toStatus: rule.to, note });
     });
@@ -261,7 +284,7 @@ transferRoutes.get('/:id/events', async (c) => {
   const id = uuidParam(c, 'id');
   const [s] = await db.select().from(settlements).where(eq(settlements.id, id)).limit(1);
   if (!s) throw notFound('Transfer not found');
-  await membership(db, s.tripId, me.id);
+  await viewAccess(db, s.tripId, me);
   const rows = await db
     .select({ e: settlementEvents, name: schema.users.displayName })
     .from(settlementEvents)

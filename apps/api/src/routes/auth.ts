@@ -12,26 +12,46 @@ import {
 import { schema } from '@ncc/db';
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { burnVerifyTime, hashSecret, newRecoveryCode, verifySecret } from '../auth/crypto.ts';
+import { timingSafeEqual } from 'node:crypto';
+import { ADMIN_USERNAME } from '@ncc/contracts';
+import { burnVerifyTime, hashSecret, newRecoveryCode, sha256, verifySecret } from '../auth/crypto.ts';
 import { currentUser, endSession, requireAuth, revokeOtherSessions, startSession } from '../auth/session.ts';
 import { body, clientIp, HttpError, isUniqueViolation } from '../lib/http.ts';
-import { rateLimit, resetRateLimit } from '../lib/rateLimit.ts';
+import { rateLimit, rateLimitHit, rateLimitPeek, resetRateLimit } from '../lib/rateLimit.ts';
 import type { Env } from '../lib/types.ts';
 
 const MIN = 60;
-const publicUser = (u: { id: string; username: string; displayName: string; avatarVersion: number | null }) => ({
+const publicUser = (u: { id: string; username: string; displayName: string; avatarVersion: number | null; isAdmin: boolean }) => ({
   id: u.id,
   username: u.username,
   displayName: u.displayName,
   avatarVersion: u.avatarVersion,
+  isAdmin: u.isAdmin,
 });
+
+/** Constant-time comparison of the one-time admin setup code. */
+function adminCodeMatches(expected: string | undefined, given: string | undefined): boolean {
+  if (!expected || !given) return false;
+  return timingSafeEqual(Buffer.from(sha256(expected), 'hex'), Buffer.from(sha256(given.trim()), 'hex'));
+}
 
 export const authRoutes = new Hono<Env>();
 
 authRoutes.post('/register', async (c) => {
   const db = c.var.db;
-  await rateLimit(db, `register:ip:${clientIp(c)}`, 20, 60 * MIN);
+  const ipKey = `register:ip:${clientIp(c)}`;
+  // Only successful sign-ups count (test report U8): typos on shared hotel Wi-Fi don't lock a group out.
+  await rateLimitPeek(db, ipKey, 50, 60 * MIN);
   const input = await body(c, RegisterRequest);
+
+  // The reserved "admin" ID needs the one-time code from the server's environment (ADMIN_SETUP_CODE).
+  const isAdmin = input.username === ADMIN_USERNAME;
+  if (isAdmin) {
+    await rateLimit(db, `admin-setup:ip:${clientIp(c)}`, 5, 60 * MIN);
+    if (!adminCodeMatches(c.var.config.adminSetupCode, input.adminSetupCode)) {
+      throw new HttpError(403, 'ADMIN_CODE', 'That ID is reserved', { fields: { username: 'That ID is reserved. Please pick another' } });
+    }
+  }
 
   const recovery = newRecoveryCode();
   const [passwordHash, recoveryCodeHash] = await Promise.all([
@@ -43,13 +63,14 @@ authRoutes.post('/register', async (c) => {
   try {
     [user] = await db
       .insert(schema.users)
-      .values({ username: input.username, displayName: input.displayName, passwordHash, recoveryCodeHash })
+      .values({ username: input.username, displayName: input.displayName, passwordHash, recoveryCodeHash, isAdmin })
       .returning();
   } catch (err) {
     if (isUniqueViolation(err)) throw new HttpError(409, 'USERNAME_TAKEN', 'That username is taken');
     throw err;
   }
 
+  await rateLimitHit(db, ipKey, 60 * MIN);
   await startSession(c, user!.id);
   const res: AuthWithRecoveryResponse = { user: publicUser(user!), recoveryCode: recovery.display };
   return c.json(res, 201);
@@ -58,8 +79,12 @@ authRoutes.post('/register', async (c) => {
 authRoutes.post('/login', async (c) => {
   const db = c.var.db;
   const input = await body(c, LoginRequest);
-  await rateLimit(db, `login:ip:${clientIp(c)}`, 30, 15 * MIN);
-  await rateLimit(db, `login:user:${input.username}`, 8, 15 * MIN);
+  // Per IP, per username+IP (so a stranger can't lock someone else out, test report B4), and a
+  // generous per-username cap against distributed guessing.
+  const ip = clientIp(c);
+  await rateLimit(db, `login:ip:${ip}`, 30, 15 * MIN);
+  await rateLimit(db, `login:user:${input.username}:ip:${ip}`, 8, 15 * MIN);
+  await rateLimit(db, `login:user:${input.username}`, 100, 15 * MIN);
 
   const [user] = await db.select().from(schema.users).where(eq(schema.users.username, input.username)).limit(1);
   if (!user) {
@@ -70,7 +95,7 @@ authRoutes.post('/login', async (c) => {
     throw new HttpError(401, 'INVALID_CREDENTIALS', 'Wrong username or password');
   }
 
-  await resetRateLimit(db, `login:user:${input.username}`);
+  await resetRateLimit(db, `login:user:${input.username}:ip:${ip}`);
   await startSession(c, user.id);
   const res: MeResponse = { user: publicUser(user) };
   return c.json(res);
@@ -124,7 +149,6 @@ authRoutes.post('/recover', async (c) => {
     .set({ passwordHash, recoveryCodeHash, updatedAt: new Date() })
     .where(eq(schema.users.id, user.id));
   await revokeOtherSessions(db, user.id, null);
-  await resetRateLimit(db, `login:user:${input.username}`);
   await startSession(c, user.id);
 
   const res: AuthWithRecoveryResponse = { user: publicUser(user), recoveryCode: recovery.display };

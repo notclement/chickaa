@@ -223,13 +223,17 @@ export function Avatar({ name, id, size = 'md' }: { name: string; id: string; si
   }
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => [...w][0] ?? '')
-    .join('')
-    .toUpperCase();
+  // CJK names get one character: two wide characters don't fit the circle (test report U6).
+  const first = [...name.trim()][0] ?? '';
+  const initials = /[\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/.test(first)
+    ? first
+    : name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((w) => [...w][0] ?? '')
+        .join('')
+        .toUpperCase();
   return (
     <span
       aria-hidden

@@ -1,4 +1,4 @@
-# Security & financial-integrity review (v1.0.0-rc.1)
+# Security & financial-integrity review (v1.1.0)
 
 Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by automated tests.
 
@@ -7,12 +7,15 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 |---|---|
 | Passwords and recovery codes hashed with **Argon2id** (19 MiB, t=2), never stored or logged in plain text | ✅ |
 | Same error for unknown user vs wrong password, with equal timing (dummy hash) | ✅ |
-| Rate limits (Postgres): login 8 / 15 min per username + 30 per IP; recovery 5 / h per username; register 20 / h per IP; avatar 30 / h | ✅ |
+| Rate limits (Postgres): login 8 / 15 min per **user ID + IP** (a stranger can't lock someone out), 100 / 15 min per user ID, 30 per IP; recovery 5 / h per user; **successful** sign-ups 50 / h per IP; admin setup 5 / h per IP; avatar 30 / h | ✅ |
 | Client IP for limits from edge headers or the **last** X-Forwarded-For hop (the first hop is client-controlled) | ✅ |
 | Session = 32 random bytes in an **httpOnly, Secure, SameSite=Lax `__Host-` cookie**; only the SHA-256 is stored; 90-day sliding expiry | ✅ |
 | Logout revokes server-side; password change signs out other devices; recovery signs out all and rotates the code | ✅ |
 | Nothing auth-related in localStorage/IndexedDB (only the display profile) | ✅ |
 | Old sessions and rate-limit rows cleaned up every 6 h | ✅ |
+
+| Admin account `admin` only creatable with the private one-time `ADMIN_SETUP_CODE` (constant-time compare); look-alike admin/staff IDs reserved for everyone | ✅ |
+| Admin can **read** any trip; all writes still require trip membership | ✅ |
 
 ## Web and API
 | Control | Status |
@@ -20,10 +23,12 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 | HTTPS only (Render), **HSTS** in production | ✅ |
 | Strict **CSP** (`default-src 'self'`, no inline scripts/styles), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, COOP | ✅ |
 | **CSRF**: writes need same-origin `Origin` + `X-Requested-With: ncc`, on top of SameSite cookies | ✅ |
-| Request bodies capped at 64 KB (photos at 24 KB, checked by magic bytes, JPEG/WebP only, no SVG) | ✅ |
+| Request bodies capped at 64 KB (photos at 24 KB, checked by magic bytes, JPEG/WebP only, no SVG); oversized requests close the connection | ✅ |
+| Real calendar dates enforced everywhere (no DB errors from 2026-02-30) | ✅ |
+| Typed exchange rates > 100× off the official rate refused (fat-finger guard) | ✅ |
 | Input validation with shared zod schemas; malformed ids are 404 (no DB errors) | ✅ |
 | **Access control**: every trip/expense/settlement/avatar read and write checks membership; non-members get 404 (no probing); owner-only and payer/recipient-only actions enforced server-side | ✅ |
-| Invite tokens: 192-bit random, only SHA-256 stored, expiry, max uses (row-locked), revocation | ✅ |
+| Invite tokens: 192-bit random, only SHA-256 stored, expiry, max uses (row-locked), revocation; dead links reveal nothing about the trip | ✅ |
 | User data never in shared HTTP caches (`no-store`); avatars `private` + versioned | ✅ |
 | Service worker never caches API responses; offline copy is per user and **deleted on logout / expiry / user switch** | ✅ |
 | Production dependencies: `pnpm audit --prod` reports no known vulnerabilities (26 Nov 2026) | ✅ |
@@ -45,7 +50,8 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 
 ## Accepted risks
 - Usernames can be checked for availability at sign-up (inherent to username accounts).
-- Anyone holding a valid invite link sees the trip name, owner name and member count before joining (by design).
+- Anyone holding a **valid** invite link sees the trip name, owner name and member count before joining (by design).
+- The admin ID (`admin`) is public in the repo; it's protected by the private one-time code, which is useless once the account exists.
 - No email/phone means a lost password **and** lost recovery code can't be recovered.
 
 ## Reporting

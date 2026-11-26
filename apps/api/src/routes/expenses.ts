@@ -34,7 +34,8 @@ import { currentUser, requireAuth } from '../auth/session.ts';
 import { apiRate } from '../fx/rates.ts';
 import { body, forbidden, HttpError, isUniqueViolation, notFound, uuidParam } from '../lib/http.ts';
 import type { Env } from '../lib/types.ts';
-import { membership } from './trips.ts';
+import { isRealDate } from '@ncc/contracts';
+import { membership, viewAccess } from './trips.ts';
 
 const { trips, tripMembers, users, expenses, expensePayers, expenseSplits, expenseRevisions, tripFxRates, settlements } = schema;
 
@@ -42,7 +43,6 @@ type ExpenseRow = typeof expenses.$inferSelect;
 type TripRow = typeof trips.$inferSelect;
 type Fields = Omit<z.output<typeof CreateExpenseRequest>, 'clientId'>;
 
-const IsoDate = /^\d{4}-\d{2}-\d{2}$/;
 
 // ---------- helpers ----------
 
@@ -90,6 +90,29 @@ async function tripFixedRate(db: Db, tripId: string, currency: string) {
   return row ? rateToString(rateFromLiteral(row.rate)) : null;
 }
 
+/**
+ * Guard against typos like 1000000 instead of 0.3 (test report U2): a typed rate more than 100×
+ * away from the day's official rate is refused. (The app also asks to confirm anything >20% off.)
+ * If the official rate can't be fetched, the typed rate is accepted.
+ */
+async function assertPlausibleRate(db: Db, fx: Env['Variables']['fx'], from: string, to: string, date: string, value: string) {
+  let ref: string;
+  try {
+    ref = (await apiRate(db, fx, from, to, date)).rate;
+  } catch {
+    return;
+  }
+  const a = parseRate(value);
+  const b = parseRate(ref);
+  // Compare a/b against [1/100, 100] with exact integers: a.num·10^b.scale vs b.num·10^a.scale.
+  const left = a.num * 10n ** BigInt(b.scale);
+  const right = b.num * 10n ** BigInt(a.scale);
+  if (left > right * 100n || left * 100n < right) {
+    const msg = `That rate looks wrong: today’s rate is about 1 ${from} = ${ref} ${to}`;
+    throw new HttpError(400, 'VALIDATION', msg, { fields: { rate: msg } });
+  }
+}
+
 /** Decides the exchange rate for an expense. Network calls happen here, outside the DB transaction. */
 async function decideRate(
   db: Db,
@@ -109,13 +132,17 @@ async function decideRate(
   }
 
   switch (choice.source) {
-    case 'manual':
+    case 'manual': {
+      let value: string;
       try {
-        return { rate: rateToString(parseRate(choice.value)), source: 'manual', date: f.expenseDate };
+        value = rateToString(parseRate(choice.value));
       } catch (err) {
         if (err instanceof FinanceError) throw new HttpError(400, 'VALIDATION', err.message, { fields: { rate: err.message } });
         throw err;
       }
+      await assertPlausibleRate(db, fx, f.currency, trip.baseCurrency, f.expenseDate, value);
+      return { rate: value, source: 'manual', date: f.expenseDate };
+    }
     case 'trip_fixed': {
       const r = await tripFixedRate(db, trip.id, f.currency);
       if (!r) throw new HttpError(400, 'VALIDATION', `This trip has no fixed rate for ${f.currency}`, { fields: { rate: 'No trip rate set' } });
@@ -132,8 +159,11 @@ function toSplitInput(split: SplitRequest, currency: CurrencyCode): SplitInput {
   switch (split.type) {
     case 'equal':
       return { type: 'equal', participants: split.participants };
-    case 'exact':
-      return { type: 'exact', amounts: split.amounts.map((a) => ({ userId: a.userId, amount: parseAmount(a.amount, currency) })) };
+    case 'exact': {
+      // Rows of 0 mean "not sharing this": drop them instead of storing 0 shares (test report U7).
+      const amounts = split.amounts.map((a) => ({ userId: a.userId, amount: parseAmount(a.amount, currency) })).filter((a) => a.amount !== 0n);
+      return { type: 'exact', amounts };
+    }
     case 'percentage':
       return { type: 'percentage', percents: split.percents.map((p) => ({ userId: p.userId, basisPoints: parsePercent(p.percent) })) };
     case 'shares':
@@ -290,7 +320,7 @@ tripExpenseRoutes.use('*', requireAuth);
 tripExpenseRoutes.get('/:id/expenses', async (c) => {
   const me = currentUser(c);
   const tripId = uuidParam(c, 'id');
-  await membership(c.var.db, tripId, me.id);
+  await viewAccess(c.var.db, tripId, me);
   const res: ExpenseListResponse = { expenses: await loadExpenses(c.var.db, { tripId }) };
   return c.json(res);
 });
@@ -390,7 +420,7 @@ export async function tripBalances(db: Db, trip: TripRow): Promise<BalancesRespo
 
 tripExpenseRoutes.get('/:id/balances', async (c) => {
   const me = currentUser(c);
-  const { trip } = await membership(c.var.db, uuidParam(c, 'id'), me.id);
+  const { trip } = await viewAccess(c.var.db, uuidParam(c, 'id'), me);
   return c.json(await tripBalances(c.var.db, trip));
 });
 
@@ -443,7 +473,7 @@ tripExpenseRoutes.get('/:id/fx-rate', async (c) => {
   const { trip } = await membership(db, tripId, me.id);
   const currency = (c.req.query('currency') ?? '').toUpperCase();
   const date = c.req.query('date') ?? new Date().toISOString().slice(0, 10);
-  if (!isCurrencyCode(currency) || !IsoDate.test(date)) throw new HttpError(400, 'VALIDATION', 'Bad currency or date');
+  if (!isCurrencyCode(currency) || !isRealDate(date)) throw new HttpError(400, 'VALIDATION', 'Bad currency or date');
   let res: FxRateResponse;
   if (currency === trip.baseCurrency) {
     res = { from: currency, to: trip.baseCurrency, rate: '1', date, source: 'same_currency', provider: null };
@@ -461,7 +491,7 @@ tripExpenseRoutes.get('/:id/fx-rate', async (c) => {
 tripExpenseRoutes.get('/:id/fx-rates', async (c) => {
   const me = currentUser(c);
   const tripId = uuidParam(c, 'id');
-  await membership(c.var.db, tripId, me.id);
+  await viewAccess(c.var.db, tripId, me);
   const rows = await c.var.db.select().from(tripFxRates).where(eq(tripFxRates.tripId, tripId)).orderBy(asc(tripFxRates.currency));
   const res: TripFxRatesResponse = {
     rates: rows.map((r) => ({ currency: r.currency, rate: rateToString(rateFromLiteral(r.rate)), setAt: r.setAt.toISOString(), setBy: r.setBy })),
@@ -485,6 +515,7 @@ tripExpenseRoutes.put('/:id/fx-rates/:currency', async (c) => {
   } catch (err) {
     financeToHttp(err);
   }
+  await assertPlausibleRate(db, c.var.fx, currency, trip.baseCurrency, new Date().toISOString().slice(0, 10), value);
   await db
     .insert(tripFxRates)
     .values({ tripId, currency, rate: value, setBy: me.id })
@@ -515,6 +546,14 @@ async function expenseForMember(db: Db, id: string, userId: string) {
   return { expense: e, ...m };
 }
 
+/** Read-only variant: also lets the admin view expenses of trips they're not in. */
+async function expenseForViewer(db: Db, id: string, user: { id: string; isAdmin: boolean }) {
+  const [e] = await db.select().from(expenses).where(eq(expenses.id, id)).limit(1);
+  if (!e) throw notFound('Expense not found');
+  await viewAccess(db, e.tripId, user);
+  return e;
+}
+
 function canEdit(e: ExpenseRow, role: 'owner' | 'member', userId: string) {
   return role === 'owner' || e.createdBy === userId;
 }
@@ -522,7 +561,7 @@ function canEdit(e: ExpenseRow, role: 'owner' | 'member', userId: string) {
 expenseRoutes.get('/:id', async (c) => {
   const me = currentUser(c);
   const id = uuidParam(c, 'id');
-  await expenseForMember(c.var.db, id, me.id);
+  await expenseForViewer(c.var.db, id, me);
   const [e] = await loadExpenses(c.var.db, { ids: [id], includeDeleted: true });
   return c.json(e!);
 });
@@ -603,7 +642,7 @@ expenseRoutes.delete('/:id', async (c) => {
 expenseRoutes.get('/:id/revisions', async (c) => {
   const me = currentUser(c);
   const id = uuidParam(c, 'id');
-  await expenseForMember(c.var.db, id, me.id);
+  await expenseForViewer(c.var.db, id, me);
   const rows = await c.var.db
     .select({ r: expenseRevisions, name: users.displayName })
     .from(expenseRevisions)

@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'rea
 import { AuthProvider, useAuth } from '../auth/AuthContext.tsx';
 import { AppShell } from '../components/AppShell.tsx';
 import { AccountScreen } from '../screens/AccountScreen.tsx';
+import { AdminScreen } from '../screens/AdminScreen.tsx';
 import { BalancesScreen } from '../screens/BalancesScreen.tsx';
 import { ExpenseDetailScreen } from '../screens/ExpenseDetailScreen.tsx';
 import { EditExpenseScreen, NewExpenseScreen } from '../screens/ExpenseFormScreen.tsx';
@@ -42,6 +43,7 @@ export function App() {
               <Route path="expenses/:eid" element={<ExpenseDetailScreen />} />
               <Route path="expenses/:eid/edit" element={<EditExpenseScreen />} />
               <Route path="account" element={<AccountScreen />} />
+              <Route path="admin" element={<AdminScreen />} />
             </Route>
             <Route path="*" element={<NotFoundScreen />} />
           </Route>

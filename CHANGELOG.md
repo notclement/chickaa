@@ -2,6 +2,36 @@
 
 All notable changes to NoChickenCall. Dates are Singapore time.
 
+## [1.1.0] - 2026-11-26 · Fresh start + admin
+### ⚠️ Data reset
+- **The database is wiped once when this version deploys.** All accounts, trips, expenses and settlements are deleted (exchange-rate cache kept). Everyone signs up again.
+
+### Added
+- **Admin:** the reserved ID `admin` can only be created with a one-time code stored privately on the server (`ADMIN_SETUP_CODE`). The admin sees **all trips** with colour-coded status tags and can open any trip **read-only** (normal rights in trips they're a member of).
+- **Trip status tags:** 🔵 Active (created, no transactions yet) · 🟢 On-going (within the trip dates or has transactions) · 🟣 Needs finishing (end date passed, not finished) · 🟠 Pending settlement (finished, payments open) · ⚪ Ended (fully settled) · 🔴 Deleted.
+- **Reserved user IDs:** look-alike admin/staff IDs are refused (adm1n, 4dmin, a_d_m_i_n, admn, amdin, administrator, root, sysadmin, moderator, support, official, nochickencall… including number-for-letter swaps and one-letter typos).
+- Sign-up and Account explain that the **User ID is for logging in and can't be changed**, while the **display name** is what friends see and can change any time.
+- **Settled another way** (owner): mark a transfer as paid outside the app (cash, swapped debts) with a note. It counts as paid.
+- **Paid earlier:** payments confirmed before a trip was reopened stay listed on Settle up and in the trip summary.
+- Recipients can confirm a payment after saying "Not received" if the money turns up.
+- Warnings: a typed exchange rate more than 20% away from the day's rate must be confirmed (more than 100× off is refused); dates in the future or outside the trip's dates show a note.
+- Settle up explains that you may pay someone other than the person who paid for your share.
+
+### Fixed (test report run 2)
+- B1: the owner's "Cancel" left a debt open forever. Replaced by **Settled another way**.
+- B2: impossible dates (e.g. 2026-02-30) now give a clear error instead of "Something went wrong".
+- B3: earlier payments no longer disappear after Reopen → Finish.
+- B4: wrong passwords from one device can no longer lock the real owner out (limit is now per user ID + network).
+- B5: Balances screen no longer says settling up is "coming soon"; it links to Settle up.
+- B6: rejected oversized uploads close the connection cleanly.
+- U4: expired/revoked invite links no longer show the trip's name, owner or size.
+- U5: Chinese yuan shows as **CN¥** (JPY stays ¥).
+- U6: avatars for CJK names show one character, so they fit the circle.
+- U7: 0-amount rows in an "Amounts" split are dropped.
+- U8: only successful sign-ups count towards the per-network limit (now 50/hour), so typos on shared Wi-Fi don't block a group.
+- O5: transfers always list in the same order.
+- O6: large lists are compressed (≈10× smaller downloads).
+
 ## [1.0.0-rc.1] - 2026-11-26 · Phase 8 (release candidate)
 Becomes 1.0.0 once the real-phone checklist in docs/TESTING.md passes.
 ### Security

@@ -27,7 +27,8 @@ export function TripScreen() {
   if (!trip) return null;
 
   const owner = trip.myRole === 'owner';
-  const active = trip.status === 'active';
+  const viewer = trip.myRole === 'viewer'; // admin looking at someone else's trip: read-only
+  const active = trip.status === 'active' && !viewer;
   const ownerName = trip.members.find((m) => m.role === 'owner')?.displayName;
   const mine = balances.data?.balances.find((b) => b.userId === me.id);
   const myNet = mine ? BigInt(mine.net) : 0n;
@@ -37,9 +38,14 @@ export function TripScreen() {
     <div className="space-y-4 pb-20">
       <ScreenTitle title={trip.name} back="/" subtitle={formatDateRange(trip.startDate, trip.endDate) ?? undefined} />
 
+      {viewer && (
+        <div className="rounded-2xl bg-ink-900 px-4 py-2 text-sm font-semibold text-cream" data-testid="admin-view">
+          🛡️ Admin view · read-only (you’re not in this trip)
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="brand">{currencyLabel(trip.baseCurrency)}</Badge>
-        <Badge tone={active ? 'good' : 'neutral'}>{active ? 'Active' : trip.status === 'completed' ? 'Completed' : 'Archived'}</Badge>
+        <Badge tone={trip.status === 'active' ? 'good' : 'neutral'}>{trip.status === 'active' ? 'Active' : trip.status === 'completed' ? 'Completed' : 'Archived'}</Badge>
         {owner && (
           <Link to={`/trips/${trip.id}/edit`} className="ml-auto rounded-xl px-2 py-1 text-sm font-semibold text-ink-500 active:bg-ink-900/5">
             ⚙︎ Settings
@@ -54,22 +60,29 @@ export function TripScreen() {
             {balances.data ? money(balances.data.totalSpent, trip.baseCurrency) : '…'}
           </div>
         </div>
+        {viewer ? (
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-ink-900/5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">Expenses</div>
+            <div className="mt-1 text-xl font-extrabold tabular-nums">{balances.data?.expenseCount ?? '…'}</div>
+          </div>
+        ) : (
         <div className={`rounded-3xl p-4 shadow-sm ring-1 ring-ink-900/5 ${myNet > 0n ? 'bg-owed/10' : myNet < 0n ? 'bg-owes/10' : 'bg-white'}`}>
           <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">{myNet > 0n ? 'You get back' : myNet < 0n ? 'You owe' : 'You’re'}</div>
           <div className={`mt-1 text-xl font-extrabold tabular-nums ${myNet > 0n ? 'text-owed' : myNet < 0n ? 'text-owes' : ''}`} data-testid="my-balance">
             {!balances.data ? '…' : myNet === 0n ? 'settled up' : money(myNet < 0n ? -myNet : myNet, trip.baseCurrency)}
           </div>
         </div>
+        )}
       </section>
 
       {trip.description && <p className="whitespace-pre-line px-1 text-ink-700">{trip.description}</p>}
 
-      {settle.data && (active ? (balances.data?.expenseCount ?? 0) > 0 : true) && (
+      {settle.data && (trip.status === 'active' ? (balances.data?.expenseCount ?? 0) > 0 : true) && (
         <Link
           to={`/trips/${trip.id}/settle`}
           data-testid="settle-entry"
           className={`flex items-center gap-3 rounded-3xl p-4 shadow-sm ring-1 ring-ink-900/5 ${
-            settle.data.progress.fullySettled ? 'bg-owed/10' : active ? 'bg-white' : 'bg-sun-300/40'
+            settle.data.progress.fullySettled ? 'bg-owed/10' : trip.status === 'active' ? 'bg-white' : 'bg-sun-300/40'
           }`}
         >
           <span className="text-2xl" aria-hidden>
@@ -79,12 +92,12 @@ export function TripScreen() {
             <span className="block font-bold">
               {settle.data.progress.fullySettled
                 ? 'All settled'
-                : active
+                : trip.status === 'active'
                   ? 'Settle up'
                   : `Settling up · ${settle.data.progress.confirmed} of ${settle.data.progress.total} confirmed`}
             </span>
             <span className="block text-sm text-ink-700">
-              {active
+              {trip.status === 'active'
                 ? `${settle.data.transfers.length} transfer${settle.data.transfers.length === 1 ? '' : 's'} would square everyone up`
                 : settle.data.progress.fullySettled
                   ? 'Everyone has paid and been paid back'
@@ -141,7 +154,7 @@ export function TripScreen() {
             ＋ Invite people
           </ButtonLink>
         ) : (
-          active && <p className="mt-3 text-sm text-ink-500">Want to add someone? Ask {ownerName ?? 'the owner'} for an invite link.</p>
+          active && !viewer && <p className="mt-3 text-sm text-ink-500">Want to add someone? Ask {ownerName ?? 'the owner'} for an invite link.</p>
         )}
       </Card>
 

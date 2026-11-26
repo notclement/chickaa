@@ -28,7 +28,9 @@ const memberCountSql = sql<number>`(
   where m.trip_id = ${trips.id} and m.left_at is null
 )`;
 
-function toSummary(t: TripRow, myRole: 'owner' | 'member', memberCount: number): TripSummary {
+type Role = 'owner' | 'member' | 'viewer';
+
+function toSummary(t: TripRow, myRole: Role, memberCount: number): TripSummary {
   return {
     id: t.id,
     name: t.name,
@@ -86,9 +88,24 @@ async function members(db: Db, tripId: string): Promise<Member[]> {
   return rows.map((r) => ({ ...r, joinedAt: r.joinedAt.toISOString() }));
 }
 
-async function detail(db: Db, trip: TripRow, myRole: 'owner' | 'member'): Promise<TripDetail> {
+export async function detail(db: Db, trip: TripRow, myRole: Role): Promise<TripDetail> {
   const list = await members(db, trip.id);
   return { ...toSummary(trip, myRole, list.length), members: list, createdBy: trip.createdBy };
+}
+
+/**
+ * Read access: members as usual; the admin may also VIEW any trip they're not in (role "viewer",
+ * read-only), including deleted ones. Every write still goes through `membership()`.
+ */
+export async function viewAccess(db: Db, tripId: string, user: { id: string; isAdmin: boolean }): Promise<{ trip: TripRow; role: Role }> {
+  try {
+    return await membership(db, tripId, user.id);
+  } catch (err) {
+    if (!user.isAdmin) throw err;
+    const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
+    if (!trip) throw err;
+    return { trip, role: 'viewer' };
+  }
 }
 
 export const tripRoutes = new Hono<Env>();
@@ -129,7 +146,7 @@ tripRoutes.post('/', async (c) => {
 
 tripRoutes.get('/:id', async (c) => {
   const me = currentUser(c);
-  const { trip, role } = await membership(c.var.db, uuidParam(c, 'id'), me.id);
+  const { trip, role } = await viewAccess(c.var.db, uuidParam(c, 'id'), me);
   return c.json(await detail(c.var.db, trip, role));
 });
 

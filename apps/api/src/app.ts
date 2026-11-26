@@ -2,6 +2,7 @@ import type { HealthResponse } from '@ncc/contracts';
 import type { Db } from '@ncc/db';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { compress } from 'hono/compress';
 import { loadSession } from './auth/session.ts';
 import type { Config } from './config.ts';
 import { errorResponse, HttpError } from './lib/http.ts';
@@ -12,6 +13,7 @@ import { frankfurter, type FxProvider } from './fx/provider.ts';
 import { authRoutes } from './routes/auth.ts';
 import { avatarRoutes, myAvatarRoutes } from './routes/avatars.ts';
 import { expenseRoutes, tripExpenseRoutes } from './routes/expenses.ts';
+import { adminRoutes } from './routes/admin.ts';
 import { settlementRoutes, transferRoutes } from './routes/settlement.ts';
 import { inviteRoutes } from './routes/invites.ts';
 import { invitationRoutes, tripRoutes } from './routes/trips.ts';
@@ -41,12 +43,15 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
     if (!c.res.headers.has('Cache-Control')) c.res.headers.set('Cache-Control', 'no-store');
   });
   api.use('*', csrfGuard(config.publicOrigin));
+  // Big JSON (e.g. 300 expenses ≈ 300 KB) shrinks ~10× on the wire (test report O6).
+  api.use('*', compress({ threshold: 2048 }));
   // No legitimate request is bigger than this (photos are ≤ 24 KB, checked again in their route).
   api.use(
     '*',
     bodyLimit({
       maxSize: 64 * 1024,
-      onError: (c) => c.json({ error: { code: 'TOO_LARGE', message: 'Request too large' } }, 413),
+      // Close the connection: the unread body would otherwise corrupt the next request on it (B6).
+      onError: (c) => c.json({ error: { code: 'TOO_LARGE', message: 'Request too large' } }, 413, { Connection: 'close' }),
     }),
   );
 
@@ -80,6 +85,7 @@ export function createApp({ config, db, pingDb, fx = frankfurter() }: AppDeps) {
   api.route('/trips', settlementRoutes);
   api.route('/expenses', expenseRoutes);
   api.route('/settlements', transferRoutes);
+  api.route('/admin', adminRoutes);
   api.route('/invitations', invitationRoutes);
   api.route('/invites', inviteRoutes);
 

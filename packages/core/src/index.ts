@@ -7,3 +7,4 @@ export * from './money.ts';
 export * from './rate.ts';
 export * from './splits.ts';
 export * from './settlement.ts';
+export * from './usernames.ts';

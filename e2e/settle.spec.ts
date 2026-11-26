@@ -65,3 +65,24 @@ test('settle up: preview → finish trip → payer marks sent → recipient conf
   await expect(bob.getByTestId('owes-row')).toContainText('paid ✓');
   await bobCtx.close();
 });
+
+test('owner can mark a payment as "settled another way" and the trip still reaches All settled', async ({ page, browser }) => {
+  const { alice, bobCtx, tripUrl } = await tripWithTwo(page, browser);
+  const tripPath = new URL(tripUrl).pathname;
+  await alice.getByRole('link', { name: /Add expense/ }).click();
+  await alice.getByLabel('Amount').fill('30');
+  await alice.getByLabel('What was it for?').fill('Taxi');
+  await alice.getByRole('button', { name: /^Save/ }).click();
+  await alice.goto(`${tripPath}/settle`);
+  alice.once('dialog', (d) => d.accept());
+  await alice.getByRole('button', { name: 'Finish trip & settle up' }).click();
+  await expect(alice.getByTestId('progress')).toBeVisible();
+
+  alice.once('dialog', (d) => d.accept('paid in cash'));
+  await alice.getByRole('button', { name: 'Settled another way…' }).click();
+  await expect(alice.getByTestId('fully-settled')).toBeVisible();
+  await expect(alice.getByTestId('transfer')).toContainText('Settled another way ✓');
+  await alice.getByRole('button', { name: 'History' }).click();
+  await expect(alice.getByText(/You marked it as settled another way · “paid in cash”/)).toBeVisible();
+  await bobCtx.close();
+});

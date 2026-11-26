@@ -59,8 +59,11 @@ inviteRoutes.get('/:token', async (c) => {
   const { inv, trip } = await find(db, c.req.param('token'));
   const reason = check(inv, trip);
 
+  const me = c.var.user;
+  const member = !!(me && trip && (await isMember(db, trip.id, me.id)));
+  // Dead links reveal nothing about the trip (test report U4), unless you're already in it.
   let tripInfo: InvitePreview['trip'] = null;
-  if (trip && reason !== 'not_found') {
+  if (trip && (reason === 'ok' || member)) {
     const [owner] = await db.select({ name: users.displayName }).from(users).where(eq(users.id, trip.createdBy));
     const [{ n } = { n: 0 }] = await db
       .select({ n: sql<number>`count(*)::int` })
@@ -68,13 +71,7 @@ inviteRoutes.get('/:token', async (c) => {
       .where(and(eq(tripMembers.tripId, trip.id), isNull(tripMembers.leftAt)));
     tripInfo = { id: trip.id, name: trip.name, baseCurrency: trip.baseCurrency, memberCount: n, ownerName: owner?.name ?? '' };
   }
-  const me = c.var.user;
-  const res: InvitePreview = {
-    valid: reason === 'ok',
-    reason,
-    trip: tripInfo,
-    alreadyMember: !!(me && trip && (await isMember(db, trip.id, me.id))),
-  };
+  const res: InvitePreview = { valid: reason === 'ok', reason, trip: tripInfo, alreadyMember: member };
   return c.json(res);
 });
 

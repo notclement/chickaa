@@ -12,6 +12,10 @@ export interface Config {
   runMigrationsOnStart: boolean;
   /** Multiplier for all rate limits (tests only). */
   rateLimitScale: number;
+  /** One-time code required to create the reserved "admin" account. Unset = admin can't be created. */
+  adminSetupCode: string | undefined;
+  /** Time zone used for "today" when tagging trips. */
+  timeZone: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -23,8 +27,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl: env.DATABASE_URL,
     publicOrigin: (env.PUBLIC_ORIGIN ?? env.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
     webDist: env.WEB_DIST ?? new URL('../../web/dist', import.meta.url).pathname,
-    appVersion: `1.0.0-rc.1+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
+    appVersion: `1.1.0+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
     runMigrationsOnStart: env.RUN_MIGRATIONS_ON_START === 'true',
     rateLimitScale: Number(env.RATE_LIMIT_SCALE ?? 1) || 1,
+    adminSetupCode: env.ADMIN_SETUP_CODE?.trim() || undefined,
+    timeZone: env.TZ_TRIPS ?? 'Asia/Singapore',
   };
 }

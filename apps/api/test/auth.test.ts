@@ -68,13 +68,16 @@ describe.skipIf(!TEST_DB_URL)('auth', () => {
     expect(replay.status).toBe(401);
   });
 
-  it('rate-limits repeated failed logins for a username', async () => {
+  it('rate-limits repeated failed logins from one device, without locking the real owner out (B4)', async () => {
     const { app } = await testApp();
     await registered(app, 'dave');
     let last;
-    for (let i = 0; i < 9; i++) last = await client(app, `198.51.100.${i}`).post('/auth/login', { username: 'dave', password: 'wrong wrong' });
+    for (let i = 0; i < 9; i++) last = await client(app, '198.51.100.9').post('/auth/login', { username: 'dave', password: 'wrong wrong' });
     expect(last!.status).toBe(429);
     expect(last!.body.error.code).toBe('RATE_LIMITED');
+    // The attacker's attempts don't block Dave on his own phone.
+    const real = await client(app, '203.0.113.200').post('/auth/login', { username: 'dave', password: 'correct horse battery' });
+    expect(real.status).toBe(200);
   });
 
   it('recovers a forgotten password with the recovery code, rotating it and signing out other devices', async () => {

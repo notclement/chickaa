@@ -25,7 +25,10 @@ myAvatarRoutes.put('/', async (c) => {
   const me = currentUser(c);
   await rateLimit(c.var.db, `avatar:user:${me.id}`, 30, 60 * 60);
   const declared = Number(c.req.header('content-length') ?? 0);
-  if (declared > AVATAR_MAX_BYTES) throw new HttpError(413, 'TOO_LARGE', 'That photo is too big');
+  if (declared > AVATAR_MAX_BYTES) {
+    c.header('Connection', 'close'); // body left unread (B6)
+    throw new HttpError(413, 'TOO_LARGE', 'That photo is too big');
+  }
   const buf = new Uint8Array(await c.req.arrayBuffer());
   if (buf.length === 0) throw new HttpError(400, 'VALIDATION', 'No photo received');
   if (buf.length > AVATAR_MAX_BYTES) throw new HttpError(413, 'TOO_LARGE', 'That photo is too big');
@@ -36,7 +39,7 @@ myAvatarRoutes.put('/', async (c) => {
     .update(users)
     .set({ avatar: Buffer.from(buf), avatarType: type, avatarVersion: sql`coalesce(${users.avatarVersion}, 0) + 1`, updatedAt: new Date() })
     .where(eq(users.id, me.id))
-    .returning({ id: users.id, username: users.username, displayName: users.displayName, avatarVersion: users.avatarVersion });
+    .returning({ id: users.id, username: users.username, displayName: users.displayName, avatarVersion: users.avatarVersion, isAdmin: users.isAdmin });
   const res: MeResponse = { user: u! };
   return c.json(res);
 });
@@ -47,7 +50,7 @@ myAvatarRoutes.delete('/', async (c) => {
     .update(users)
     .set({ avatar: null, avatarType: null, avatarVersion: null, updatedAt: new Date() })
     .where(eq(users.id, me.id))
-    .returning({ id: users.id, username: users.username, displayName: users.displayName, avatarVersion: users.avatarVersion });
+    .returning({ id: users.id, username: users.username, displayName: users.displayName, avatarVersion: users.avatarVersion, isAdmin: users.isAdmin });
   const res: MeResponse = { user: u! };
   return c.json(res);
 });
@@ -63,7 +66,7 @@ avatarRoutes.get('/:id/avatar', async (c) => {
   const me = currentUser(c);
   const id = uuidParam(c, 'id');
   const db = c.var.db;
-  if (id !== me.id) {
+  if (id !== me.id && !me.isAdmin) {
     const mine = db
       .select({ tripId: tripMembers.tripId })
       .from(tripMembers)

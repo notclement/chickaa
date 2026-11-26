@@ -23,9 +23,16 @@ export function AppShell() {
               <BrandLockup size="sm" />
             </Link>
             {user && (
-              <Link to="/account" aria-label="Account" className="rounded-full">
-                <Avatar name={user.displayName} id={user.id} size="sm" />
-              </Link>
+              <div className="flex items-center gap-2">
+                {user.isAdmin && (
+                  <Link to="/admin" aria-label="Admin: all trips" className="grid size-9 place-items-center rounded-full bg-ink-900 text-sm text-cream">
+                    🛡️
+                  </Link>
+                )}
+                <Link to="/account" aria-label="Account" className="rounded-full">
+                  <Avatar name={user.displayName} id={user.id} size="sm" />
+                </Link>
+              </div>
             )}
           </div>
         </div>

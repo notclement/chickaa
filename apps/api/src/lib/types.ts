@@ -7,6 +7,7 @@ export interface AuthUser {
   username: string;
   displayName: string;
   avatarVersion: number | null;
+  isAdmin: boolean;
 }
 
 export interface Env {

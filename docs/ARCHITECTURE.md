@@ -1,6 +1,6 @@
 # NoChickenCall: Architecture & Design (draft for review)
 
-> Status: **As built, v1.0.0-rc.1 (26 Nov 2026).** All 8 phases implemented. Decisions in §0; security review in [SECURITY.md](SECURITY.md).
+> Status: **As built, v1.1.0 (26 Nov 2026).** All 8 phases implemented. Decisions in §0; security review in [SECURITY.md](SECURITY.md).
 > Source of truth for scope: [SPEC.md](SPEC.md). This doc covers *how* to build it.
 
 Guiding rule: **the app is a PWA first.** Every choice below is judged on whether it makes the
@@ -532,7 +532,16 @@ Each phase ends with something runnable and deployed to a staging URL.
 
 ---
 
-## 12. Known limitations
+## 12. Admin (v1.1.0)
+
+- `users.is_admin`. Only the reserved ID **`admin`** (`ADMIN_USERNAME` in `@ncc/core`) can have it, and registering it requires `adminSetupCode` to match the server's `ADMIN_SETUP_CODE` (SHA-256 + `timingSafeEqual`; rate-limited 5/h per IP). If the variable is unset, `admin` can't be created.
+- **Reserved IDs** (`isReservedUsername`, shared by client and server): every reading of the ID (leet digits → letters or dropped, separators removed, repeated letters collapsed) is checked for blocked words anywhere (admin, administrator, sysadmin, moderator, nochickencall…), blocked words at the start/end (adm, root, sudo, system, mod, staff, support, owner…), and any 4–6-letter substring within one edit or swap of "admin". `badminton` is allowed.
+- **Read access** (`viewAccess`): members as usual; the admin gets role `viewer` on any trip (including deleted ones) for every GET. Every write still goes through `membership()`, so the admin can't change trips they're not in.
+- `GET /api/v1/admin/trips` (404 for non-admins): all trips with owner, member/expense counts, total and a **tag**, by precedence: `deleted` → `ended` (finished, no open transfers) → `pending_settlement` → `needs_finishing` (end date < today in `TZ_TRIPS`, default Asia/Singapore) → `ongoing` (within dates or ≥ 1 expense) → `active`.
+- Settlement: owner action `POST /settlements/:id/settle-outside` (from pending/sent/disputed, optional note) sets `confirmed` + `settled_outside`; it replaces "cancel". The recipient may confirm from `disputed`. `GET /trips/:id/settlement` also returns `earlier`: confirmed transfers from superseded plans. Transfers keep a `position` for stable order.
+- **One-time data reset:** migration `0005_wipe_all_data` truncates every table except the FX cache. Drizzle records it, so it runs once.
+
+## 13. Known limitations
 
 - **Free hosting sleeps** after 15 idle minutes (Render free). The app wakes it on open and shows "Waking up the server…"; the cron pinger keeps it awake.
 - **Frankfurter rounding:** for the most recent day, `v2/rate/{from}/{to}?date=` occasionally returns a rounded value (e.g. JPY→SGD 0.0081 vs 0.0080997 from `/latest`). Effect is under 1 cent per expense; left as is. Possible tweak: use `/latest` when the requested date is today or yesterday.

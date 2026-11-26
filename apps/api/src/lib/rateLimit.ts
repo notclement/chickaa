@@ -40,3 +40,20 @@ export async function rateLimit(db: Db, key: string, baseLimit: number, windowSe
 export async function resetRateLimit(db: Db, key: string): Promise<void> {
   await db.delete(schema.rateLimits).where(eq(schema.rateLimits.key, key));
 }
+
+/** Throws 429 if `key` has already reached its limit, WITHOUT counting this attempt. */
+export async function rateLimitPeek(db: Db, key: string, baseLimit: number, windowSeconds: number): Promise<void> {
+  const t = schema.rateLimits;
+  const [row] = await db
+    .select()
+    .from(t)
+    .where(sql`${t.key} = ${key} and ${t.windowStart} >= now() - make_interval(secs => ${windowSeconds})`);
+  if (row && row.count >= baseLimit * scale) {
+    throw new HttpError(429, 'RATE_LIMITED', 'Too many sign-ups from this network. Try again later.', { retryAfter: windowSeconds });
+  }
+}
+
+/** Counts one event against `key` (used after a successful action). */
+export async function rateLimitHit(db: Db, key: string, windowSeconds: number): Promise<void> {
+  await rateLimit(db, key, Number.MAX_SAFE_INTEGER, windowSeconds);
+}

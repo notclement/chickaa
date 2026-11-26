@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { CURRENCY_CODES } from '@ncc/core';
+import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername } from '@ncc/core';
+
+export { ADMIN_USERNAME };
 
 /** Shared request/response schemas (client + server). Grows phase by phase. */
 
@@ -45,7 +47,8 @@ export const Username = z
   .toLowerCase()
   .min(3, 'At least 3 characters')
   .max(24, 'At most 24 characters')
-  .regex(/^[a-z0-9_.]+$/, 'Letters, numbers, _ and . only');
+  .regex(/^[a-z0-9_.]+$/, 'Letters, numbers, _ and . only')
+  .refine((u) => u === ADMIN_USERNAME || !isReservedUsername(u), 'That ID is reserved. Please pick another');
 
 export const Password = z
   .string()
@@ -61,7 +64,13 @@ export const RecoveryCode = z
   .transform((s) => s.replace(/[^A-Z0-9]/g, ''))
   .pipe(z.string().length(16, 'Recovery codes are 16 letters/numbers'));
 
-export const RegisterRequest = z.object({ username: Username, password: Password, displayName: DisplayName });
+export const RegisterRequest = z.object({
+  username: Username,
+  password: Password,
+  displayName: DisplayName,
+  /** Only for the reserved "admin" ID: must match ADMIN_SETUP_CODE on the server. */
+  adminSetupCode: z.string().max(200).optional(),
+});
 export type RegisterRequest = z.input<typeof RegisterRequest>;
 
 export const LoginRequest = z.object({ username: z.string().trim().toLowerCase().min(1), password: z.string().min(1) });
@@ -83,6 +92,7 @@ export const User = z.object({
   displayName: z.string(),
   /** null = no photo. Otherwise part of the photo URL: /api/v1/users/:id/avatar?v=N */
   avatarVersion: z.number().nullable(),
+  isAdmin: z.boolean(),
 });
 export type User = z.infer<typeof User>;
 
@@ -99,7 +109,13 @@ export type AuthWithRecoveryResponse = z.infer<typeof AuthWithRecoveryResponse>;
 
 // ---------- trips ----------
 export const CurrencyCode = z.enum(CURRENCY_CODES as [string, ...string[]]);
-const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+/** A real calendar date: "2026-02-30" and "2026-13-01" are rejected (test report B2). */
+export function isRealDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+const IsoDate = z.string().refine(isRealDate, 'Use a real date (YYYY-MM-DD)');
 
 export const CreateTripRequest = z
   .object({
@@ -130,7 +146,8 @@ export const UpdateTripRequest = z
 export type UpdateTripRequest = z.input<typeof UpdateTripRequest>;
 
 export const TripStatus = z.enum(['active', 'completed', 'archived']);
-export const MemberRole = z.enum(['owner', 'member']);
+/** viewer = the admin looking at a trip they're not in (read-only). */
+export const MemberRole = z.enum(['owner', 'member', 'viewer']);
 
 export const Member = z.object({
   userId: z.string(),
@@ -348,6 +365,8 @@ export const SettlementTransfer = z.object({
   amount: z.string(),
   currency: z.string(),
   status: SettlementStatus,
+  /** Owner marked it "settled another way" (cash, offset…). Counts as confirmed. */
+  settledOutside: z.boolean(),
   updatedAt: z.string().nullable(),
 });
 export type SettlementTransfer = z.infer<typeof SettlementTransfer>;
@@ -362,6 +381,8 @@ export const SettlementResponse = z.object({
   nonZeroCount: z.number(),
   baseCurrency: z.string(),
   transfers: z.array(SettlementTransfer),
+  /** Confirmed payments from before the trip was reopened (still count in balances). */
+  earlier: z.array(SettlementTransfer),
   progress: z.object({ confirmed: z.number(), total: z.number(), fullySettled: z.boolean() }),
 });
 export type SettlementResponse = z.infer<typeof SettlementResponse>;
@@ -378,3 +399,37 @@ export const SettlementEvent = z.object({
 export type SettlementEvent = z.infer<typeof SettlementEvent>;
 export const SettlementEventsResponse = z.object({ events: z.array(SettlementEvent) });
 export type SettlementEventsResponse = z.infer<typeof SettlementEventsResponse>;
+
+export const SettleOutsideRequest = z.object({ note: z.string().trim().max(300).optional().nullable() });
+
+// ---------- admin ----------
+/**
+ * Trip status tags (admin view):
+ *  active             created, no transactions yet (invites / pre-trip)        blue
+ *  ongoing            within the trip dates, or at least one transaction       green
+ *  needs_finishing    end date has passed but the owner never finished it     purple
+ *  pending_settlement finished; not every transfer confirmed yet              amber
+ *  ended              finished and fully settled                              grey
+ *  deleted            deleted by the owner                                     red
+ */
+export const TripTag = z.enum(['active', 'ongoing', 'needs_finishing', 'pending_settlement', 'ended', 'deleted']);
+export type TripTag = z.infer<typeof TripTag>;
+
+export const AdminTrip = z.object({
+  id: z.string(),
+  name: z.string(),
+  baseCurrency: z.string(),
+  ownerName: z.string(),
+  ownerUsername: z.string(),
+  memberCount: z.number(),
+  expenseCount: z.number(),
+  totalSpent: z.string(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  createdAt: z.string(),
+  tag: TripTag,
+  iAmMember: z.boolean(),
+});
+export type AdminTrip = z.infer<typeof AdminTrip>;
+export const AdminTripsResponse = z.object({ trips: z.array(AdminTrip), counts: z.record(z.string(), z.number()) });
+export type AdminTripsResponse = z.infer<typeof AdminTripsResponse>;

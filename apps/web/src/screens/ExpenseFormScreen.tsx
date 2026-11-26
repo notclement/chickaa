@@ -192,6 +192,7 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
   const [uncertain, setUncertain] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [triedSubmit, setTriedSubmit] = useState(false);
+  const [rateConfirmed, setRateConfirmed] = useState(false);
   const base = trip.baseCurrency;
   const foreign = f.currency !== base;
   const dirty = JSON.stringify(f) !== JSON.stringify(initial);
@@ -229,6 +230,16 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
   }, [foreign, f.currency, f.date, trip.id, base, existing]);
 
   const effectiveRate = !foreign ? '1' : f.rateMode === 'manual' ? (isValidRate(f.manualRate) ? f.manualRate : null) : (suggestion?.rate ?? null);
+  // Sanity check for typed rates (test report U2).
+  const offBy = foreign && f.rateMode === 'manual' && suggestion && isValidRate(f.manualRate) ? rateOffBy(f.manualRate, suggestion.rate) : null;
+  const rateSuspicious = offBy !== null && offBy > 1.2;
+  // Soft date warnings (test report U3).
+  const dateWarning =
+    f.date > todayLocal()
+      ? 'This date is in the future.'
+      : (trip.startDate && f.date < trip.startDate) || (trip.endDate && f.date > trip.endDate)
+        ? 'This date is outside the trip’s dates.'
+        : null;
   const pv = preview(f, trip.members, effectiveRate, base);
 
   const submit = async (e: FormEvent) => {
@@ -238,6 +249,7 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
     setUncertain(false);
     if (!f.description.trim()) return setError('What was it for?');
     if (!pv.ok) return setError(pv.error ?? (pv.total ? 'Check the exchange rate' : 'Enter the amount'));
+    if (rateSuspicious && !rateConfirmed) return setError('Please confirm the exchange rate (it’s very different from today’s rate).');
     setBusy(true);
     try {
       const req = toRequest(f, trip.members, suggestion, base);
@@ -294,6 +306,11 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
           </div>
           <TextField className="mt-3" label="What was it for?" placeholder="Dinner at Jimbaran" value={f.description} onChange={(e) => set('description', e.target.value)} maxLength={80} />
           <TextField className="mt-3" label="Date" type="date" value={f.date} onChange={(e) => set('date', e.target.value || todayLocal())} />
+          {dateWarning && (
+            <p className="mt-1.5 text-sm font-medium text-tangerine-700" data-testid="date-warning">
+              ⚠︎ {dateWarning} Still OK to save.
+            </p>
+          )}
           {foreign && (
             <RateBox
               f={f}
@@ -304,6 +321,18 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
               setManual={(v) => set('manualRate', v)}
               converted={pv.ok ? money(pv.built.baseTotal, base) : null}
             />
+          )}
+          {rateSuspicious && suggestion && (
+            <label className="mt-2 flex items-start gap-3 rounded-2xl bg-owes/10 px-4 py-3 text-sm" data-testid="rate-warning">
+              <input type="checkbox" checked={rateConfirmed} onChange={(e) => setRateConfirmed(e.target.checked)} className="mt-0.5 size-5 accent-tangerine-500" />
+              <span>
+                <b>
+                  This rate is {offBy! >= 10 ? `${Math.round(offBy!)}×` : `${Math.round((offBy! - 1) * 100)}%`} away from today’s rate
+                </b>{' '}
+                (1 {f.currency} = {suggestion.rate} {base}).{pv.ok ? ` It makes this expense ${money(pv.built.baseTotal, base)}.` : ''} Tick if that’s
+                right.
+              </span>
+            </label>
           )}
         </Card>
 
@@ -459,6 +488,24 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
       </form>
     </>
   );
+}
+
+/**
+ * How far a typed rate is from the suggested one, as a factor ≥ 1 (exact: no floats needed beyond
+ * the final display). Used to ask "are you sure?" when it's more than 20% off (test report U2).
+ */
+export function rateOffBy(typed: string, reference: string): number | null {
+  try {
+    const a = parseRate(typed);
+    const b = parseRate(reference);
+    const left = a.num * 10n ** BigInt(b.scale);
+    const right = b.num * 10n ** BigInt(a.scale);
+    const big = left > right ? left : right;
+    const small = left > right ? right : left;
+    return Number((big * 1000n) / small) / 1000;
+  } catch {
+    return null;
+  }
 }
 
 function isValidRate(s: string) {

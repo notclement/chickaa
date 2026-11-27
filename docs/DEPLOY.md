@@ -60,6 +60,7 @@ Render dashboard → service → **Settings → Custom Domains**. Then add an en
 | `PUBLIC_ORIGIN` | automatic | Falls back to `RENDER_EXTERNAL_URL`; override for custom domains |
 | `NODE_ENV`, `RUN_MIGRATIONS_ON_START` | render.yaml | |
 | `PORT` | Render | Injected automatically |
+| `TRUST_CLOUDFLARE` | automatic | Rate limits read the visitor's IP from Cloudflare's `cf-connecting-ip` when running on Render. Set `false` if you ever host somewhere without Cloudflare in front, or `true` on another host behind Cloudflare |
 | `PAYNOW_QR_PAYLOAD` | you (privately) | The text inside your static PayNow QR (contains your PayNow number, so keep it out of the repo). Unset = the Supporter page says supporting isn't open yet. Invalid text is ignored with a log warning |
 | `ADMIN_SETUP_CODE` | you (privately) | One-time code to create the `admin` account. Unset = admin can't be created. Can be removed once the admin exists |
 

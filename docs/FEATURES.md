@@ -1,6 +1,6 @@
 # Features
 
-What ChickAA does as of **v1.7.0**. See [PHASES.md](PHASES.md) for what's next.
+What ChickAA does as of **v1.8.0**. See [PHASES.md](PHASES.md) for what's next.
 
 ## Accounts
 - Sign up with a **display name, user ID and password**. No email or phone number.
@@ -37,7 +37,8 @@ What ChickAA does as of **v1.7.0**. See [PHASES.md](PHASES.md) for what's next.
 - The owner **finishes the trip**: expenses lock, and the plan is saved.
 - The **payer** taps *I've sent it* after paying in their banking app (with a copy-amount button). The **recipient** taps *Got it ✓*, or *Not received* with a note.
 - Progress shows as "3 of 5 transfers confirmed". The trip is **fully settled** only when every transfer is confirmed and every balance is zero.
-- The owner can mark a transfer as **Settled another way** (cash, swapped debts…) with a note. It counts as paid.
+- The owner can mark a transfer as **Settled another way** (cash, swapped debts…) with a note. Owed to the owner: counts as paid at once. Owed to someone else: they accept or refuse it first.
+- Odd cents from uneven splits rotate between people from expense to expense, so nobody is always the one paying the extra cent.
 - If a payment was marked *Not received* but turns up later, the recipient can still confirm it.
 - Every transfer has a history of who did what, and when.
 - The owner can **reopen** a finished trip to fix expenses. Received payments stay counted and listed as **Paid earlier**, and the rest is recalculated.

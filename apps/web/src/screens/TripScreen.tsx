@@ -6,7 +6,9 @@ import { useMe } from '../auth/AuthContext.tsx';
 import { ExpenseRow } from '../components/ExpenseRow.tsx';
 import { WhoOwesWho } from '../components/WhoOwesWho.tsx';
 import { currencyLabel, formatDateRange } from '../lib/format.ts';
-import { money } from '../lib/money.ts';
+import { money, todayLocal } from '../lib/money.ts';
+import { tripTag } from '@chickaa/core';
+import { TripTagChip } from '../components/TripTagChip.tsx';
 import { useTrip } from '../lib/useTrip.ts';
 import { Avatar, Badge, ButtonLink, Card, ErrorState, Loading, ScreenTitle } from '../ui/index.tsx';
 
@@ -33,6 +35,18 @@ export function TripScreen() {
   const mine = balances.data?.balances.find((b) => b.userId === me.id);
   const myNet = mine ? BigInt(mine.net) : 0n;
   const list = expenses.data?.expenses ?? [];
+  // Same status tag as Admin uses (test report run 3, F10). Waits for the numbers it needs.
+  const tag =
+    balances.data && (trip.status === 'active' || settle.data)
+      ? tripTag(
+          trip,
+          {
+            expenseCount: balances.data.expenseCount,
+            openTransfers: settle.data?.state === 'plan' ? settle.data.progress.total - settle.data.progress.confirmed : 0,
+          },
+          todayLocal(),
+        )
+      : null;
 
   return (
     <div className="space-y-4 pb-20">
@@ -45,7 +59,7 @@ export function TripScreen() {
       )}
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="brand">{currencyLabel(trip.baseCurrency)}</Badge>
-        <Badge tone={trip.status === 'active' ? 'good' : 'neutral'}>{trip.status === 'active' ? 'Active' : trip.status === 'completed' ? 'Completed' : 'Archived'}</Badge>
+        {tag && <TripTagChip tag={tag} />}
         {owner && (
           <Link to={`/trips/${trip.id}/edit`} className="ml-auto rounded-xl px-2 py-1 text-sm font-semibold text-ink-500 active:bg-ink-900/5">
             ⚙︎ Settings

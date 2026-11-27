@@ -63,6 +63,7 @@ test('settle up: preview → finish trip → payer marks sent → recipient conf
   await expect(bob.getByTestId('settle-entry')).toContainText('All settled');
   await expect(bob.getByTestId('my-balance')).toHaveText('settled up');
   await expect(bob.getByTestId('owes-row')).toContainText('paid ✓');
+  await expect(bob.getByTestId('trip-tag')).toHaveText('Ended'); // same tag as Admin (F10)
   await bobCtx.close();
 });
 

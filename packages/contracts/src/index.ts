@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername, EXPENSE_CATEGORIES } from '@chickaa/core';
+import { ADMIN_USERNAME, CURRENCY_CODES, isReservedUsername, EXPENSE_CATEGORIES, TRIP_TAGS } from '@chickaa/core';
 
 export { ADMIN_USERNAME };
 
@@ -55,7 +55,18 @@ export const Password = z
   .min(8, 'At least 8 characters')
   .max(200, 'Too long');
 
-export const DisplayName = z.string().trim().min(1, 'Required').max(40, 'At most 40 characters');
+/**
+ * Removes invisible formatting characters (Unicode "Cf": zero-width spaces, right-to-left
+ * overrides, BOMs…) that can disguise or flip names (test report run 3, F8). Keeps the
+ * zero-width joiners and tag characters that emoji sequences need (👨‍👩‍👧, 🏴󠁧󠁢󠁳󠁣󠁴󠁿).
+ */
+export function stripInvisible(s: string): string {
+  return s.replace(/\p{Cf}/gu, (ch) => (ch === '\u200C' || ch === '\u200D' || (ch.codePointAt(0)! >= 0xe0020 && ch.codePointAt(0)! <= 0xe007f) ? ch : ''));
+}
+/** User-typed text: invisible characters removed, then trimmed. */
+const text = () => z.string().overwrite(stripInvisible).trim();
+
+export const DisplayName = text().min(1, 'Required').max(40, 'At most 40 characters');
 
 export const RecoveryCode = z
   .string()
@@ -145,8 +156,8 @@ const IsoDate = z.string().refine(isRealDate, 'Use a real date (YYYY-MM-DD)');
 
 export const CreateTripRequest = z
   .object({
-    name: z.string().trim().min(1, 'Give the trip a name').max(60),
-    description: z.string().trim().max(500).optional().nullable(),
+    name: text().min(1, 'Give the trip a name').max(60),
+    description: text().max(500).optional().nullable(),
     baseCurrency: CurrencyCode,
     startDate: IsoDate.optional().nullable(),
     endDate: IsoDate.optional().nullable(),
@@ -159,8 +170,8 @@ export type CreateTripRequest = z.input<typeof CreateTripRequest>;
 
 export const UpdateTripRequest = z
   .object({
-    name: z.string().trim().min(1).max(60).optional(),
-    description: z.string().trim().max(500).optional().nullable(),
+    name: text().min(1).max(60).optional(),
+    description: text().max(500).optional().nullable(),
     baseCurrency: CurrencyCode.optional(),
     startDate: IsoDate.optional().nullable(),
     endDate: IsoDate.optional().nullable(),
@@ -283,7 +294,8 @@ export type SplitRequest = z.infer<typeof SplitRequest>;
 export const RateChoice = z.discriminatedUnion('source', [
   z.object({ source: z.literal('api') }),
   z.object({ source: z.literal('trip_fixed') }),
-  z.object({ source: z.literal('manual'), value: DecimalString }),
+  /** `confirmed`: the person ticked "this rate is right" for a rate far from the day's rate (run 3, F7). */
+  z.object({ source: z.literal('manual'), value: DecimalString, confirmed: z.boolean().optional() }),
 ]);
 export type RateChoice = z.infer<typeof RateChoice>;
 
@@ -291,9 +303,9 @@ export const ExpenseCategory = z.enum(EXPENSE_CATEGORIES);
 export type ExpenseCategory = z.infer<typeof ExpenseCategory>;
 
 const ExpenseFields = {
-  description: z.string().trim().min(1, 'What was it for?').max(80),
+  description: text().min(1, 'What was it for?').max(80),
   category: ExpenseCategory.default('other'),
-  notes: z.string().trim().max(500).nullable().optional(),
+  notes: text().max(500).nullable().optional(),
   expenseDate: IsoDate,
   currency: CurrencyCode,
   amount: DecimalString,
@@ -398,8 +410,12 @@ export const SettlementTransfer = z.object({
   amount: z.string(),
   currency: z.string(),
   status: SettlementStatus,
-  /** Owner marked it "settled another way" (cash, offset…). Counts as confirmed. */
+  /**
+   * Settled another way (cash, offset…), marked by the trip owner. If the owner isn't the recipient
+   * the transfer stays "sent" until the recipient accepts it (test report run 3, F4).
+   */
   settledOutside: z.boolean(),
+  settledOutsideBy: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
 export type SettlementTransfer = z.infer<typeof SettlementTransfer>;
@@ -420,7 +436,7 @@ export const SettlementResponse = z.object({
 });
 export type SettlementResponse = z.infer<typeof SettlementResponse>;
 
-export const DisputeRequest = z.object({ note: z.string().trim().max(300).optional().nullable() });
+export const DisputeRequest = z.object({ note: text().max(300).optional().nullable() });
 
 export const SettlementEvent = z.object({
   fromStatus: SettlementStatus.nullable(),
@@ -433,7 +449,7 @@ export type SettlementEvent = z.infer<typeof SettlementEvent>;
 export const SettlementEventsResponse = z.object({ events: z.array(SettlementEvent) });
 export type SettlementEventsResponse = z.infer<typeof SettlementEventsResponse>;
 
-export const SettleOutsideRequest = z.object({ note: z.string().trim().max(300).optional().nullable() });
+export const SettleOutsideRequest = z.object({ note: text().max(300).optional().nullable() });
 
 // ---------- admin ----------
 /**
@@ -445,7 +461,7 @@ export const SettleOutsideRequest = z.object({ note: z.string().trim().max(300).
  *  ended              finished and fully settled                              grey
  *  deleted            deleted by the owner                                     red
  */
-export const TripTag = z.enum(['active', 'ongoing', 'needs_finishing', 'pending_settlement', 'ended', 'deleted']);
+export const TripTag = z.enum(TRIP_TAGS);
 export type TripTag = z.infer<typeof TripTag>;
 
 export const AdminTrip = z.object({
@@ -498,7 +514,7 @@ export const AdminUser = z.object({
 });
 export type AdminUser = z.infer<typeof AdminUser>;
 /** POST /admin/users/:id/disable */
-export const DisableUserRequest = z.object({ note: z.string().trim().max(300).optional() });
+export const DisableUserRequest = z.object({ note: text().max(300).optional() });
 export type DisableUserRequest = z.infer<typeof DisableUserRequest>;
 
 /** POST /admin/users/:id/supporter */

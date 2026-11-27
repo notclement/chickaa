@@ -443,7 +443,7 @@ Errors use a consistent shape: `{ error: { code, message, details? } }`. Codes i
 | Percentage | basis points per person (2-dp %) | must sum to 10000; largest remainder |
 | Shares | positive integer weights | largest remainder |
 
-**Deterministic tie-break** for leftover cents: largest fractional remainder first, then member join order, then user id. Identical input always gives identical output on client and server.
+**Deterministic tie-break** for leftover cents: largest fractional remainder first; ties are handed out in member order starting at position `seed mod n`, where `seed = seedFrom(clientId)` (FNV-1a), so the odd cent rotates between expenses instead of always going to the first member (test report run 3, F2). Identical input and seed always give identical output on client and server. On edit, if seed 0 (the pre-v1.8 rule) reproduces the stored lines, it's kept, so money-neutral edits never move a cent.
 
 ### 8.4 Ledger & balances
 ```
@@ -535,7 +535,7 @@ Each phase ends with something runnable and deployed to a staging URL.
 ## 12. Admin (v1.1.0)
 
 - `users.is_admin`. Only the reserved ID **`admin`** (`ADMIN_USERNAME` in `@chickaa/core`) can have it, and registering it requires `adminSetupCode` to match the server's `ADMIN_SETUP_CODE` (SHA-256 + `timingSafeEqual`; rate-limited 5/h per IP). If the variable is unset, `admin` can't be created.
-- **Reserved IDs** (`isReservedUsername`, shared by client and server): every reading of the ID (leet digits → letters or dropped, separators removed, repeated letters collapsed) is checked for blocked words anywhere (admin, administrator, sysadmin, moderator, chickaa…), blocked words at the start/end (adm, root, sudo, system, mod, staff, support, owner…), and any 4–6-letter substring within one edit or swap of "admin". `badminton` is allowed.
+- **Reserved IDs** (`isReservedUsername`, shared by client and server): every reading of the ID (leet digits → letters or dropped, separators removed, repeated letters collapsed) is checked for blocked words anywhere (admin, administrator, sysadmin, moderator, chickaa…); short words (adm, root, sudo, system, mod, staff, support, owner, team…) only as the whole ID, a part between separators/digits, or joined to a role word (rootuser); and the whole ID within one edit or swap of "admin" (plus `adnim`), two of "administrator", one of "moderator". Allowed: badminton, amin, armin, and names like benjamin/jasmine/yasmin (v1.8, test report run 3, F3).
 - **Read access** (`viewAccess`): members as usual; the admin gets role `viewer` on any trip (including deleted ones) for every GET. Every write still goes through `membership()`, so the admin can't change trips they're not in.
 - `GET /api/v1/admin/trips` (404 for non-admins): all trips with owner, member/expense counts, total and a **tag**, by precedence: `deleted` → `ended` (finished, no open transfers) → `pending_settlement` → `needs_finishing` (end date < today in `TZ_TRIPS`, default Asia/Singapore) → `ongoing` (within dates or ≥ 1 expense) → `active`.
 - `GET /api/v1/admin/users` (v1.2.0, 404 for non-admins): every user (oldest first) with `lastSeenAt` (latest session use) and their trips from `trip_members` (role owner/member, `left`), each with the same tag, newest trip first. No password, recovery or avatar data is returned.
@@ -566,6 +566,15 @@ Each phase ends with something runnable and deployed to a staging URL.
 - `POST /admin/users/:id/disable {note?}`: refused for the admin and while `tripBalances` shows a non-zero net for them in any non-deleted trip they're in (`409 OUTSTANDING`, listing trips). `POST /admin/users/:id/enable` undoes it.
 - Reopen is refused while an active member is disabled (`409 MEMBER_DISABLED`, names them); creating or editing an expense that includes a disabled person is refused the same way.
 - Web: red banner on every screen; `needsNetwork` buttons/links are greyed out for disabled accounts; admin Users has Active / Disabled folders.
+
+## 12d. Run 3 hardening (v1.8.0)
+
+- **Client IP** (`clientIp`): `cf-connecting-ip` when `config.trustCloudflare` (automatic when `RENDER=true`, or `TRUST_CLOUDFLARE=true|false`), else the last `x-forwarded-for` hop. `true-client-ip` is never read.
+- **Settled another way** (`settle-outside`): owner = recipient → `confirmed`; otherwise → `sent` with `settled_outside=true`, `settled_outside_by=owner`, and the recipient confirms (label kept) or disputes (flag cleared). Migration `0010_settled_outside_by`.
+- **Disabled people**: add/edit/delete compare each person's net effect of the expense (paid − share, base) before and after; if a disabled person's changes → `409 MEMBER_DISABLED`.
+- **Typed rates**: expenses refuse > 10× off the published rate for the date unless `rate.confirmed` (then > 100×); trip fixed rates > 100×.
+- **Text**: `stripInvisible` removes Unicode Cf characters except ZWNJ/ZWJ and emoji tag characters, before trim/length checks.
+- **Trip tag** (`tripTag` in core) is shared by Admin and the trip screen.
 
 ## 13. Known limitations
 

@@ -20,6 +20,8 @@ export interface Config {
   timeZone: string;
   /** The text inside the owner's static PayNow QR (PAYNOW_QR_PAYLOAD). Unset/invalid = no PayNow on the Supporter page. */
   payNowPayload: string | undefined;
+  /** Trust Cloudflare's `cf-connecting-ip` (on Render, or TRUST_CLOUDFLARE=true). */
+  trustCloudflare: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -31,12 +33,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl: env.DATABASE_URL,
     publicOrigin: (env.PUBLIC_ORIGIN ?? env.RENDER_EXTERNAL_URL ?? `http://localhost:${port}`).replace(/\/+$/, ''),
     webDist: env.WEB_DIST ?? new URL('../../web/dist', import.meta.url).pathname,
-    appVersion: `1.7.1+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
+    appVersion: `1.8.0+${(env.APP_VERSION || 'dev').slice(0, 7)}`,
     runMigrationsOnStart: env.RUN_MIGRATIONS_ON_START === 'true',
     rateLimitScale: Number(env.RATE_LIMIT_SCALE ?? 1) || 1,
     adminSetupCode: env.ADMIN_SETUP_CODE?.trim() || undefined,
     timeZone: env.TZ_TRIPS ?? 'Asia/Singapore',
     payNowPayload: validPayNow(env.PAYNOW_QR_PAYLOAD),
+    trustCloudflare: env.TRUST_CLOUDFLARE ? env.TRUST_CLOUDFLARE === 'true' : env.RENDER === 'true',
   };
 }
 

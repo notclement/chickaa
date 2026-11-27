@@ -22,6 +22,8 @@ export interface ExpenseInput {
   rate: string;
   payers: { userId: string; amount: bigint }[];
   split: SplitInput;
+  /** Tie-break seed for leftover cents (seedFrom(clientId)); 0 = first person first. */
+  seed?: number;
 }
 
 export interface Allocation {
@@ -62,15 +64,15 @@ export function buildExpense(input: ExpenseInput): BuiltExpense {
     throw new FinanceError('INVALID_PAYERS', `What people paid adds up to ${paid < total ? 'less' : 'more'} than the total`, 'payers');
   }
 
-  const shares = computeSplit(total, input.split);
+  const shares = computeSplit(total, input.split, input.seed ?? 0);
 
   const baseTotal = convert(total, currency, baseCurrency, rate);
   if (baseTotal <= 0n) {
     throw new FinanceError('AMOUNT_TOO_SMALL', `That amount is too small to show in ${baseCurrency}`, 'total');
   }
 
-  const payerBase = allocate(baseTotal, input.payers.map((p) => p.amount));
-  const splitBase = allocate(baseTotal, shares.map((s) => s.amount));
+  const payerBase = allocate(baseTotal, input.payers.map((p) => p.amount), input.seed ?? 0);
+  const splitBase = allocate(baseTotal, shares.map((s) => s.amount), input.seed ?? 0);
 
   return {
     total,

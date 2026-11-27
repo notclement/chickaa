@@ -1,0 +1,1 @@
+ALTER TABLE "settlements" ADD COLUMN "settled_outside_by" uuid;

@@ -11,10 +11,17 @@ const BLOCKED_ANYWHERE = [
   'admin', 'administrator', 'sysadmin', 'superuser', 'superadmin', 'webmaster', 'hostmaster', 'postmaster',
   'moderator', 'helpdesk', 'chickaa', 'official', 'customerservice',
 ];
-/** Words that may not be the whole ID or start/end it (too short to ban everywhere). */
-const BLOCKED_EDGES = ['adm', 'admn', 'root', 'sudo', 'sysop', 'system', 'mod', 'mods', 'staff', 'support', 'owner', 'chickaa', 'team', 'security', 'operator', 'sys'];
-/** Real words that happen to contain "admin". */
-const ALLOWED_WORDS = ['badminton'];
+/**
+ * Short words that are only blocked as a whole word: the entire ID, one part of it between
+ * separators/digits (mod_sg, staff_ann, mod1), or joined to a role word (rootuser, teamsupport).
+ * Inside ordinary words they're fine (model, rootbeer, supportive, sudoku, teamlee): test report run 3, F3.
+ */
+const BLOCKED_WORDS = ['adm', 'admn', 'root', 'sudo', 'sysop', 'system', 'mod', 'mods', 'staff', 'support', 'owner', 'team', 'security', 'operator', 'sys'];
+const ROLE_PARTS = ['user', 'team', 'staff', 'support', 'official', 'bot', 'help', 'account', 'acct', 'service', 'app'];
+/** Real names/words that happen to be one edit away from "admin" or contain it. */
+const ALLOWED_WORDS = ['badminton', 'amin', 'armin'];
+/** Typos of "admin" that aren't a single edit. */
+const EXTRA_TYPOS = ['adnim', 'amdni', 'admni'];
 
 const LEET: Record<string, string> = { '0': 'o', '3': 'e', '4': 'a', '@': 'a', '5': 's', '$': 's', '7': 't', '8': 'b', '9': 'g', '2': 'z', '6': 'g', '!': 'i', '|': 'l' };
 
@@ -46,17 +53,24 @@ function distance(a: string, b: string): number {
   return d[a.length]![b.length]!;
 }
 
+/** Word parts of the raw ID: split on separators and digit runs ("mod_sg" → mod, sg; "mod1" → mod). */
+function parts(id: string): string[] {
+  return id.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+}
+
 /** True if a NEW user may not take this ID. (The real "admin" account is created separately.) */
 export function isReservedUsername(id: string): boolean {
+  if (parts(id).some((p) => BLOCKED_WORDS.includes(p) || EXTRA_TYPOS.includes(p))) return true;
   for (const r of readings(id)) {
+    if (ALLOWED_WORDS.includes(r)) continue;
     let s = r;
-    for (const ok of ALLOWED_WORDS) s = s.replaceAll(ok, '#');
+    for (const ok of ALLOWED_WORDS) if (ok.length > 5) s = s.replaceAll(ok, '#');
     if (BLOCKED_ANYWHERE.some((w) => s.includes(w))) return true;
-    if (BLOCKED_EDGES.some((w) => s === w || s.startsWith(w) || s.endsWith(w))) return true;
-    // One-letter typos/swaps of "admin" anywhere inside (admn, amdin, admim, addmin, sdmin…).
-    for (let len = 4; len <= 6; len++) {
-      for (let i = 0; i + len <= s.length; i++) if (distance(s.slice(i, i + len), 'admin') <= 1) return true;
-    }
+    if (BLOCKED_WORDS.some((w) => s === w || ROLE_PARTS.some((x) => s === w + x || s === x + w))) return true;
+    // Typos/swaps of "admin" as the whole ID (admn, amdin, admim, addmin, sdmin, adnim), not inside
+    // longer words, so benjamin, jasmine and yasmin are fine.
+    if (EXTRA_TYPOS.includes(s) || distance(s, 'admin') <= 1) return true;
+    if (distance(s, 'administrator') <= 2 || distance(s, 'moderator') <= 1) return true;
   }
   return false;
 }

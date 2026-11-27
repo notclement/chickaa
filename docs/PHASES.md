@@ -17,6 +17,7 @@
 | — | Become a Supporter page (PayNow QR + reference, Telegram) | ✅ Done | 1.5.0 |
 | — | Admin: disable accounts (read-only), Disabled folder | ✅ Done | 1.6.0 |
 | — | Renamed to ChickAA · 别鸡较 | ✅ Done | 1.7.0 |
+| — | Test report run 3 fixes (F1–F10) | ✅ Done | 1.8.0 |
 | — | Supporter extras (exports, trip recap, receipt photos) + PayNow | ⏳ Later | — |
 
 ## 1 · Foundation + PWA shell

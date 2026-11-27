@@ -63,8 +63,8 @@ type App = Awaited<ReturnType<typeof testApp>>['app'];
 /** A browser-like client: keeps the session cookie and sends CSRF headers on writes. */
 export function client(app: App, ip = '203.0.113.1') {
   let cookie = '';
-  async function call(method: string, path: string, body?: unknown, raw?: { bytes: Uint8Array; type: string }) {
-    const headers: Record<string, string> = { 'x-forwarded-for': ip };
+  async function call(method: string, path: string, body?: unknown, raw?: { bytes: Uint8Array; type: string }, extra: Record<string, string> = {}) {
+    const headers: Record<string, string> = { 'x-forwarded-for': ip, ...extra };
     if (cookie) headers.cookie = cookie;
     if (method !== 'GET') {
       headers.origin = ORIGIN;

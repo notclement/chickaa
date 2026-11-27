@@ -30,13 +30,13 @@ function checkPeople(ids: string[]): void {
   }
 }
 
-export function computeSplit(total: bigint, input: SplitInput): ShareRow[] {
+export function computeSplit(total: bigint, input: SplitInput, seed = 0): ShareRow[] {
   if (total <= 0n) throw new FinanceError('INVALID_AMOUNT', 'The amount must be more than 0', 'total');
 
   switch (input.type) {
     case 'equal': {
       checkPeople(input.participants);
-      const parts = allocate(total, input.participants.map(() => 1n));
+      const parts = allocate(total, input.participants.map(() => 1n), seed);
       return input.participants.map((userId, i) => ({ userId, amount: parts[i]! }));
     }
 
@@ -63,7 +63,7 @@ export function computeSplit(total: bigint, input: SplitInput): ShareRow[] {
         bp += p.basisPoints;
       }
       if (bp !== 10_000) throw new FinanceError('INVALID_SPLIT', 'Percentages must add up to exactly 100%', 'split');
-      const parts = allocate(total, input.percents.map((p) => BigInt(p.basisPoints)));
+      const parts = allocate(total, input.percents.map((p) => BigInt(p.basisPoints)), seed);
       return input.percents.map((p, i) => ({ userId: p.userId, amount: parts[i]! }));
     }
 
@@ -74,7 +74,7 @@ export function computeSplit(total: bigint, input: SplitInput): ShareRow[] {
           throw new FinanceError('INVALID_SPLIT', `Shares must be whole numbers from 1 to ${MAX_SHARES}`, 'split');
         }
       }
-      const parts = allocate(total, input.shares.map((s) => BigInt(s.shares)));
+      const parts = allocate(total, input.shares.map((s) => BigInt(s.shares)), seed);
       return input.shares.map((s, i) => ({ userId: s.userId, amount: parts[i]! }));
     }
   }

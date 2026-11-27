@@ -10,3 +10,4 @@ export * from './settlement.ts';
 export * from './usernames.ts';
 export * from './categories.ts';
 export * from './paynow.ts';
+export * from './trips.ts';

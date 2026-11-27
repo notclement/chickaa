@@ -1,7 +1,7 @@
 import { DeleteTripRequest, DisableUserRequest, SetSupporterRequest, type AdminTrip, type AdminTripsResponse, type AdminUser, type AdminUsersResponse, type TripTag } from '@chickaa/contracts';
 import { schema } from '@chickaa/db';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { formatAmount, isCurrencyCode } from '@chickaa/core';
+import { formatAmount, isCurrencyCode, tripTag } from '@chickaa/core';
 import { tripBalances } from './expenses.ts';
 import { Hono } from 'hono';
 import { currentUser, requireAuth } from '../auth/session.ts';
@@ -29,22 +29,8 @@ export function todayIn(timeZone: string, now = new Date()): string {
   return now.toLocaleDateString('en-CA', { timeZone });
 }
 
-/**
- * Status tag for the admin list (precedence top to bottom):
- *   deleted → ended → pending_settlement → needs_finishing → ongoing → active
- */
-export function tripTag(
-  t: { status: string; deletedAt: Date | null; startDate: string | null; endDate: string | null },
-  stats: { expenseCount: number; openTransfers: number },
-  today: string,
-): TripTag {
-  if (t.deletedAt) return 'deleted';
-  if (t.status !== 'active') return stats.openTransfers === 0 ? 'ended' : 'pending_settlement';
-  if (t.endDate && t.endDate < today) return 'needs_finishing';
-  const withinDates = !!t.startDate && t.startDate <= today && (!t.endDate || today <= t.endDate);
-  if (withinDates || stats.expenseCount > 0) return 'ongoing';
-  return 'active';
-}
+/** Status tag (shared with the trip screen; see @chickaa/core trips.ts). */
+export { tripTag };
 
 export const adminRoutes = new Hono<Env>();
 adminRoutes.use('*', requireAuth);

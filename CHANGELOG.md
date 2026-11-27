@@ -2,6 +2,21 @@
 
 All notable changes to ChickAA. Dates are Singapore time.
 
+## [1.8.0] - 2026-11-27 · Test report run 3 fixes
+### Fixed
+- **F1 Rate limits can't be dodged with a fake IP header.** `true-client-ip` is no longer trusted. On Render (behind Cloudflare) the IP comes from `cf-connecting-ip`, which Cloudflare sets itself; elsewhere from the last `x-forwarded-for` hop. `TRUST_CLOUDFLARE` overrides the automatic choice.
+- **F2 Leftover cents are spread around.** When a split doesn't divide evenly, who gets the odd cent now rotates per expense (from the expense's own ID) instead of always the first member, so long trips no longer drift against the owner. Existing expenses keep their cents; an edit that doesn't change the money never moves a cent.
+- **F3 Real names are no longer "reserved".** benjamin, amin, jasmine, yasmin, armin, model, sudoku, rootbeer, supportive… are allowed. Look-alikes are still blocked: the typo check runs on the whole ID, and short words (mod, root, team, support…) only as a whole word or with digits/separators (mod1, mod_sg). `adnim` is now caught.
+- **F4 The owner can't wipe a debt between two other people.** "Settled another way…" on someone else's payment now waits for the person being paid to accept it (**Got it**) or refuse it (**Not received**). It's instant only when the owner is the one being paid. The row shows who marked it.
+- **F5/F6 Disabled accounts.** No add, edit or delete may move a disabled person's balance (so deleting an old expense can't give them a debt again), but edits that leave their part alone (e.g. a new description) now work.
+- **F7 Typed exchange rates.** The server refuses a rate more than 10× off the published rate for that date unless you ticked "this rate is right" (then up to 100×). The warning now says "the rate for <date>", not "today's rate".
+- **F8 Invisible characters** (zero-width spaces, right-to-left overrides…) are removed from display names, trip names, descriptions and notes. Emoji keep working.
+- **F9 Better category guesses.** Phrases and ticket words win ("Water park tickets" → Activities, "Night market dinner", "Room service dinner", "Grab food delivery" → Food); "transfer" alone is no longer Transport; plus pho, banh mi, izakaya, durian, ice cream, onsen, 夜市 and more SEA/Japan words.
+- **F10 One meaning for "Active".** The trip screen shows the same colour tag as Admin (Active / On-going / Needs finishing / Pending settlement / Ended). The trip list headings are now "Current trips" and "Finished".
+
+### Performance
+- Splitting an expense is slightly faster than before (no sorting when the amount divides exactly); ID checks are ~35% faster. The app download grows by about 1 KB gzipped (the extra category words).
+
 ## [1.7.1] - 2026-11-26 · Find people by ref code
 ### Changed
 - **Admin → Users** shows everyone's ref code (`CHICKAA-` + the code in big orange letters). Every account gets one at sign-up.

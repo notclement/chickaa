@@ -1,6 +1,6 @@
 import type { TripTag } from '@chickaa/contracts';
 
-/** Colour-coded trip status (admin view). */
+/** Colour-coded trip status: Admin and the trip screen use the same tags (test report run 3, F10). */
 export const TAGS: Record<TripTag, { label: string; className: string; help: string }> = {
   active: { label: 'Active', className: 'bg-[#DDE9FF] text-[#1D4ED8]', help: 'Created, no transactions yet (invites / pre-trip)' },
   ongoing: { label: 'On-going', className: 'bg-owed/15 text-owed', help: 'Within the trip dates, or has transactions' },

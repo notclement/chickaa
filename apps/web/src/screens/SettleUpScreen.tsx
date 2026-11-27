@@ -243,7 +243,12 @@ function TransferCard(props: {
   const iPay = t.fromUserId === me;
   const iReceive = t.toUserId === me;
   const busy = (a: string) => props.busy === `${a}:${t.id}`;
-  const st = t.settledOutside ? { label: 'Settled another way ✓', tone: 'bg-owed/15 text-owed' } : STATUS[t.status];
+  const by = t.settledOutsideBy ? (t.settledOutsideBy === me ? 'you' : props.nameOf(t.settledOutsideBy)) : 'the owner';
+  const st = !t.settledOutside
+    ? STATUS[t.status]
+    : t.status === 'confirmed'
+      ? { label: `Settled another way ✓ · marked by ${by}`, tone: 'bg-owed/15 text-owed' }
+      : { label: `${by === 'you' ? 'You' : by} marked it settled another way · waiting for ${who(t.toUserId)}`, tone: 'bg-sun-300/60 text-[#7A4A00]' };
   const amountPlain = isCurrencyCode(t.currency) ? formatAmount(BigInt(t.amount), t.currency).replaceAll(',', '') : t.amount;
 
   const copy = async () => {
@@ -314,13 +319,15 @@ function TransferCard(props: {
               Not received
             </Button>
           )}
-          {props.owner && t.status !== 'confirmed' && t.status !== 'cancelled' && (
+          {props.owner && t.status !== 'confirmed' && t.status !== 'cancelled' && !(t.settledOutside && t.status === 'sent') && (
             <button
               type="button"
               className="ml-auto min-h-10 rounded-xl px-2 text-sm font-semibold text-ink-500"
               onClick={() => {
                 const note = window.prompt(
-                  `Mark “${who(t.fromUserId)} → ${who(t.toUserId)}” as settled another way (cash, swapped with another debt…)? It will count as paid.\n\nOptional note:`,
+                  iReceive
+                    ? `Mark “${who(t.fromUserId)} → you” as settled another way (cash, swapped with another debt…)? It will count as paid.\n\nOptional note:`
+                    : `Mark “${who(t.fromUserId)} → ${who(t.toUserId)}” as settled another way (cash, swapped with another debt…)? ${who(t.toUserId)} will be asked to accept it before it counts as paid.\n\nOptional note:`,
                 );
                 if (note !== null) void props.act(`settle-outside:${t.id}`, `/settlements/${t.id}/settle-outside`, { note });
               }}

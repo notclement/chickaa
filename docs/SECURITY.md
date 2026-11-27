@@ -8,7 +8,7 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 | Passwords and recovery codes hashed with **Argon2id** (19 MiB, t=2), never stored or logged in plain text | ✅ |
 | Same error for unknown user vs wrong password, with equal timing (dummy hash) | ✅ |
 | Rate limits (Postgres): login 8 / 15 min per **user ID + IP** (a stranger can't lock someone out), 100 / 15 min per user ID, 30 per IP; recovery 5 / h per user; **successful** sign-ups 50 / h per IP; admin setup 5 / h per IP; avatar 30 / h | ✅ |
-| Client IP for limits from edge headers or the **last** X-Forwarded-For hop (the first hop is client-controlled) | ✅ |
+| Client IP for limits from Cloudflare's `cf-connecting-ip` (on Render) or the **last** X-Forwarded-For hop; client-sendable headers like `true-client-ip` are ignored (run 3, F1) | ✅ |
 | Session = 32 random bytes in an **httpOnly, Secure, SameSite=Lax `__Host-` cookie**; only the SHA-256 is stored; 90-day sliding expiry | ✅ |
 | Logout revokes server-side; password change signs out other devices; recovery signs out all and rotates the code | ✅ |
 | Nothing auth-related in localStorage/IndexedDB (only the display profile) | ✅ |
@@ -25,7 +25,9 @@ Reviewed in Phase 8 against SPEC §3.7 and §18. ✅ = in place and covered by a
 | **CSRF**: writes need same-origin `Origin` + `X-Requested-With: chickaa`, on top of SameSite cookies | ✅ |
 | Request bodies capped at 64 KB (photos at 24 KB, checked by magic bytes, JPEG/WebP only, no SVG); oversized requests close the connection | ✅ |
 | Real calendar dates enforced everywhere (no DB errors from 2026-02-30) | ✅ |
-| Typed exchange rates > 100× off the official rate refused (fat-finger guard) | ✅ |
+| Typed exchange rates > 10× off the published rate refused unless confirmed (then > 100×); trip rates > 100× | ✅ |
+| Invisible/right-to-left Unicode characters stripped from names and text | ✅ |
+| The owner can't settle a debt between two other people without the recipient accepting | ✅ |
 | Input validation with shared zod schemas; malformed ids are 404 (no DB errors) | ✅ |
 | **Access control**: every trip/expense/settlement/avatar read and write checks membership; non-members get 404 (no probing); owner-only and payer/recipient-only actions enforced server-side | ✅ |
 | Invite tokens: 192-bit random, only SHA-256 stored, expiry, max uses (row-locked), revocation; dead links reveal nothing about the trip | ✅ |

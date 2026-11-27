@@ -50,8 +50,15 @@ describe.skipIf(!TEST_DB_URL)('test report run 2 fixes', () => {
     expect((await alice.c.put(`/trips/${t.id}/fx-rates/MYR`, { rate: '1000' })).status).toBe(400);
     // Near the official rate (0.29) is fine, and so is any rate when the official one is unavailable.
     expect((await alice.c.post(`/trips/${t.id}/expenses`, { ...base, clientId: crypto.randomUUID(), rate: { source: 'manual', value: '0.31' } })).status).toBe(201);
+    // Run 3, F7: more than 10× off (3.0 vs 0.29) needs the person's confirmation; 100× off never passes.
+    const tenX = await alice.c.post(`/trips/${t.id}/expenses`, { ...base, clientId: crypto.randomUUID(), rate: { source: 'manual', value: '3.0' } });
+    expect(tenX.status).toBe(400);
+    expect(tenX.body.error.message).toMatch(/the rate for 2027-03-02 is about 1 MYR = /);
+    expect((await alice.c.post(`/trips/${t.id}/expenses`, { ...base, clientId: crypto.randomUUID(), rate: { source: 'manual', value: '3.0', confirmed: true } })).status).toBe(201);
+    expect((await alice.c.post(`/trips/${t.id}/expenses`, { ...base, clientId: crypto.randomUUID(), rate: { source: 'manual', value: '0.9' } })).status).toBe(201); // ~3× off: allowed
+    expect((await alice.c.post(`/trips/${t.id}/expenses`, { ...base, clientId: crypto.randomUUID(), rate: { source: 'manual', value: '40', confirmed: true } })).status).toBe(400);
     fakeFx.down = true;
-    expect((await alice.c.post(`/trips/${t.id}/expenses`, { ...base, clientId: crypto.randomUUID(), rate: { source: 'manual', value: '5' } })).status).toBe(201);
+    expect((await alice.c.post(`/trips/${t.id}/expenses`, { ...base, expenseDate: '2027-04-01', clientId: crypto.randomUUID(), rate: { source: 'manual', value: '5' } })).status).toBe(201);
   });
 
   it('U4: dead invite links reveal nothing about the trip', async () => {
@@ -117,5 +124,21 @@ describe.skipIf(!TEST_DB_URL)('test report run 2 fixes', () => {
     }
     const res = await app.request(`/api/v1/trips/${t.id}/expenses`, { headers: { cookie: alice.c.cookie, 'accept-encoding': 'gzip' } });
     expect(res.headers.get('content-encoding')).toBe('gzip');
+  });
+
+  it('F8 (run 3): invisible and right-to-left characters are stripped from names and text', async () => {
+    const { app } = await testApp();
+    const res = await client(app, '198.51.100.160').post('/auth/register', { username: 'zw_user', password: 'correct horse battery', displayName: 'Zero\u200bWidth\u202eName\ufeff' });
+    expect(res.status).toBe(201);
+    expect(res.body.user.displayName).toBe('ZeroWidthName');
+    const onlyInvisible = await client(app, '198.51.100.161').post('/auth/register', { username: 'zw_user2', password: 'correct horse battery', displayName: '\u200b\u202e' });
+    expect(onlyInvisible.status).toBe(400);
+    // Emoji joiners survive.
+    const fam = await client(app, '198.51.100.162').post('/auth/register', { username: 'zw_user3', password: 'correct horse battery', displayName: 'Fam 👨\u200d👩\u200d👧' });
+    expect(fam.body.user.displayName).toBe('Fam 👨\u200d👩\u200d👧');
+    const owner = { c: client(app, '198.51.100.160') };
+    await owner.c.post('/auth/login', { username: 'zw_user', password: 'correct horse battery' });
+    const t = (await owner.c.post('/trips', { name: 'Bali\u2066\u202e', baseCurrency: 'SGD' })).body;
+    expect(t.name).toBe('Bali');
   });
 });

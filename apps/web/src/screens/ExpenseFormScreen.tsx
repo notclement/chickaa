@@ -9,6 +9,7 @@ import {
   isCurrencyCode,
   parsePercent,
   parseRate,
+  seedFrom,
   suggestCategory,
   type CurrencyCode,
   type SplitInput,
@@ -105,7 +106,13 @@ function initialState(trip: TripDetail, me: string, existing?: Expense): FormSta
 }
 
 /** Request body from the form. Throws a readable Error if something is missing. */
-function toRequest(f: FormState, members: Member[], suggestion: FxRateResponse | null, baseCurrency: string): Omit<CreateExpenseRequest, 'clientId'> {
+function toRequest(
+  f: FormState,
+  members: Member[],
+  suggestion: FxRateResponse | null,
+  baseCurrency: string,
+  rateConfirmed = false,
+): Omit<CreateExpenseRequest, 'clientId'> {
   const ids = members.map((m) => m.userId);
   const amount = normalizeAmountInput(f.amount);
   const payers = f.multiPayer
@@ -130,7 +137,7 @@ function toRequest(f: FormState, members: Member[], suggestion: FxRateResponse |
 
   let rate: RateChoice | undefined;
   if (f.currency !== baseCurrency) {
-    if (f.rateMode === 'manual') rate = { source: 'manual', value: f.manualRate.trim() };
+    if (f.rateMode === 'manual') rate = { source: 'manual', value: f.manualRate.trim(), ...(rateConfirmed && { confirmed: true }) };
     else if (suggestion?.source === 'trip_fixed') rate = { source: 'trip_fixed' };
     else rate = { source: 'api' };
   }
@@ -139,7 +146,7 @@ function toRequest(f: FormState, members: Member[], suggestion: FxRateResponse |
 }
 
 /** Client-side preview with the same engine the server uses. */
-function preview(f: FormState, members: Member[], rate: string | null, baseCurrency: string) {
+function preview(f: FormState, members: Member[], rate: string | null, baseCurrency: string, clientId: string) {
   const total = tryParseAmount(f.amount, f.currency);
   if (!total || total <= 0n || !rate || !isCurrencyCode(baseCurrency)) return { ok: false as const, total };
   const req = toRequest(f, members, null, baseCurrency);
@@ -156,6 +163,7 @@ function preview(f: FormState, members: Member[], rate: string | null, baseCurre
       rate: f.currency === baseCurrency ? '1' : rate,
       payers: req.payers.map((p) => ({ userId: p.userId, amount: tryParseAmount(p.amount, f.currency) ?? -1n })),
       split,
+      seed: seedFrom(clientId),
     });
     return { ok: true as const, total, built };
   } catch (err) {
@@ -250,7 +258,7 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
       : (trip.startDate && f.date < trip.startDate) || (trip.endDate && f.date > trip.endDate)
         ? 'This date is outside the trip’s dates.'
         : null;
-  const pv = preview(f, trip.members, effectiveRate, base);
+  const pv = preview(f, trip.members, effectiveRate, base, existing?.clientId ?? clientId);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -259,10 +267,10 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
     setUncertain(false);
     if (!f.description.trim()) return setError('What was it for?');
     if (!pv.ok) return setError(pv.error ?? (pv.total ? 'Check the exchange rate' : 'Enter the amount'));
-    if (rateSuspicious && !rateConfirmed) return setError('Please confirm the exchange rate (it’s very different from today’s rate).');
+    if (rateSuspicious && !rateConfirmed) return setError('Please confirm the exchange rate (it’s very different from the rate for that date).');
     setBusy(true);
     try {
-      const req = toRequest(f, trip.members, suggestion, base);
+      const req = toRequest(f, trip.members, suggestion, base, rateSuspicious && rateConfirmed);
       if (existing) {
         await api<Expense>(`/expenses/${existing.id}`, { method: 'PUT', json: { ...req, version: existing.version } });
       } else {
@@ -357,7 +365,8 @@ function ExpenseForm({ trip, existing }: { trip: TripDetail; existing?: Expense 
               <input type="checkbox" checked={rateConfirmed} onChange={(e) => setRateConfirmed(e.target.checked)} className="mt-0.5 size-5 accent-tangerine-500" />
               <span>
                 <b>
-                  This rate is {offBy! >= 10 ? `${Math.round(offBy!)}×` : `${Math.round((offBy! - 1) * 100)}%`} away from today’s rate
+                  This rate is {offBy! >= 10 ? `${Math.round(offBy!)}×` : `${Math.round((offBy! - 1) * 100)}%`} away from the rate for{' '}
+                  {suggestion.date}
                 </b>{' '}
                 (1 {f.currency} = {suggestion.rate} {base}).{pv.ok ? ` It makes this expense ${money(pv.built.baseTotal, base)}.` : ''} Tick if that’s
                 right.

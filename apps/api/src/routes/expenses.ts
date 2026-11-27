@@ -2,6 +2,7 @@ import {
   CreateExpenseRequest,
   DeleteTripRequest,
   SetTripFxRateRequest,
+  SUPPORT_TELEGRAM,
   UpdateExpenseRequest,
   type BalancesResponse,
   type Expense,
@@ -23,6 +24,7 @@ import {
   parseRate,
   rateFromLiteral,
   rateToString,
+  seedFrom,
   type CurrencyCode,
   type SplitInput,
 } from '@chickaa/core';
@@ -96,20 +98,26 @@ async function tripFixedRate(db: Db, tripId: string, currency: string) {
  * away from the day's official rate is refused. (The app also asks to confirm anything >20% off.)
  * If the official rate can't be fetched, the typed rate is accepted.
  */
-async function assertPlausibleRate(db: Db, fx: Env['Variables']['fx'], from: string, to: string, date: string, value: string) {
+/**
+ * Refuses a typed rate that's far from the published rate for that date: more than `limit` times
+ * off. Expenses use 10× (100× once the person has confirmed it; test report run 3, F7); trip rates
+ * use 100×. Skipped if the rate service is unreachable.
+ */
+async function assertPlausibleRate(db: Db, fx: Env['Variables']['fx'], from: string, to: string, date: string, value: string, limit: bigint) {
   let ref: string;
+  let refDate: string;
   try {
-    ref = (await apiRate(db, fx, from, to, date)).rate;
+    ({ rate: ref, date: refDate } = await apiRate(db, fx, from, to, date));
   } catch {
     return;
   }
   const a = parseRate(value);
   const b = parseRate(ref);
-  // Compare a/b against [1/100, 100] with exact integers: a.num·10^b.scale vs b.num·10^a.scale.
+  // Compare a/b against [1/limit, limit] with exact integers: a.num·10^b.scale vs b.num·10^a.scale.
   const left = a.num * 10n ** BigInt(b.scale);
   const right = b.num * 10n ** BigInt(a.scale);
-  if (left > right * 100n || left * 100n < right) {
-    const msg = `That rate looks wrong: today’s rate is about 1 ${from} = ${ref} ${to}`;
+  if (left > right * limit || left * limit < right) {
+    const msg = `That rate looks wrong: the rate for ${refDate} is about 1 ${from} = ${ref} ${to}`;
     throw new HttpError(400, 'VALIDATION', msg, { fields: { rate: msg } });
   }
 }
@@ -141,7 +149,7 @@ async function decideRate(
         if (err instanceof FinanceError) throw new HttpError(400, 'VALIDATION', err.message, { fields: { rate: err.message } });
         throw err;
       }
-      await assertPlausibleRate(db, fx, f.currency, trip.baseCurrency, f.expenseDate, value);
+      await assertPlausibleRate(db, fx, f.currency, trip.baseCurrency, f.expenseDate, value, choice.confirmed ? 100n : 10n);
       return { rate: value, source: 'manual', date: f.expenseDate };
     }
     case 'trip_fixed': {
@@ -186,7 +194,7 @@ function splitUserIds(split: SplitRequest): string[] {
 }
 
 /** Validates and computes all amounts with the shared financial engine. */
-function compute(trip: TripRow, f: Fields, rate: RateDecision, members: string[]) {
+function compute(trip: TripRow, f: Fields, rate: RateDecision, members: string[], seed: number) {
   if (!isCurrencyCode(trip.baseCurrency)) throw new HttpError(500, 'INTERNAL', 'Bad trip currency');
   const currency = f.currency as CurrencyCode;
   const everyone = new Set(members);
@@ -203,6 +211,7 @@ function compute(trip: TripRow, f: Fields, rate: RateDecision, members: string[]
       rate: rate.rate,
       payers: f.payers.map((p) => ({ userId: p.userId, amount: parseAmount(p.amount, currency) })),
       split,
+      seed,
     });
     const inputs = new Map<string, { bp: number | null; shares: number | null; amount: bigint | null }>();
     if (split.type === 'percentage') split.percents.forEach((p) => inputs.set(p.userId, { bp: p.basisPoints, shares: null, amount: null }));
@@ -333,7 +342,6 @@ tripExpenseRoutes.post('/:id/expenses', async (c) => {
   const tripId = uuidParam(c, 'id');
   const { trip } = await membership(db, tripId, me.id);
   const input = await body(c, CreateExpenseRequest);
-  await assertNobodyDisabled(db, input);
   const { clientId, ...fields } = input;
   const payloadHash = sha256(stableStringify(fields));
 
@@ -355,7 +363,8 @@ tripExpenseRoutes.post('/:id/expenses', async (c) => {
   try {
     const id = await db.transaction(async (tx) => {
       const t = await lockTrip(tx as unknown as Db, tripId);
-      const computed = compute(t, fields, rate, await memberIds(tx as unknown as Db, tripId));
+      const computed = compute(t, fields, rate, await memberIds(tx as unknown as Db, tripId), seedFrom(clientId));
+      await assertDisabledUnaffected(tx as unknown as Db, new Map(), builtNet(computed.built));
       const [row] = await tx
         .insert(expenses)
         .values({
@@ -392,29 +401,47 @@ tripExpenseRoutes.post('/:id/expenses', async (c) => {
   }
 });
 
-/** People whose accounts are disabled can't be added to new or changed expenses. */
-async function assertNobodyDisabled(
-  db: Db,
-  f: { payers: { userId: string }[]; split: CreateExpenseRequest['split'] },
-): Promise<void> {
-  const ids = new Set(f.payers.map((p) => p.userId));
-  const split = f.split;
-  const add = (list: { userId: string }[]) => list.forEach((x) => ids.add(x.userId));
-  if (split.type === 'equal') split.participants.forEach((id) => ids.add(id));
-  else if (split.type === 'exact') add(split.amounts);
-  else if (split.type === 'percentage') add(split.percents);
-  else add(split.shares);
-  const list = [...ids].filter((id) => /^[0-9a-f-]{36}$/i.test(id));
-  if (!list.length) return;
+type Net = Map<string, bigint>;
+/** Per-person effect of one expense on balances: what they paid minus their share (base currency). */
+function netOf(payers: { userId: string; base: bigint }[], splits: { userId: string; base: bigint }[]): Net {
+  const m: Net = new Map();
+  for (const p of payers) m.set(p.userId, (m.get(p.userId) ?? 0n) + p.base);
+  for (const s of splits) m.set(s.userId, (m.get(s.userId) ?? 0n) - s.base);
+  return m;
+}
+/** The expense's current effect, from its stored lines. */
+async function storedNet(db: Db, expenseId: string): Promise<Net> {
+  const [p, s] = await Promise.all([
+    db.select({ userId: expensePayers.userId, base: expensePayers.amountBase }).from(expensePayers).where(eq(expensePayers.expenseId, expenseId)),
+    db.select({ userId: expenseSplits.userId, base: expenseSplits.shareBase }).from(expenseSplits).where(eq(expenseSplits.expenseId, expenseId)),
+  ]);
+  return netOf(p, s);
+}
+
+/**
+ * A change (add, edit or delete) may not move a disabled person's balance: they can't pay or
+ * confirm anything, so nobody could settle it (test report run 3, F5). Edits that leave their
+ * part alone (a new description, someone else's share) are fine (F6).
+ */
+async function assertDisabledUnaffected(db: Db, before: Net, after: Net): Promise<void> {
+  const moved = [...new Set([...before.keys(), ...after.keys()])].filter((id) => (before.get(id) ?? 0n) !== (after.get(id) ?? 0n));
+  if (!moved.length) return;
   const off = await db
     .select({ displayName: users.displayName, username: users.username })
     .from(users)
-    .where(and(inArray(users.id, list), isNotNull(users.disabledAt)));
+    .where(and(inArray(users.id, moved), isNotNull(users.disabledAt)));
   if (off.length) {
     const who = off.map((u) => `${u.displayName} (@${u.username})`).join(', ');
-    throw new HttpError(409, 'MEMBER_DISABLED', `${who} ${off.length === 1 ? 'has a' : 'have'} disabled account${off.length === 1 ? '' : 's'} and can't be in new or changed expenses.`);
+    throw new HttpError(
+      409,
+      'MEMBER_DISABLED',
+      `${who} ${off.length === 1 ? 'has a disabled account' : 'have disabled accounts'}, so this change can’t move their balance. Keep their part as it is, or PM @${SUPPORT_TELEGRAM} on Telegram.`,
+    );
   }
 }
+const sameNet = (a: Net, b: Net) =>
+  [...new Set([...a.keys(), ...b.keys()])].every((id) => (a.get(id) ?? 0n) === (b.get(id) ?? 0n));
+const builtNet = (b: { payers: { userId: string; base: bigint }[]; splits: { userId: string; base: bigint }[] }) => netOf(b.payers, b.splits);
 
 /** Current balances for a trip (non-deleted expenses + confirmed transfers). */
 export async function tripBalances(db: Db, trip: TripRow): Promise<BalancesResponse> {
@@ -543,7 +570,7 @@ tripExpenseRoutes.put('/:id/fx-rates/:currency', async (c) => {
   } catch (err) {
     financeToHttp(err);
   }
-  await assertPlausibleRate(db, c.var.fx, currency, trip.baseCurrency, new Date().toISOString().slice(0, 10), value);
+  await assertPlausibleRate(db, c.var.fx, currency, trip.baseCurrency, new Date().toISOString().slice(0, 10), value, 100n);
   await db
     .insert(tripFxRates)
     .values({ tripId, currency, rate: value, setBy: me.id })
@@ -602,7 +629,6 @@ expenseRoutes.put('/:id', async (c) => {
   if (!canEdit(expense, role, me.id)) throw forbidden('Only whoever added this expense, or the trip owner, can change it');
   if (expense.deletedAt) throw new HttpError(410, 'NOT_FOUND', 'This expense was deleted');
   const { version, ...fields } = await body(c, UpdateExpenseRequest);
-  await assertNobodyDisabled(db, fields);
   const rate = await decideRate(db, c.var.fx, trip, fields, expense);
 
   await db.transaction(async (tx) => {
@@ -613,7 +639,15 @@ expenseRoutes.put('/:id', async (c) => {
       const [current] = await loadExpenses(tx as unknown as Db, { ids: [id] });
       throw new HttpError(409, 'CONFLICT', 'Someone changed this expense while you were editing it', { current });
     }
-    const computed = compute(t, fields, rate, await memberIds(tx as unknown as Db, expense.tripId));
+    const members = await memberIds(tx as unknown as Db, expense.tripId);
+    const before = await storedNet(tx as unknown as Db, id);
+    // Leftover cents go by the expense's seed (F2). Expenses saved before that used seed 0: if
+    // that reproduces what's stored, keep it, so an edit that doesn't touch the money (a new
+    // description) never moves a cent, including a disabled person's (F6).
+    const seeded = compute(t, fields, rate, members, seedFrom(expense.clientId));
+    const legacy = sameNet(builtNet(seeded.built), before) ? null : compute(t, fields, rate, members, 0);
+    const computed = legacy && sameNet(builtNet(legacy.built), before) ? legacy : seeded;
+    await assertDisabledUnaffected(tx as unknown as Db, before, builtNet(computed.built));
     await tx.delete(expensePayers).where(eq(expensePayers.expenseId, id));
     await tx.delete(expenseSplits).where(eq(expenseSplits.expenseId, id));
     await tx
@@ -659,6 +693,7 @@ expenseRoutes.delete('/:id', async (c) => {
       const [current] = await loadExpenses(tx as unknown as Db, { ids: [id] });
       throw new HttpError(409, 'CONFLICT', 'Someone changed this expense while you were looking at it', { current });
     }
+    await assertDisabledUnaffected(tx as unknown as Db, await storedNet(tx as unknown as Db, id), new Map());
     // Soft delete: history (and the revision trail) stays.
     await tx
       .update(expenses)

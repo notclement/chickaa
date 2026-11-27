@@ -295,6 +295,8 @@ export const settlements = pgTable(
     status: settlementStatus('status').notNull().default('pending'),
     /** Owner marked it "settled another way" (cash, offset…): counts as confirmed. */
     settledOutside: boolean('settled_outside').notNull().default(false),
+    /** Who said it was settled another way (the trip owner). */
+    settledOutsideBy: uuid('settled_outside_by'),
     /** Order within the plan, so transfers always list the same way. */
     position: integer('position').notNull().default(0),
     version: integer('version').notNull().default(1),

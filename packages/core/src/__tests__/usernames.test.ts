@@ -15,7 +15,14 @@ describe('reserved usernames', () => {
     expect(isReservedUsername(id)).toBe(false);
   });
 
-  it('accepts that a few real words starting with "adm" are blocked (admire, admiral): safer than letting look-alikes through', () => {
-    expect(isReservedUsername('admiral')).toBe(true);
-  });
+  // Test report run 3, F3: common names and ordinary words must not be "reserved".
+  it.each([
+    'benjamin', 'benjamin_tan', 'amin', 'mohd_amin', 'muhammad_amin', 'amina', 'jasmine', 'jasmin', 'yasmin', 'kamini', 'yamini', 'shamini',
+    'armin', 'ramin', 'salmin', 'admiral', 'admire', 'admiration', 'modi', 'model', 'modesty', 'teamlee', 'rootbeer', 'supportive', 'sudoku',
+    'systematic', 'owners', 'staffy', 'madmen', 'sysy', 'admit_one', 'adamina', 'nadim', 'mandi', 'damian', 'sudirman', 'teo_wei', 'moderna_fan',
+  ])('%s is allowed (real name or word)', (id) => expect(isReservedUsername(id)).toBe(false));
+
+  it.each(['adnim', 'adnim_sg', 'mod1', 'mod_sg', 'rootuser', 'teamsupport', 'supportteam', 'staff01', 'owner_sg'])('%s is still blocked', (id) =>
+    expect(isReservedUsername(id)).toBe(true),
+  );
 });

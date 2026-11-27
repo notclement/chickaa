@@ -66,7 +66,7 @@ If the signal drops while saving, you'll see **"Not sure it saved"**. Just tap S
 2. When the trip's over, the **owner** taps **Finish trip & settle up**. Expenses lock.
 3. **If you owe:** pay in your banking app (PayNow, bank transfer…). Tap **Copy** to copy the exact amount, then tap **I've sent it**.
 4. **If you're owed:** when the money arrives, tap **Got it ✓**. If it hasn't arrived, tap **Not received** and add a note. The payer can mark it sent again; if the money turns up anyway, you can still tap **Got it ✓**.
-   - **Owner:** if a payment was sorted out another way (cash, or swapped against another debt), tap **Settled another way…** and add a note. It counts as paid.
+   - **Owner:** if a payment was sorted out another way (cash, or swapped against another debt), tap **Settled another way…** and add a note. If the money was owed to you, it counts as paid straight away. If it was owed to someone else, they're asked to accept it (**Got it**) or say **Not received**, so nobody's money disappears without their OK.
 5. Watch the progress (e.g. *3 of 5 transfers confirmed*). When every transfer is confirmed, you'll see **🎉 All settled!**
 
 **Forgot an expense after finishing?** The owner can **Reopen trip** on the Settle up screen. Payments already received stay counted (listed under **Paid earlier**), and the remaining transfers are recalculated when the trip is finished again.

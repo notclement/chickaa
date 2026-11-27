@@ -59,7 +59,7 @@ test('add expenses (multi-payer, foreign currency, shares), see balances, edit a
   await alice.getByRole('button', { name: 'Use my own rate' }).click();
   // A typo'd rate (10× too high) needs an explicit confirmation (test report U2).
   await alice.getByLabel('1 THB = ? SGD').fill('0.4');
-  await expect(alice.getByTestId('rate-warning')).toContainText('away from today’s rate');
+  await expect(alice.getByTestId('rate-warning')).toContainText(/away from the rate for \d{4}-\d{2}-\d{2}/);
   await alice.getByLabel('1 THB = ? SGD').fill('0.04'); // ~7% off: normal, no warning
   await expect(alice.getByTestId('rate-warning')).toHaveCount(0);
   await expect(alice.getByTestId('converted')).toHaveText('≈ S$20.00');
@@ -149,7 +149,9 @@ test('categories: suggested from the description, picked by hand, filterable', a
     await alice.getByRole('button', { name: /^Save/ }).click();
     await expect(alice.getByTestId('trip-total')).toBeVisible();
   };
+  await expect(alice.getByTestId('trip-tag')).toHaveText('Active'); // nothing added yet (F10)
   await add('Grab to airport', '20');
+  await expect(alice.getByTestId('trip-tag')).toHaveText('On-going');
   await add('Grab back', '15');
   await add('Fridge magnets', '8', 'Shopping');
 
@@ -162,4 +164,19 @@ test('categories: suggested from the description, picked by hand, filterable', a
   await expect(alice.getByTestId('expense-row')).toHaveCount(1);
   await alice.getByTestId('expense-row').click();
   await expect(alice.getByTestId('expense-category')).toHaveText(/Shopping/);
+});
+
+test('a rate over 10× off saves once ticked (the app sends the confirmation: run 3, F7)', async ({ page, browser }) => {
+  const { alice } = await tripWithTwo(page, browser);
+  await alice.getByRole('link', { name: /Add expense/ }).first().click();
+  await alice.getByLabel('Amount').fill('500');
+  await alice.getByLabel('Currency').selectOption('THB');
+  await alice.getByLabel('What was it for?').fill('Massage');
+  await alice.getByRole('button', { name: 'Use my own rate' }).click();
+  await alice.getByLabel('1 THB = ? SGD').fill('0.4'); // ~11× the 0.0375 rate
+  await alice.getByRole('button', { name: /^Save/ }).click();
+  await expect(alice.getByText(/Please confirm the exchange rate/)).toBeVisible();
+  await alice.getByTestId('rate-warning').getByRole('checkbox').check();
+  await alice.getByRole('button', { name: /^Save/ }).click();
+  await expect(alice.getByTestId('trip-total')).toHaveText('S$200.00');
 });

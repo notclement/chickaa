@@ -59,13 +59,17 @@ export function uuidParam(c: Context, name: string): string {
 }
 
 /**
- * Client IP for rate limiting. Prefer headers set by the hosting edge (True-Client-IP /
- * CF-Connecting-IP); otherwise the LAST X-Forwarded-For hop, which our proxy appended. The first
- * hop is whatever the client claimed, so it can't be trusted.
+ * The caller's IP for rate limits (test report run 3, F1).
+ * - Behind Cloudflare (Render is): `cf-connecting-ip`, which Cloudflare sets itself and refuses
+ *   from clients (error 1000). `true-client-ip` is never trusted: clients can send it.
+ * - Otherwise: the right-most `x-forwarded-for` hop, the one our own proxy appended.
  */
 export function clientIp(c: Context): string {
-  const edge = c.req.header('true-client-ip') ?? c.req.header('cf-connecting-ip');
-  if (edge) return edge.trim();
+  const config = (c.var as { config?: { trustCloudflare?: boolean } }).config;
+  if (config?.trustCloudflare) {
+    const cf = c.req.header('cf-connecting-ip')?.trim();
+    if (cf) return cf;
+  }
   const hops = c.req.header('x-forwarded-for')?.split(',').map((h) => h.trim()).filter(Boolean);
-  return hops?.at(-1) || c.req.header('x-real-ip') || 'unknown';
+  return hops?.at(-1) || 'unknown';
 }

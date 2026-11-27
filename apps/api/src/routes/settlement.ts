@@ -1,4 +1,4 @@
-import { SUPPORT_TELEGRAM, type BalancesResponse, type SettlementResponse } from '@chickaa/contracts';
+import { stripInvisible, SUPPORT_TELEGRAM, type BalancesResponse, type SettlementResponse } from '@chickaa/contracts';
 import { planSettlement, verifySettlement } from '@chickaa/core';
 import { schema, type Db } from '@chickaa/db';
 import { and, asc, eq, inArray, isNotNull, isNull, max } from 'drizzle-orm';
@@ -21,6 +21,7 @@ const toTransfer = (r: SettlementRow) => ({
   currency: r.currency,
   status: r.status,
   settledOutside: r.settledOutside,
+  settledOutsideBy: r.settledOutsideBy,
   updatedAt: r.updatedAt.toISOString(),
 });
 
@@ -62,6 +63,7 @@ export async function settlementView(db: Db, trip: TripRow): Promise<SettlementR
         currency: trip.baseCurrency,
         status: 'pending',
         settledOutside: false,
+        settledOutsideBy: null,
         updatedAt: null,
       })),
       earlier,
@@ -232,8 +234,10 @@ type Action = 'sent' | 'confirm' | 'dispute' | 'settle-outside';
  *   sent     — the payer, from pending or disputed (re-sent after a dispute)
  *   confirm  — ONLY the recipient, from sent, pending (cash) or disputed (money turned up after all)
  *   dispute  — the recipient, from sent ("I haven't received it")
- *   settle-outside — the trip owner: "settled another way" (cash, offset…). Counts as confirmed, so
- *              the trip can reach All settled (test report B1). Replaces the old "cancel".
+ *   settle-outside — the trip owner: "settled another way" (cash, offset…). If the owner is the
+ *              recipient it's confirmed straight away (test report B1). Otherwise it only becomes
+ *              "sent", flagged as settled another way, and the recipient accepts ("Got it") or
+ *              disputes it, so the owner can't wipe a debt between two other people (run 3, F4).
  * Confirmed is final. ("cancelled" is only used internally when a trip is reopened.)
  */
 const RULES: Record<Action, { to: Status; from: Status[]; who: 'payer' | 'recipient' | 'owner' }> = {
@@ -261,7 +265,7 @@ for (const action of Object.keys(RULES) as Action[]) {
     let note: string | null = null;
     if (action === 'dispute' || action === 'settle-outside') {
       const raw = (await c.req.json().catch(() => ({}))) as { note?: unknown };
-      note = typeof raw.note === 'string' ? raw.note.trim().slice(0, 300) || null : null;
+      note = typeof raw.note === 'string' ? stripInvisible(raw.note).trim().slice(0, 300) || null : null;
       if (action === 'settle-outside') note = `Settled another way${note ? `: ${note}` : ''}`;
     }
 
@@ -274,7 +278,9 @@ for (const action of Object.keys(RULES) as Action[]) {
       if (!s) throw notFound('Transfer not found');
       const allowed = rule.who === 'payer' ? s.fromUserId === me.id : rule.who === 'recipient' ? s.toUserId === me.id : role === 'owner';
       if (!allowed) throw forbidden(WHO_MSG[rule.who]);
-      if (s.status === rule.to && (action !== 'settle-outside' || s.settledOutside)) return; // already done: retrying is harmless
+      // Owner settling someone else's transfer only claims it; the recipient has the final say.
+      const to: Status = action === 'settle-outside' && s.toUserId !== me.id ? 'sent' : rule.to;
+      if (s.status === to && (action !== 'settle-outside' || s.settledOutside)) return; // already done: retrying is harmless
       const [p] = await tx.select().from(settlementPlans).where(eq(settlementPlans.id, s.planId));
       if (p?.supersededAt || trip.status !== 'completed') throw new HttpError(409, 'CONFLICT', 'This settle-up plan is no longer current');
       if (!rule.from.includes(s.status)) {
@@ -283,9 +289,16 @@ for (const action of Object.keys(RULES) as Action[]) {
       }
       await tx
         .update(settlements)
-        .set({ status: rule.to, settledOutside: action === 'settle-outside', version: s.version + 1, updatedAt: new Date() })
+        .set({
+          status: to,
+          // Confirming keeps the "settled another way" label; anything else starts over.
+          settledOutside: action === 'settle-outside' || (action === 'confirm' && s.settledOutside),
+          settledOutsideBy: action === 'settle-outside' ? me.id : action === 'confirm' ? s.settledOutsideBy : null,
+          version: s.version + 1,
+          updatedAt: new Date(),
+        })
         .where(eq(settlements.id, id));
-      await tx.insert(settlementEvents).values({ settlementId: id, actorUserId: me.id, fromStatus: s.status, toStatus: rule.to, note });
+      await tx.insert(settlementEvents).values({ settlementId: id, actorUserId: me.id, fromStatus: s.status, toStatus: to, note });
     });
     const { trip: fresh } = await membership(db, s0.tripId, me.id);
     return c.json(await settlementView(db, fresh));

@@ -45,8 +45,8 @@ export function MyTripsScreen() {
         </Card>
       ) : (
         <>
-          {active.length > 0 && <TripList title="Active" trips={active} />}
-          {done.length > 0 && <TripList title="Completed" trips={done} />}
+          {active.length > 0 && <TripList title="Current trips" trips={active} />}
+          {done.length > 0 && <TripList title="Finished" trips={done} />}
         </>
       )}
 

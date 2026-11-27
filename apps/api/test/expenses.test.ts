@@ -214,7 +214,43 @@ describe.skipIf(!TEST_DB_URL)('expenses', () => {
     expect((await post({ type: 'percentage', percents: [{ userId: ids.alice, percent: '50' }] })).status).toBe(400);
 
     const eq3 = await post({ type: 'equal', participants: [ids.alice, ids.bob, ids.charlie] });
-    expect(eq3.body.splits.map((s: { amount: string }) => s.amount)).toEqual(['3334', '3333', '3333']);
+    const eq3Amounts = eq3.body.splits.map((s: { amount: string }) => s.amount).sort();
+    expect(eq3Amounts).toEqual(['3333', '3333', '3334']); // the odd cent goes to someone, not always the first (F2)
+
+    // Over many equal splits the odd cents spread across everyone (test report run 3, F2).
+    const extra: Record<string, number> = {};
+    for (let i = 0; i < 36; i++) {
+      const e = await post({ type: 'equal', participants: [ids.alice, ids.bob, ids.charlie] }, '10');
+      for (const s of e.body.splits as { userId: string; amount: string }[]) if (s.amount === '334') extra[s.userId] = (extra[s.userId] ?? 0) + 1;
+    }
+    expect(Object.keys(extra).length).toBe(3);
+  });
+
+  it('an edit that doesn’t touch the money never moves a cent, even for expenses saved before F2', async () => {
+    const { trip, alice, ids, db } = await fourFriends();
+    const body = {
+      description: 'Dinner',
+      expenseDate: '2027-03-02',
+      currency: 'SGD',
+      amount: '10',
+      payers: [{ userId: ids.alice, amount: '10' }],
+      split: { type: 'equal', participants: [ids.alice, ids.bob, ids.charlie] },
+    };
+    const e = (await alice.c.post(`/trips/${trip.id}/expenses`, { clientId: uuid(), ...body })).body;
+    const cents = (x: { splits: { userId: string; amount: string }[] }) => Object.fromEntries(x.splits.map((s) => [s.userId, s.amount]));
+    const renamed = (await alice.c.put(`/expenses/${e.id}`, { ...body, description: 'Dinner!', version: e.version })).body;
+    expect(cents(renamed)).toEqual(cents(e));
+
+    // Simulate an expense saved before F2 (odd cent always on the first person) by rewriting its lines.
+    const { eq } = await import('drizzle-orm');
+    for (const [userId, v] of [[ids.alice, 334n], [ids.bob, 333n], [ids.charlie, 333n]] as const) {
+      await db
+        .update(schema.expenseSplits)
+        .set({ shareOriginal: v, shareBase: v })
+        .where((await import('drizzle-orm')).and(eq(schema.expenseSplits.expenseId, e.id), eq(schema.expenseSplits.userId, userId)));
+    }
+    const legacy = (await alice.c.put(`/expenses/${e.id}`, { ...body, description: 'Dinner (old)', version: renamed.version })).body;
+    expect(cents(legacy)).toEqual({ [ids.alice]: '334', [ids.bob]: '333', [ids.charlie]: '333' });
   });
 
   it('rejects non-members, bad amounts and wrong payer totals', async () => {

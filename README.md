@@ -7,7 +7,7 @@ ChickAA is a group-trip expense app. Log what everyone pays during the trip, in 
 
 It's a Progressive Web App: open it in your phone's browser and add it to your home screen. There's nothing to download from an app store.
 
-**Live app:** https://chickaa-sg.onrender.com · **Version:** 1.7.1
+**Live app:** https://chickaa-sg.onrender.com · **Version:** 1.8.0
 
 ## Highlights
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { allocate } from '../index.ts';
+import { allocate, seedFrom } from '../index.ts';
 
 const sum = (xs: bigint[]) => xs.reduce((a, b) => a + b, 0n);
 
@@ -61,5 +61,40 @@ describe('allocate (largest remainder)', () => {
     fc.assert(fc.property(fc.bigInt({ min: 0n, max: 10n ** 9n }), weights, (t, w) => {
       expect(allocate(t, w)).toEqual(allocate(t, [...w]));
     }));
+  });
+});
+
+describe('allocate: tie-break seed (test report run 3, F2)', () => {
+  it('without a seed, ties go to the first position (unchanged)', () => {
+    expect(allocate(1000n, [1n, 1n, 1n])).toEqual([334n, 333n, 333n]);
+  });
+
+  it('the seed picks where ties start, and is stable', () => {
+    expect(allocate(1000n, [1n, 1n, 1n], 1)).toEqual([333n, 334n, 333n]);
+    expect(allocate(1000n, [1n, 1n, 1n], 2)).toEqual([333n, 333n, 334n]);
+    expect(allocate(1000n, [1n, 1n, 1n], 5)).toEqual(allocate(1000n, [1n, 1n, 1n], 2));
+    expect(allocate(1001n, [1n, 1n, 1n], 2)).toEqual([334n, 333n, 334n]);
+  });
+
+  it('largest real remainder still wins over the seed', () => {
+    // 10 split 1:2 → 3.33 / 6.67: the 2-weight part has the bigger remainder whatever the seed.
+    for (let s = 0; s < 5; s++) expect(allocate(10n, [1n, 2n], s)).toEqual([3n, 7n]);
+  });
+
+  it('over many expenses the odd cents even out', () => {
+    const got = [0n, 0n, 0n, 0n];
+    for (let k = 0; k < 4000; k++) {
+      const parts = allocate(1001n, [1n, 1n, 1n, 1n], seedFrom(`expense-${k}`));
+      parts.forEach((p, i) => (got[i]! += p - 250n));
+    }
+    const max = got.reduce((a, b) => (a > b ? a : b));
+    const min = got.reduce((a, b) => (a < b ? a : b));
+    expect(Number(max - min)).toBeLessThan(150); // was 4000 vs 0 with first-person-first
+  });
+
+  it('seedFrom is a stable 32-bit number', () => {
+    expect(seedFrom('abc')).toBe(seedFrom('abc'));
+    expect(seedFrom('abc')).not.toBe(seedFrom('abd'));
+    expect(seedFrom('')).toBe(0x811c9dc5);
   });
 });

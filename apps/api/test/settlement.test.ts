@@ -106,6 +106,20 @@ describe.skipIf(!TEST_DB_URL)('settle up', () => {
     expect((await alice.c.call('DELETE', `/trips/${trip.id}`, { confirmName: 'Bali 2027' })).status).toBe(200);
   });
 
+  it('owner can’t wipe a debt between two other people: the recipient can refuse (run 3, F4)', async () => {
+    const { trip, alice, bob, charlie, david, eve } = await fiveFriends();
+    const plan = (await alice.c.post(`/trips/${trip.id}/complete`)).body;
+    const people = { [alice.user.id]: alice, [bob.user.id]: bob, [charlie.user.id]: charlie, [david.user.id]: david, [eve.user.id]: eve };
+    const t = plan.transfers.find((x: { toUserId: string; fromUserId: string }) => x.toUserId !== alice.user.id && x.fromUserId !== alice.user.id)!;
+    expect(t).toBeTruthy();
+    await alice.c.call('POST', `/settlements/${t.id}/settle-outside`, { note: 'they sorted it' });
+    const refused = await people[t.toUserId]!.c.call('POST', `/settlements/${t.id}/dispute`, { note: 'No, I was never paid' });
+    expect(refused.status).toBe(200);
+    expect(refused.body.transfers.find((x: { id: string }) => x.id === t.id)).toMatchObject({ status: 'disputed', settledOutside: false, settledOutsideBy: null });
+    // Not settled, so the trip can't be deleted.
+    expect((await alice.c.call('DELETE', `/trips/${trip.id}`, { confirmName: 'Bali 2027' })).status).toBe(409);
+  });
+
   it('dispute → recipient can still confirm if the money turns up (U1); owner can mark "settled another way" (B1)', async () => {
     const { trip, alice, bob, charlie, david, eve } = await fiveFriends();
     const plan = (await alice.c.post(`/trips/${trip.id}/complete`)).body;
@@ -129,6 +143,15 @@ describe.skipIf(!TEST_DB_URL)('settle up', () => {
     for (const o of others) {
       const r = await alice.c.call('POST', `/settlements/${o.id}/settle-outside`, { note: 'paid in cash' });
       expect(r.status).toBe(200);
+      const after = r.body.transfers.find((x: { id: string }) => x.id === o.id);
+      // F4 (run 3): only the recipient's own debt is settled at once; others wait for the recipient.
+      if (o.toUserId === alice.user.id) expect(after).toMatchObject({ status: 'confirmed', settledOutside: true, settledOutsideBy: alice.user.id });
+      else {
+        expect(after).toMatchObject({ status: 'sent', settledOutside: true, settledOutsideBy: alice.user.id });
+        expect((await alice.c.get(`/trips/${trip.id}/settlement`)).body.progress.fullySettled).toBe(false);
+        const confirmed = await people[o.toUserId]!.c.post(`/settlements/${o.id}/confirm`);
+        expect(confirmed.body.transfers.find((x: { id: string }) => x.id === o.id)).toMatchObject({ status: 'confirmed', settledOutside: true });
+      }
     }
     const final = (await alice.c.get(`/trips/${trip.id}/settlement`)).body;
     expect(final.progress).toEqual({ confirmed: 4, total: 4, fullySettled: true });
@@ -136,7 +159,7 @@ describe.skipIf(!TEST_DB_URL)('settle up', () => {
     const b = (await alice.c.get(`/trips/${trip.id}/balances`)).body;
     expect(Object.values(nets(b)).every((n) => n === '0')).toBe(true);
     const ev2 = (await bob.c.get(`/settlements/${others[0].id}/events`)).body.events;
-    expect(ev2.at(-1).note).toBe('Settled another way: paid in cash');
+    expect(ev2.some((e: { note: string | null }) => e.note === 'Settled another way: paid in cash')).toBe(true);
     // And the trip can now be deleted.
     expect((await alice.c.call('DELETE', `/trips/${trip.id}`, { confirmName: 'Bali 2027' })).status).toBe(200);
   });
